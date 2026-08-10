@@ -30,16 +30,19 @@ Tracking issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
 
 ## Credential bootstrap
 
-1. Use the owner session to create a temporary account-owned bootstrap token.
-2. Exclude billing and membership permissions.
-3. Limit zone permissions to `sabiqah.org` and account permissions to the
-   Sabiqah account.
-4. Create separate development and production provider tokens after resources
-   exist; put them directly in their GitHub environments.
-5. Create bucket-scoped publishing and validation credentials.
-6. Test every credential with an allowed operation and a deliberately denied
+1. Create an account-owned planning token with Workers R2 Storage Read and put
+   it directly in the GitHub `development` environment.
+2. Create an account-owned apply token with Workers R2 Storage Write and put it
+   directly in the owner-approved `production` environment.
+3. Exclude billing, membership, and API-token administration permissions.
+4. Give both tokens a 90-day expiry and rotate them before expiration.
+5. Keep DNS owner-managed because account-owned tokens currently do not expose
+   zone-scoped DNS permissions; do not place a human user token in CI.
+6. Create bucket-scoped publishing and validation credentials after the buckets
+   exist.
+7. Test every credential with an allowed operation and a deliberately denied
    operation.
-7. Revoke the bootstrap token and confirm subsequent use fails.
+8. Revoke any temporary bootstrap credential and confirm subsequent use fails.
 
 ## DNSSEC activation
 

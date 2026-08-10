@@ -1,7 +1,7 @@
 # Cloudflare infrastructure
 
-This root configuration manages the Sabiqah R2 asset buckets and defensive DNS
-records. It uses OpenTofu and Cloudflare provider 5.23.0.
+This root configuration manages the Sabiqah R2 asset buckets. It uses OpenTofu
+and Cloudflare provider 5.23.0.
 
 ## Safety boundaries
 
@@ -13,6 +13,11 @@ records. It uses OpenTofu and Cloudflare provider 5.23.0.
 - R2 buckets remain private unless a separate, reviewed resource explicitly
   enables a public domain.
 - CI validation uses no credentials and cannot change Cloudflare.
+
+Cloudflare account-owned tokens currently expose account-level R2 permissions
+but not zone-scoped DNS permissions. DNS therefore remains owner-managed rather
+than introducing a human user token into automation. Revisit this boundary if
+Cloudflare adds zone permissions to account-owned tokens.
 
 ## State bootstrap
 
