@@ -6,12 +6,13 @@ independent of any single work.
 
 ## Repository status
 
-This repository is in its security and infrastructure bootstrap phase. No
-application or cloud environment has been deployed yet.
+This repository is in its security and infrastructure bootstrap phase. The
+Cloudflare account and `sabiqah.org` zone have been established, but no
+application has been deployed yet.
 
 - Bootstrap issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
-- Proposed cloud architecture: [`docs/architecture/cloud-foundation.md`](docs/architecture/cloud-foundation.md)
-- Proposed access model: [`docs/security/access-model.md`](docs/security/access-model.md)
+- Cloud architecture: [`docs/architecture/cloud-foundation.md`](docs/architecture/cloud-foundation.md)
+- Access model: [`docs/security/access-model.md`](docs/security/access-model.md)
 - Secret-handling policy: [`SECURITY.md`](SECURITY.md)
 
 ## Project boundaries
