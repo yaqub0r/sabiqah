@@ -79,8 +79,14 @@ On 2026-08-10:
 - Namecheap was configured to delegate to `chip.ns.cloudflare.com` and
   `sureena.ns.cloudflare.com`;
 - public DNS and the Cloudflare dashboard confirm that the zone is active;
+- DNSSEC is active at Cloudflare and the `.org` parent publishes the matching DS
+  record;
+- strict SPF, DMARC, and null-MX records declare that the domain sends and
+  receives no email;
 - GitHub `development` and owner-approved `production` environments were
   created, with production deployments restricted to `main`;
+- 90-day account-owned R2 planning and apply tokens were stored directly in the
+  corresponding GitHub environments;
 - R2 activation reached the usage-billed subscription confirmation and has not
   yet been submitted.
 

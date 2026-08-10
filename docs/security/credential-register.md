@@ -6,8 +6,8 @@ added to this file, Git, issues, pull requests, workflow logs, or chat.
 | Credential name | Scope | Secret location | Owner | Review/rotation |
 | --- | --- | --- | --- | --- |
 | Bootstrap operator | Temporary Cloudflare account and Sabiqah zone setup | Owner-controlled password manager or ephemeral session only | Account owner | Revoke immediately after routine credentials are verified |
-| `CLOUDFLARE_API_TOKEN` (development) | Account-owned token; Workers R2 Storage Read; expires after 90 days | GitHub `development` environment | Account owner | Rotate before expiry or after suspected exposure |
-| `CLOUDFLARE_API_TOKEN` (production) | Account-owned token; Workers R2 Storage Write; expires after 90 days | GitHub `production` environment | Account owner | Rotate before expiry with an approved production change |
+| `CLOUDFLARE_API_TOKEN` (development) | Account-owned token; Workers R2 Storage Read; expires 2026-11-08 | GitHub `development` environment | Account owner | Rotate before expiry or after suspected exposure |
+| `CLOUDFLARE_API_TOKEN` (production) | Account-owned token; Workers R2 Storage Write; expires 2026-11-08 | GitHub `production` environment | Account owner | Rotate before expiry with an approved production change |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (state) | R2 object read/write on `sabiqah-infra-state` only | GitHub environment secrets | Account owner | Review quarterly; rotate one environment at a time |
 | Development publisher | R2 object read/write on `sabiqah-assets-dev` only | GitHub `development` environment | Application maintainer | Rotate quarterly or after suspected exposure |
 | Production publisher | R2 object read/write on `sabiqah-assets-prod` only | GitHub `production` environment | Application maintainer | Rotate quarterly with overlap and verification |

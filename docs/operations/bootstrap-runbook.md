@@ -9,9 +9,16 @@ Tracking issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
   `sureena.ns.cloudflare.com`.
 - Cloudflare reports that traffic for `sabiqah.org` is behind Cloudflare.
 - Imported registrar parking and email-forwarding DNS records were removed.
+- DNSSEC is active and the parent DS record matches Cloudflare key tag 2371,
+  algorithm 13, and digest type 2.
+- The domain publishes null MX, `v=spf1 -all`, and a strict `p=reject` DMARC
+  policy while email is intentionally disabled.
+- Namecheap domain privacy, auto-renew, and transfer lock are enabled.
 - GitHub has separate `development` and owner-approved `production`
   environments; production accepts deployments only from `main`.
 - GitHub secret scanning and push protection are enabled.
+- The R2 planning token is read-only in `development`; the R2 write token is in
+  `production`. Both are account-owned and expire on 2026-11-08.
 
 ## R2 bootstrap
 
@@ -46,11 +53,10 @@ Tracking issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
 
 ## DNSSEC activation
 
-Enable DNSSEC only after the Cloudflare zone is active. Copy the generated DS
-record into Namecheap, then verify both the parent `.org` delegation and
-Cloudflare report the chain as active. A half-configured DS record can make the
-entire domain unreachable; remove the registrar DS record first if rollback is
-required.
+DNSSEC was enabled after the Cloudflare zone became active. Both the parent
+`.org` delegation and Cloudflare now report the chain as active. A mismatched DS
+record can make the entire domain unreachable; remove the registrar DS record
+first if rollback is required.
 
 ## Recovery order
 
