@@ -36,6 +36,10 @@ and exclude billing unless a specific task requires it.
 - Public readers never receive Cloudflare or R2 credentials.
 - Production changes require a protected GitHub environment and human approval.
 
+GitHub environments named `development` and `production` implement this
+separation. The production environment requires approval by the account owner
+and accepts deployments only from `main`.
+
 ## Secret placement
 
 Store tokens directly in the protected environment that consumes them. Record
