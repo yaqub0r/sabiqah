@@ -5,8 +5,6 @@
 Do not commit or paste any of the following into this repository, issues, pull
 requests, CI logs, or documentation:
 
-- AWS access key IDs or secret access keys
-- AWS session tokens or exported credential files
 - Cloudflare API tokens, R2 access keys, or R2 secret keys
 - passwords, MFA seeds, backup codes, or account recovery codes
 - private keys, signing keys, webhook secrets, or database credentials
@@ -29,10 +27,12 @@ The repository may contain non-secret operational metadata such as:
 
 ## Credential model
 
-- Humans authenticate through AWS IAM Identity Center with MFA.
-- Codex operates through a user-authorized, short-lived AWS session.
-- GitHub Actions uses AWS workload identity through OIDC.
-- Cloudflare credentials are separate, narrowly scoped, and rotated.
+- The account owner uses a named Cloudflare login protected by MFA; recovery
+  material stays outside the repository.
+- Codex-assisted bootstrap uses an account-owned Cloudflare API token that is
+  temporary, narrowly scoped, and revoked when bootstrap is complete.
+- Routine automation uses separate tokens per workload and environment.
+- R2 credentials are bucket-scoped and never exposed to browser code.
 - Production writes require a protected GitHub environment and approval.
 
 ## Reporting
