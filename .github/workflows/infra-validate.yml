@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "infra/**"
+      - ".github/workflows/cloudflare-credential-smoke.yml"
       - ".github/workflows/infra-validate.yml"
   push:
     branches:
       - main
     paths:
       - "infra/**"
+      - ".github/workflows/cloudflare-credential-smoke.yml"
       - ".github/workflows/infra-validate.yml"
 
 permissions:
