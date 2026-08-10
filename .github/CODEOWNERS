@@ -1,0 +1,9 @@
+# Security and infrastructure changes require review by the repository owner.
+* @yaqub0r
+
+/SECURITY.md @yaqub0r
+/docs/architecture/ @yaqub0r
+/docs/security/ @yaqub0r
+/docs/operations/ @yaqub0r
+/infra/ @yaqub0r
+/.github/workflows/ @yaqub0r

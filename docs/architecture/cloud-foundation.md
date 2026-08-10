@@ -77,8 +77,9 @@ On 2026-08-10:
 - eight imported Namecheap parking and email-forwarding records were removed;
 - Namecheap was configured to delegate to `chip.ns.cloudflare.com` and
   `sureena.ns.cloudflare.com`;
-- Cloudflare nameserver verification was requested and remains subject to DNS
-  propagation;
+- public DNS and the Cloudflare dashboard confirm that the zone is active;
+- GitHub `development` and owner-approved `production` environments were
+  created, with production deployments restricted to `main`;
 - R2 activation reached the usage-billed subscription confirmation and has not
   yet been submitted.
 
@@ -87,17 +88,15 @@ in this record.
 
 ## Remaining bootstrap work
 
-1. Confirm Cloudflare reports the zone as active.
-2. Activate R2 after the owner approves usage-based billing.
-3. Create the private development and production buckets.
-4. Create a temporary, account-owned bootstrap token and store it directly in a
+1. Activate R2 after the owner approves usage-based billing.
+2. Create the private state, development, and production buckets.
+3. Create a temporary, account-owned bootstrap token and store it directly in a
    protected secret store; never place it in Git or chat.
-5. Choose infrastructure as code and import or declare the bootstrapped
-   resources.
-6. Create narrow deployment and R2 publishing tokens.
-7. Add preview validation, protected production deployment, budget alerts, and
+4. Import the bootstrapped resources into the OpenTofu configuration.
+5. Create narrow deployment and R2 publishing tokens.
+6. Add reviewed plans, protected production deployment, budget alerts, and
    credential-rotation procedures.
-8. Validate revocation, restore, and rollback procedures before production use.
+7. Validate revocation, restore, and rollback procedures before production use.
 
 ## Decisions still required
 

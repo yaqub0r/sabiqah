@@ -1,4 +1,19 @@
-# Local configuration and secrets
+# OpenTofu working data and state
+**/.terraform/
+.tofu/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+!*.tfvars.example
+
+# Local credentials and environment files
 .env
 .env.*
 !.env.example
@@ -7,15 +22,8 @@
 *.p12
 credentials*
 
-# Infrastructure state and plans
-*.tfstate
-*.tfstate.*
-*.tfplan
-.terraform/
-.tofu/
+# Other infrastructure and runtime output
 cdk.out/
-
-# Runtime and tooling
 .runtime/
 node_modules/
 dist/

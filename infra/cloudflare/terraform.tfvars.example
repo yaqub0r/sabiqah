@@ -1,0 +1,6 @@
+cloudflare_account_id = "00000000000000000000000000000000"
+cloudflare_zone_id    = "00000000000000000000000000000000"
+
+# The defaults intentionally create these private buckets:
+# development_bucket_name = "sabiqah-assets-dev"
+# production_bucket_name  = "sabiqah-assets-prod"
