@@ -62,11 +62,12 @@ Pull request -> validation and deployment preview
 Protected GitHub environment approval
         |
         v
-Scoped Cloudflare token -> Pages / Workers / R2 / DNS
+Scoped Cloudflare token -> Pages / Workers / R2
 ```
 
 Bootstrap credentials are temporary. Routine deployments must use narrower
-tokens that cannot administer account membership or billing.
+tokens that cannot administer account membership or billing. DNS stays
+owner-managed until Cloudflare account-owned tokens can be scoped to zone DNS.
 
 ## Bootstrap record
 

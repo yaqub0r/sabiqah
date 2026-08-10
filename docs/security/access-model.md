@@ -40,6 +40,13 @@ GitHub environments named `development` and `production` implement this
 separation. The production environment requires approval by the account owner
 and accepts deployments only from `main`.
 
+The R2 planning and apply identities are account-owned service tokens. The
+planning token has Workers R2 Storage Read; the apply token has Workers R2
+Storage Write and is stored only in the protected production environment. Both
+expire after 90 days. Cloudflare account-owned tokens currently lack zone DNS
+permissions, so DNS changes remain owner-managed instead of using a human token
+in automation.
+
 ## Secret placement
 
 Store tokens directly in the protected environment that consumes them. Record
