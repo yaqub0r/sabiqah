@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { fromJS } from "immutable";
 
 interface DecapValue {
   toJS?: () => unknown;
@@ -12,6 +11,10 @@ function displayValue(value: DecapValue | string | undefined): string {
   return typeof plainValue === "string"
     ? plainValue
     : JSON.stringify(plainValue, null, 2);
+}
+
+export function parsePendingProposal(pending: string): unknown {
+  return JSON.parse(pending);
 }
 
 export function DecapAdmin() {
@@ -45,7 +48,7 @@ export function DecapAdmin() {
                 {!value && pending && (
                   <button
                     type="button"
-                    onClick={() => onChange(fromJS(JSON.parse(pending)))}
+                    onClick={() => onChange(parsePendingProposal(pending))}
                   >
                     Import prepared proposal
                   </button>
