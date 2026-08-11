@@ -1,0 +1,62 @@
+name: Apply Cloudflare infrastructure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-infra-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply private R2 infrastructure
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@9d84900f3238fab8cd84ce47d658d25dd008be2f # v1
+        with:
+          tofu_version: 1.12.5
+
+      - name: Verify required configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${AWS_ACCESS_KEY_ID}"
+          test -n "${AWS_SECRET_ACCESS_KEY}"
+          test -n "${CLOUDFLARE_API_TOKEN}"
+          test -n "${TF_VAR_cloudflare_account_id}"
+
+      - name: Configure remote state endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed "s/<CLOUDFLARE_ACCOUNT_ID>/${TF_VAR_cloudflare_account_id}/" \
+            infra/cloudflare/backend.hcl.example > "${RUNNER_TEMP}/backend.hcl"
+
+      - name: Initialize remote state
+        working-directory: infra/cloudflare
+        run: tofu init -input=false -backend-config="${RUNNER_TEMP}/backend.hcl"
+
+      - name: Review final plan
+        working-directory: infra/cloudflare
+        run: tofu plan -input=false -lock-timeout=5m -out=tfplan
+
+      - name: Apply reviewed plan
+        working-directory: infra/cloudflare
+        run: tofu apply -input=false -auto-approve tfplan
+

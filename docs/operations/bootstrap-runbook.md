@@ -17,23 +17,29 @@ Tracking issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
 - GitHub has separate `development` and owner-approved `production`
   environments; production accepts deployments only from `main`.
 - GitHub secret scanning and push protection are enabled.
+- R2 is active, and the private Standard `sabiqah-infra-state` bucket is the
+  dedicated OpenTofu state backend.
+- A $1 monthly R2 billable-usage alert notifies the account owner.
 - The R2 planning token is read-only in `development`; the R2 write token is in
   `production`. Both are account-owned and expire on 2026-11-08.
+- The development planning token successfully lists R2 buckets after activation.
+- The state backend credential has Object Read & Write only on
+  `sabiqah-infra-state`, is stored in both protected GitHub environments, and
+  expires on 2027-02-10.
 
 ## R2 bootstrap
 
 1. The owner approves and activates the usage-billed R2 subscription.
-2. Create three private Standard buckets: `sabiqah-infra-state`,
-   `sabiqah-assets-dev`, and `sabiqah-assets-prod`.
+2. Manually create only the private Standard `sabiqah-infra-state` bucket.
 3. Keep `r2.dev` public access disabled on every bucket.
 4. Create an R2 Object Read & Write token scoped only to
    `sabiqah-infra-state` for the OpenTofu backend.
 5. Store its S3-compatible access key ID and secret access key directly in the
    protected GitHub environments. Do not expose them to the Cloudflare provider.
-6. Initialize the backend and import the two asset buckets before the first
-   managed plan if they were created manually.
-7. Verify state locking with two concurrent speculative plans before enabling a
-   production apply workflow.
+6. Run the speculative plan, merge it, and use the owner-approved production
+   apply workflow to create `sabiqah-assets-dev` and `sabiqah-assets-prod`.
+7. Verify state locking with two concurrent speculative plans after the first
+   apply.
 
 ## Credential bootstrap
 

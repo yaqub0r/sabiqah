@@ -5,6 +5,8 @@ on:
     paths:
       - "infra/**"
       - ".github/workflows/cloudflare-credential-smoke.yml"
+      - ".github/workflows/infra-plan.yml"
+      - ".github/workflows/infra-apply.yml"
       - ".github/workflows/infra-validate.yml"
   push:
     branches:
@@ -12,6 +14,8 @@ on:
     paths:
       - "infra/**"
       - ".github/workflows/cloudflare-credential-smoke.yml"
+      - ".github/workflows/infra-plan.yml"
+      - ".github/workflows/infra-apply.yml"
       - ".github/workflows/infra-validate.yml"
 
 permissions:

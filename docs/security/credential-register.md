@@ -8,7 +8,7 @@ added to this file, Git, issues, pull requests, workflow logs, or chat.
 | Bootstrap operator | Temporary Cloudflare account and Sabiqah zone setup | Owner-controlled password manager or ephemeral session only | Account owner | Revoke immediately after routine credentials are verified |
 | `CLOUDFLARE_API_TOKEN` (development) | Account-owned token; Workers R2 Storage Read; expires 2026-11-08 | GitHub `development` environment | Account owner | Rotate before expiry or after suspected exposure |
 | `CLOUDFLARE_API_TOKEN` (production) | Account-owned token; Workers R2 Storage Write; expires 2026-11-08 | GitHub `production` environment | Account owner | Rotate before expiry with an approved production change |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (state) | R2 object read/write on `sabiqah-infra-state` only | GitHub environment secrets | Account owner | Review quarterly; rotate one environment at a time |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (state) | Account-owned R2 Object Read & Write on `sabiqah-infra-state` only; expires 2027-02-10 | GitHub `development` and `production` environment secrets | Account owner | Review quarterly; rotate one environment at a time |
 | Development publisher | R2 object read/write on `sabiqah-assets-dev` only | GitHub `development` environment | Application maintainer | Rotate quarterly or after suspected exposure |
 | Production publisher | R2 object read/write on `sabiqah-assets-prod` only | GitHub `production` environment | Application maintainer | Rotate quarterly with overlap and verification |
 | Validator | R2 object read/list on named asset buckets | Protected CI environment | Application maintainer | Remove if unused; review quarterly |

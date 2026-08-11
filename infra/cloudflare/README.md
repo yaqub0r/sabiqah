@@ -21,10 +21,12 @@ Cloudflare adds zone permissions to account-owned tokens.
 
 ## State bootstrap
 
-The state bucket must exist before this configuration can use it. Create the
-private `sabiqah-infra-state` R2 bucket during the one-time bootstrap, create an
-R2 token scoped only to that bucket with Object Read & Write, and put the access
-key ID and secret access key directly into the protected GitHub environments.
+The state bucket must exist before this configuration can use it. Create only
+the private `sabiqah-infra-state` R2 bucket during the one-time manual bootstrap,
+create an R2 token scoped only to that bucket with Object Read & Write, and put
+the access key ID and secret access key directly into the protected GitHub
+environments. The protected apply workflow then creates the asset buckets from
+this configuration; do not create them manually unless an import is planned.
 
 Copy `backend.hcl.example` to an ignored `backend.hcl`, replace only the account
 identifier placeholder, and initialize with:
@@ -41,8 +43,8 @@ OpenTofu records backend arguments in local metadata and saved plans.
 1. Run `tofu fmt -check -recursive` and `tofu validate`.
 2. Generate a speculative plan with a read-capable development token.
 3. Review the plan in a pull request.
-4. Apply development through the `development` environment.
-5. Apply production only from `main` through the owner-approved `production`
-   environment.
+4. Merge the reviewed change to `main`.
+5. Dispatch `Apply Cloudflare infrastructure`; the job can run only from `main`
+   and requires approval through the `production` environment.
 
 Do not use the broad bootstrap token for routine plans or applies.
