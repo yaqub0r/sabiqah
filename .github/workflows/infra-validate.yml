@@ -7,6 +7,7 @@ on:
       - ".github/workflows/cloudflare-credential-smoke.yml"
       - ".github/workflows/infra-plan.yml"
       - ".github/workflows/infra-apply.yml"
+      - ".github/workflows/r2-publisher-smoke.yml"
       - ".github/workflows/infra-validate.yml"
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - ".github/workflows/cloudflare-credential-smoke.yml"
       - ".github/workflows/infra-plan.yml"
       - ".github/workflows/infra-apply.yml"
+      - ".github/workflows/r2-publisher-smoke.yml"
       - ".github/workflows/infra-validate.yml"
 
 permissions:

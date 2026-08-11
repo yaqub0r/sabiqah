@@ -1,0 +1,68 @@
+name: R2 publisher least-privilege test
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Publisher environment to verify
+        required: true
+        type: choice
+        default: development
+        options:
+          - development
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r2-publisher-smoke-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify allowed and denied bucket access
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: ${{ inputs.environment }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      AWS_DEFAULT_REGION: auto
+
+    steps:
+      - name: Verify credential scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${AWS_ACCESS_KEY_ID}"
+          test -n "${AWS_SECRET_ACCESS_KEY}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID}"
+
+          if [[ "${{ inputs.environment }}" == "production" ]]; then
+            allowed_bucket="sabiqah-assets-prod"
+            denied_bucket="sabiqah-assets-dev"
+          else
+            allowed_bucket="sabiqah-assets-dev"
+            denied_bucket="sabiqah-assets-prod"
+          fi
+
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3api list-objects-v2 \
+            --bucket "${allowed_bucket}" \
+            --max-items 1 \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager >/dev/null
+
+          if aws s3api list-objects-v2 \
+            --bucket "${denied_bucket}" \
+            --max-items 1 \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager >/dev/null 2>&1; then
+            echo "Credential unexpectedly accessed the denied bucket." >&2
+            exit 1
+          fi
+
+          echo "Allowed access succeeded and cross-environment access was denied."
+
