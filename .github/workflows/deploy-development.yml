@@ -21,7 +21,6 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_API_TOKEN }}
       PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-      WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler.log
 
     steps:
       - name: Check out repository
@@ -64,9 +63,13 @@ jobs:
         run: pnpm check
 
       - name: Apply forward-only D1 migrations
+        env:
+          WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler.log
         run: pnpm exec wrangler d1 migrations apply DB --remote
 
       - name: Deploy Worker and static assets
+        env:
+          WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler.log
         run: pnpm exec wrangler deploy
 
       - name: Install runtime secrets
@@ -77,6 +80,7 @@ jobs:
           INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler.log
         run: |
           set -euo pipefail
           printf '%s' "${GITHUB_CLIENT_ID}" | pnpm exec wrangler secret put GITHUB_CLIENT_ID
