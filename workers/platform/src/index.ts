@@ -350,14 +350,14 @@ function oauthFailure(): Response {
   return json({ error: "OAuth state could not be verified." }, { status: 400 });
 }
 
-function decapMessage(
+export function decapMessage(
   origin: string,
   result: { token?: string; provider?: string; error?: string },
   status = 200,
 ): Response {
   const outcome = result.token ? "success" : "error";
   const message = `authorization:github:${outcome}:${JSON.stringify(result)}`;
-  const html = `<!doctype html><meta charset="utf-8"><title>GitHub authorization</title><script>window.opener?.postMessage(${JSON.stringify(message)}, ${JSON.stringify(origin)});window.close();</script><p>You may close this window.</p>`;
+  const html = `<!doctype html><meta charset="utf-8"><title>GitHub authorization</title><script>(()=>{const targetOrigin=${JSON.stringify(origin)};const result=${JSON.stringify(message)};const receiveAuthorizationHandshake=(event)=>{if(event.origin!==targetOrigin||event.source!==window.opener||event.data!=="authorizing:github")return;window.removeEventListener("message",receiveAuthorizationHandshake);window.opener.postMessage(result,targetOrigin);window.close();};window.addEventListener("message",receiveAuthorizationHandshake);window.opener?.postMessage("authorizing:github",targetOrigin);})();</script><p>You may close this window.</p>`;
   return new Response(html, {
     status,
     headers: {
