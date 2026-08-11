@@ -7,11 +7,16 @@
 2. Apply `migrations/0001_beta_identity.sql` with Wrangler.
 3. Create a GitHub OAuth app with the development callback URL
    `/api/auth/github/callback`.
-4. Configure a Turnstile widget for the development hostname.
-5. Generate separate random values for the invite pepper and session secret.
-6. Normalize the global code (trim and lowercase), calculate its HMAC-SHA-256
+4. Store its credentials in the GitHub development environment as
+   `OAUTH_GITHUB_CLIENT_ID` and `OAUTH_GITHUB_CLIENT_SECRET`. The deployment
+   workflow maps them to the Worker's `GITHUB_CLIENT_ID` and
+   `GITHUB_CLIENT_SECRET` names because GitHub Actions reserves the `GITHUB_`
+   secret prefix.
+5. Configure a Turnstile widget for the development hostname.
+6. Generate separate random values for the invite pepper and session secret.
+7. Normalize the global code (trim and lowercase), calculate its HMAC-SHA-256
    digest with the pepper, and store only digest and pepper as Worker secrets.
-7. deploy a reviewed commit to the development Worker and complete the smoke
+8. Deploy a reviewed commit to the development Worker and complete the smoke
    checks below.
 
 Do not reuse production OAuth, Turnstile, invite, or session secrets in local or
