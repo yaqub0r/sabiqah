@@ -6,10 +6,12 @@ independent of any single work.
 
 ## Repository status
 
-The Cloudflare account and `sabiqah.org` zone are established. The first beta
-application is being built in [issue #12](https://github.com/yaqub0r/sabiqah/issues/12):
-an Astro reader, a Decap-independent React review editor, and a small Cloudflare
-Worker for enrollment and reviewer evidence.
+The Cloudflare foundation and R2 bootstrap are complete. The first development
+beta is live at [dev.sabiqah.org](https://dev.sabiqah.org) from reviewed `main`
+commits: an Astro reader, a Decap-independent React review editor, and a
+Cloudflare Worker for enrollment and reviewer evidence. [Issue
+#12](https://github.com/yaqub0r/sabiqah/issues/12) tracks final beta verification;
+production remains protected and undeployed.
 
 - Bootstrap issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
 - Cloud architecture: [`docs/architecture/cloud-foundation.md`](docs/architecture/cloud-foundation.md)

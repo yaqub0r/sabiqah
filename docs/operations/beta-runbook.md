@@ -22,6 +22,28 @@
 Do not reuse production OAuth, Turnstile, invite, or session secrets in local or
 development environments.
 
+## Development deployment record
+
+As of 2026-08-11:
+
+- the canonical development URL is `https://dev.sabiqah.org`, attached to
+  Worker `sabiqah-dev`;
+- D1 database `sabiqah-platform-dev`
+  (`fecd6d21-6348-4d47-acb7-95c83055ee6e`) holds membership and reputation
+  evidence;
+- the GitHub OAuth callback base is `https://dev.sabiqah.org/api`, covering the
+  enrollment and Decap callbacks;
+- GitHub environment `development` accepts deployments only from `main` and
+  stores the runtime secrets; the global invite plaintext exists only in the
+  owner's password manager;
+- deployment run `31533205409` migrated D1, deployed the Worker and assets,
+  installed runtime secrets, and passed the canonical health check;
+- public pages and all three fixture states returned successfully, invalid
+  enrollment failed generically, GitHub enrollment created one active member
+  and one append-only enrollment event, and the live editor enforced evidence
+  for protected Arabic corrections;
+- production remained protected and unchanged.
+
 ## Smoke checks
 
 - Public reader loads without a session and all three fixture states render.
