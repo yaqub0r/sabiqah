@@ -123,6 +123,7 @@ export function ReviewEditor({
           <label className="choice">
             <input
               type="radio"
+              name="proposal-target"
               checked={target === "translation"}
               onChange={() => selectTarget("translation")}
             />
@@ -131,6 +132,7 @@ export function ReviewEditor({
           <label className="choice protected-choice">
             <input
               type="radio"
+              name="proposal-target"
               checked={target === "canonical_arabic"}
               onChange={() => selectTarget("canonical_arabic")}
             />
