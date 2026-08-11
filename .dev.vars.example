@@ -1,0 +1,7 @@
+# Copy this file to .dev.vars. Never commit real values.
+GITHUB_CLIENT_ID=development-oauth-client-id
+GITHUB_CLIENT_SECRET=development-oauth-client-secret
+INVITE_CODE_DIGEST=lowercase-hex-hmac-sha256-digest
+INVITE_CODE_PEPPER=development-only-random-secret
+SESSION_SECRET=development-only-random-secret-at-least-32-bytes
+TURNSTILE_SECRET_KEY=development-turnstile-secret

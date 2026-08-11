@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sabiqah-dev",
+  "main": "workers/platform/src/index.ts",
+  "compatibility_date": "2026-08-11",
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "apps/web/dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sabiqah-platform-dev",
+      "database_id": "fecd6d21-6348-4d47-acb7-95c83055ee6e",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "ENROLLMENT_RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        "simple": { "limit": 10, "period": 60 },
+      },
+    ],
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+}

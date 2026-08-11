@@ -1,0 +1,95 @@
+name: Deploy development application
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sabiqah-development-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Migrate and deploy development
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: development
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_API_TOKEN }}
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+      WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler.log
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.14.0
+
+      - name: Activate the pinned package manager
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.16.0 --activate
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify required configuration
+        env:
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          INVITE_CODE_DIGEST: ${{ secrets.INVITE_CODE_DIGEST }}
+          INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_ACCOUNT_ID}"
+          test -n "${CLOUDFLARE_API_TOKEN}"
+          test -n "${PUBLIC_TURNSTILE_SITE_KEY}"
+          test -n "${GITHUB_CLIENT_ID}"
+          test -n "${GITHUB_CLIENT_SECRET}"
+          test -n "${INVITE_CODE_DIGEST}"
+          test -n "${INVITE_CODE_PEPPER}"
+          test -n "${SESSION_SECRET}"
+          test -n "${TURNSTILE_SECRET_KEY}"
+
+      - name: Validate the release candidate
+        run: pnpm check
+
+      - name: Apply forward-only D1 migrations
+        run: pnpm exec wrangler d1 migrations apply DB --remote
+
+      - name: Deploy Worker and static assets
+        run: pnpm exec wrangler deploy
+
+      - name: Install runtime secrets
+        env:
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          INVITE_CODE_DIGEST: ${{ secrets.INVITE_CODE_DIGEST }}
+          INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GITHUB_CLIENT_ID}" | pnpm exec wrangler secret put GITHUB_CLIENT_ID
+          printf '%s' "${GITHUB_CLIENT_SECRET}" | pnpm exec wrangler secret put GITHUB_CLIENT_SECRET
+          printf '%s' "${INVITE_CODE_DIGEST}" | pnpm exec wrangler secret put INVITE_CODE_DIGEST
+          printf '%s' "${INVITE_CODE_PEPPER}" | pnpm exec wrangler secret put INVITE_CODE_PEPPER
+          printf '%s' "${SESSION_SECRET}" | pnpm exec wrangler secret put SESSION_SECRET
+          printf '%s' "${TURNSTILE_SECRET_KEY}" | pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
+
+      - name: Verify Worker health
+        env:
+          DEVELOPMENT_BASE_URL: ${{ vars.DEVELOPMENT_BASE_URL }}
+        run: |
+          set -euo pipefail
+          test -n "${DEVELOPMENT_BASE_URL}"
+          curl --fail --retry 5 --retry-all-errors "${DEVELOPMENT_BASE_URL}/api/health"
