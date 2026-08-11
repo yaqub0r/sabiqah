@@ -21,11 +21,11 @@ GitHub repository
       |
       | reviewed deployment
       v
-Cloudflare Pages / Workers ----> private R2 buckets
+Cloudflare Worker -----------> private R2 buckets
       |                              |
       +---------- Cloudflare DNS ----+
                       |
-                  sabiqah.org
+       dev.sabiqah.org / sabiqah.org
 ```
 
 GitHub remains the change-control plane. Application source and small,
@@ -36,6 +36,7 @@ derived binary artifacts live in R2.
 
 Initial buckets should be private and separated by environment:
 
+- `sabiqah-infra-state`: OpenTofu state and locking
 - `sabiqah-assets-dev`: development facsimiles and derived assets
 - `sabiqah-assets-prod`: approved production assets
 
@@ -71,7 +72,7 @@ owner-managed until Cloudflare account-owned tokens can be scoped to zone DNS.
 
 ## Bootstrap record
 
-On 2026-08-10:
+On 2026-08-10 and 2026-08-11:
 
 - the Cloudflare account owner completed MFA and recovery setup;
 - the `sabiqah.org` zone was added on the Cloudflare Free plan;
@@ -85,30 +86,30 @@ On 2026-08-10:
   receives no email;
 - GitHub `development` and owner-approved `production` environments were
   created, with production deployments restricted to `main`;
-- 90-day account-owned R2 planning and apply tokens were stored directly in the
-  corresponding GitHub environments;
-- R2 activation reached the usage-billed subscription confirmation and has not
-  yet been submitted.
+- R2 billing was activated with owner approval and a $1 monthly billable-usage
+  alert was configured;
+- private `sabiqah-infra-state`, `sabiqah-assets-dev`, and
+  `sabiqah-assets-prod` buckets were created with public development URLs
+  disabled;
+- OpenTofu state, planning, apply, and bucket-scoped publisher credentials were
+  stored only in their protected GitHub environments and passed access-isolation
+  tests;
+- a scoped development deployer was limited to D1 Write and Workers Scripts
+  Write, with no membership, billing, or DNS permission;
+- the reviewed `sabiqah-dev` Worker was deployed at `dev.sabiqah.org` with D1,
+  Turnstile, GitHub OAuth, and protected GitHub environment configuration;
+- production remained protected and undeployed.
 
 No credentials, account recovery data, or personal contact information belong
 in this record.
 
-## Remaining bootstrap work
+The bootstrap was completed under issue #1 without creating a broad temporary
+operator token. Routine operations now use the documented scoped credentials,
+reviewed workflows, rotation reminders, and recovery runbooks.
 
-1. Activate R2 after the owner approves usage-based billing.
-2. Create the private state, development, and production buckets.
-3. Create a temporary, account-owned bootstrap token and store it directly in a
-   protected secret store; never place it in Git or chat.
-4. Import the bootstrapped resources into the OpenTofu configuration.
-5. Create narrow deployment and R2 publishing tokens.
-6. Add reviewed plans, protected production deployment, budget alerts, and
-   credential-rotation procedures.
-7. Validate revocation, restore, and rollback procedures before production use.
+## Decisions still required before production
 
-## Decisions still required
-
-- Pages versus Workers-first application deployment
-- infrastructure-as-code tool and Cloudflare provider version policy
-- reader authentication and editorial authorization
 - R2 custom-domain and public-delivery policy
-- production approval owners, retention, backup, and recovery objectives
+- production retention, backup, and recovery objectives
+- whether and when a narrower GitHub App can replace Decap's OAuth
+  `public_repo` scope

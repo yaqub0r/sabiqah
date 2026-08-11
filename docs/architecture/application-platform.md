@@ -1,5 +1,9 @@
 # Application platform
 
+Status: **Accepted for beta implementation**
+
+Tracking issue: [#12](https://github.com/yaqub0r/sabiqah/issues/12)
+
 ## Decision
 
 Sabiqah is the public reader and collaborative-review application. Al-Isabah
