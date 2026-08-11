@@ -2,7 +2,8 @@
 
 ## Development bootstrap
 
-1. Create a development D1 database and record its ID only in `wrangler.jsonc`.
+1. Confirm the `sabiqah-platform-dev` D1 binding in `wrangler.jsonc` matches
+   Cloudflare database `fecd6d21-6348-4d47-acb7-95c83055ee6e`.
 2. Apply `migrations/0001_beta_identity.sql` with Wrangler.
 3. Create a GitHub OAuth app with the development callback URL
    `/api/auth/github/callback`.

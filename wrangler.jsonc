@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "sabiqah-platform-dev",
-      "database_id": "replace-with-development-d1-database-id",
+      "database_id": "fecd6d21-6348-4d47-acb7-95c83055ee6e",
       "migrations_dir": "migrations",
     },
   ],
