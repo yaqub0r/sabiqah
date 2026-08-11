@@ -76,3 +76,13 @@ first if rollback is required.
 Do not delete or recreate a production bucket as a first response. Preserve
 evidence, revoke compromised access, and prefer restoring configuration from a
 reviewed plan.
+
+## Completed deployment verification
+
+- The production apply created `sabiqah-assets-dev` and
+  `sabiqah-assets-prod`; a subsequent pair of concurrent plans reported no
+  drift while sharing the R2 state lock.
+- All three buckets have no custom domain and have the public development URL
+  disabled.
+- The first malformed state-credential transfer was detected by the plan gate,
+  replaced, verified, and permanently revoked before any apply.
