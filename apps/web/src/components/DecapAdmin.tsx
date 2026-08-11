@@ -8,14 +8,35 @@ function displayValue(value: DecapValue | string | undefined): string {
   if (!value) return "No validated proposal has been imported yet.";
   const plainValue =
     typeof value === "string" ? value : (value.toJS?.() ?? value);
-  return typeof plainValue === "string"
-    ? plainValue
-    : JSON.stringify(plainValue, null, 2);
+  if (typeof plainValue !== "string") {
+    return JSON.stringify(plainValue, null, 2);
+  }
+
+  try {
+    return JSON.stringify(JSON.parse(plainValue), null, 2);
+  } catch {
+    return plainValue;
+  }
 }
 
-export function parsePendingProposal(pending: string): unknown {
-  return JSON.parse(pending);
+export function parsePendingProposal(pending: string): string {
+  JSON.parse(pending);
+  return pending;
 }
+
+export const proposalFormat = {
+  fromFile(file: string): Record<string, unknown> {
+    const parsed = JSON.parse(file) as Record<string, unknown>;
+    return { ...parsed, proposal: JSON.stringify(parsed.proposal) };
+  },
+  toFile(value: Record<string, unknown>): string {
+    const proposal =
+      typeof value.proposal === "string"
+        ? JSON.parse(value.proposal)
+        : value.proposal;
+    return `${JSON.stringify({ ...value, proposal }, null, 2)}\n`;
+  },
+};
 
 export function DecapAdmin() {
   const [error, setError] = useState("");
@@ -24,6 +45,11 @@ export function DecapAdmin() {
     window.CMS_MANUAL_INIT = true;
     import("decap-cms-app")
       .then(({ default: CMS }) => {
+        CMS.registerCustomFormat(
+          "sabiqah-proposal-json",
+          "json",
+          proposalFormat,
+        );
         CMS.registerWidget(
           "sabiqah-proposal",
           ({
