@@ -1,0 +1,10 @@
+---
+import { DecapAdmin } from "../../components/DecapAdmin";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Pull-request workflow">
+  <section class="shell">
+    <DecapAdmin client:only="react" />
+  </section>
+</BaseLayout>

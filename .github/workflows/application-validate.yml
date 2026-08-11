@@ -1,0 +1,72 @@
+name: Application validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "workers/**"
+      - "fixtures/**"
+      - "migrations/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - "wrangler.jsonc"
+      - ".github/workflows/application-validate.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "workers/**"
+      - "fixtures/**"
+      - "migrations/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - "wrangler.jsonc"
+      - ".github/workflows/application-validate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Type, test, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.14.0
+
+      - name: Activate the pinned package manager
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.16.0 --activate
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate application and Worker bundle
+        run: pnpm check
+
+      - name: Audit production dependencies
+        run: pnpm audit:prod
+
+      - name: Apply D1 migrations to a disposable local database
+        env:
+          WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler.log
+        run: pnpm exec wrangler d1 migrations apply DB --local --persist-to "${{ runner.temp }}/d1"

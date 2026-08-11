@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1.0.0",
+  "work": {
+    "slug": "al-isabah",
+    "titleAr": "الإصابة في تمييز الصحابة",
+    "titleEn": "Al-Isabah fi Tamyiz al-Sahabah"
+  },
+  "release": {
+    "id": "fixture-beta-v1",
+    "publishedAt": "2026-08-11T12:00:00.000Z",
+    "sourceCommit": "0000000000000000000000000000000000000000",
+    "repositoryUrl": "https://github.com/yaqub0r/al-isabah"
+  },
+  "entries": [
+    {
+      "id": "isabah-fixture-0001",
+      "sequence": 1,
+      "title": { "ar": "مدخل تجريبي أول", "en": "First sample entry" },
+      "sourceSpans": [
+        {
+          "id": "fixture-span-0001",
+          "editionId": "fixture-edition",
+          "volume": "8",
+          "pageStart": "101",
+          "evidenceRefs": ["fixture:page-101"]
+        }
+      ],
+      "segments": [
+        {
+          "id": "isabah-fixture-0001-segment-0001",
+          "arabic": {
+            "text": "هذا نص عربي تجريبي لعرض واجهة القراءة.",
+            "reviewState": "reviewed"
+          },
+          "english": {
+            "text": "This is synthetic Arabic text for demonstrating the reading interface.",
+            "reviewState": "reviewed"
+          },
+          "sourceSpanRefs": ["fixture-span-0001"]
+        }
+      ],
+      "issues": []
+    },
+    {
+      "id": "isabah-fixture-0002",
+      "sequence": 2,
+      "title": {
+        "ar": "مدخل ممتد بين صفحتين",
+        "en": "Entry spanning two pages"
+      },
+      "sourceSpans": [
+        {
+          "id": "fixture-span-0002a",
+          "editionId": "fixture-edition",
+          "volume": "8",
+          "pageStart": "102",
+          "evidenceRefs": ["fixture:page-102"]
+        },
+        {
+          "id": "fixture-span-0002b",
+          "editionId": "fixture-edition",
+          "volume": "8",
+          "pageStart": "103",
+          "evidenceRefs": ["fixture:page-103"]
+        }
+      ],
+      "segments": [
+        {
+          "id": "isabah-fixture-0002-segment-0001",
+          "arabic": {
+            "text": "يبدأ هذا المثال في الصفحة الأولى.",
+            "reviewState": "reviewed"
+          },
+          "english": {
+            "text": "This example begins on the first page.",
+            "reviewState": "draft"
+          },
+          "sourceSpanRefs": ["fixture-span-0002a"]
+        },
+        {
+          "id": "isabah-fixture-0002-segment-0002",
+          "arabic": {
+            "text": "ويستمر في الصفحة التالية مع بقاء المصدر واضحا.",
+            "reviewState": "reviewed"
+          },
+          "english": {
+            "text": "It continues on the next page while retaining explicit provenance.",
+            "reviewState": "draft"
+          },
+          "sourceSpanRefs": ["fixture-span-0002b"]
+        }
+      ],
+      "issues": []
+    },
+    {
+      "id": "isabah-fixture-0003",
+      "sequence": 3,
+      "title": {
+        "ar": "مدخل بقراءة غير محسومة",
+        "en": "Entry with an unresolved reading"
+      },
+      "sourceSpans": [
+        {
+          "id": "fixture-span-0003",
+          "editionId": "fixture-edition",
+          "volume": "8",
+          "pageStart": "104",
+          "evidenceRefs": ["fixture:page-104", "fixture:ocr-104"]
+        }
+      ],
+      "segments": [
+        {
+          "id": "isabah-fixture-0003-segment-0001",
+          "arabic": {
+            "text": "هذا موضع تجريبي لقراءة مختلف فيها [؟].",
+            "reviewState": "disputed"
+          },
+          "english": {
+            "text": "This synthetic passage contains an unresolved reading.",
+            "reviewState": "disputed"
+          },
+          "sourceSpanRefs": ["fixture-span-0003"],
+          "notes": [
+            "Synthetic OCR uncertainty used only to test the interface."
+          ]
+        }
+      ],
+      "issues": [
+        {
+          "code": "ocr-reading-unresolved",
+          "severity": "warning",
+          "summary": "The source reading is unresolved; do not mark this segment verified.",
+          "segmentIds": ["isabah-fixture-0003-segment-0001"]
+        }
+      ]
+    }
+  ]
+}

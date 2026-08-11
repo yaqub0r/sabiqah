@@ -1,0 +1,41 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = "Open, source-grounded bilingual reading and collaborative review.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title} · Sabiqah</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Sabiqah home">
+        <span class="brand-mark" aria-hidden="true">س</span>
+        <span><strong>Sabiqah</strong><small>سابقة</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="/works/al-isabah/">Read</a>
+        <a href="/about/">About</a>
+      </nav>
+    </header>
+    <main><slot /></main>
+    <footer>
+      <p>Texts remain accountable to their sources, uncertainties, and human reviewers.</p>
+      <a href="https://github.com/yaqub0r/sabiqah">View the project on GitHub</a>
+    </footer>
+  </body>
+</html>

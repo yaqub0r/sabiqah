@@ -1,0 +1,32 @@
+backend:
+  name: github
+  repo: yaqub0r/al-isabah
+  branch: main
+  base_url: https://dev.sabiqah.org
+  auth_endpoint: api/decap/auth
+  open_authoring: true
+
+publish_mode: editorial_workflow
+media_folder: evidence/uploads
+public_folder: /evidence/uploads
+
+collections:
+  - name: review_proposals
+    label: Review proposals
+    folder: content/review-proposals
+    create: true
+    extension: json
+    format: json
+    slug: "{{fields.entryId}}-{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}"
+    fields:
+      - {
+          name: proposalVersion,
+          label: Proposal version,
+          widget: hidden,
+          default: "1.0.0",
+        }
+      - { name: bookSlug, label: Book slug, widget: string, default: al-isabah }
+      - { name: baseReleaseId, label: Base release, widget: string }
+      - { name: entryId, label: Entry ID, widget: string }
+      - { name: createdAt, label: Prepared at, widget: datetime }
+      - { name: proposal, label: Validated proposal, widget: sabiqah-proposal }

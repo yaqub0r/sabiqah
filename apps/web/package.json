@@ -1,0 +1,25 @@
+{
+  "name": "@sabiqah/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "dev": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro dev",
+    "typecheck": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro check"
+  },
+  "dependencies": {
+    "@astrojs/react": "6.0.2",
+    "@sabiqah/editor": "workspace:*",
+    "@sabiqah/release-model": "workspace:*",
+    "astro": "7.2.0",
+    "decap-cms-app": "3.15.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4"
+  }
+}
