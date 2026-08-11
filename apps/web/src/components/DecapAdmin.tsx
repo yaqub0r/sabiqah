@@ -1,4 +1,18 @@
 import { useEffect, useState } from "react";
+import { fromJS } from "immutable";
+
+interface DecapValue {
+  toJS?: () => unknown;
+}
+
+function displayValue(value: DecapValue | string | undefined): string {
+  if (!value) return "No validated proposal has been imported yet.";
+  const plainValue =
+    typeof value === "string" ? value : (value.toJS?.() ?? value);
+  return typeof plainValue === "string"
+    ? plainValue
+    : JSON.stringify(plainValue, null, 2);
+}
 
 export function DecapAdmin() {
   const [error, setError] = useState("");
@@ -13,34 +27,35 @@ export function DecapAdmin() {
             value,
             onChange,
           }: {
-            value?: string;
-            onChange: (value: string) => void;
+            value?: DecapValue | string;
+            onChange: (value: unknown) => void;
           }) => {
             const pending = window.localStorage.getItem(
               "sabiqah.pendingProposal",
             );
-            const displayed = value || pending || "";
             return (
               <div>
                 <p>
                   Sabiqah supplies a validated proposal; Decap supplies the fork
                   and pull-request workflow.
                 </p>
-                <textarea
-                  rows={18}
-                  value={displayed}
-                  onChange={(event) => onChange(event.target.value)}
-                  aria-label="Validated Sabiqah proposal JSON"
-                />
+                <pre aria-label="Validated Sabiqah proposal JSON">
+                  {displayValue(value)}
+                </pre>
                 {!value && pending && (
-                  <button type="button" onClick={() => onChange(pending)}>
+                  <button
+                    type="button"
+                    onClick={() => onChange(fromJS(JSON.parse(pending)))}
+                  >
                     Import prepared proposal
                   </button>
                 )}
               </div>
             );
           },
-          ({ value }: { value?: string }) => <pre>{value}</pre>,
+          ({ value }: { value?: DecapValue | string }) => (
+            <pre>{displayValue(value)}</pre>
+          ),
         );
         CMS.init();
       })

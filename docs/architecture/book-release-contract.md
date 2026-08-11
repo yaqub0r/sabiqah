@@ -24,6 +24,12 @@ names the base release, entry, segment, field, proposed value, rationale, and
 evidence references. Translation proposals and canonical-Arabic corrections
 are distinct operations.
 
+The Decap adapter stores that object under a single `proposal` key in a
+workflow envelope. It converts the validated object to Decap's immutable data
+structure and renders it read-only; contributors return to the Sabiqah editor
+to change it. Book-repository CI must unwrap and validate the proposal before a
+maintainer reviews the scholarly change.
+
 Arabic is read-only in the ordinary editor. A proposed Arabic correction must
 use the protected correction path, include a rationale and evidence, and be
 approved through the book repository's review policy. Automation never silently

@@ -17,16 +17,8 @@ collections:
     create: true
     extension: json
     format: json
-    slug: "{{fields.entryId}}-{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}"
+    slug: "review-{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}"
+    identifier_field: proposal
+    summary: "Review proposal {{filename}}"
     fields:
-      - {
-          name: proposalVersion,
-          label: Proposal version,
-          widget: hidden,
-          default: "1.0.0",
-        }
-      - { name: bookSlug, label: Book slug, widget: string, default: al-isabah }
-      - { name: baseReleaseId, label: Base release, widget: string }
-      - { name: entryId, label: Entry ID, widget: string }
-      - { name: createdAt, label: Prepared at, widget: datetime }
       - { name: proposal, label: Validated proposal, widget: sabiqah-proposal }
