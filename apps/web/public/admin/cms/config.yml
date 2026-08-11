@@ -16,7 +16,7 @@ collections:
     folder: content/review-proposals
     create: true
     extension: json
-    format: json
+    format: sabiqah-proposal-json
     slug: "review-{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}"
     identifier_field: proposal
     summary: "Review proposal {{filename}}"
