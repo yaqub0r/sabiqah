@@ -13,6 +13,7 @@ application has been deployed yet.
 - Bootstrap issue: [#1](https://github.com/yaqub0r/sabiqah/issues/1)
 - Cloud architecture: [`docs/architecture/cloud-foundation.md`](docs/architecture/cloud-foundation.md)
 - Access model: [`docs/security/access-model.md`](docs/security/access-model.md)
+- Credential rotation: [`docs/operations/credential-rotation.md`](docs/operations/credential-rotation.md)
 - Secret-handling policy: [`SECURITY.md`](SECURITY.md)
 
 ## Project boundaries
