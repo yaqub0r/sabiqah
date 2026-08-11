@@ -1,9 +1,7 @@
-import {
-  useEffect,
-  useState,
-  type ReactNode,
-  type SyntheticEvent,
-} from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
+import type { BookEntry } from "@sabiqah/release-model";
+
+import { ReviewWorkspace } from "./ReviewWorkspace";
 
 interface SessionIdentity {
   login: string;
@@ -14,13 +12,17 @@ interface SessionIdentity {
 interface ReviewerGateProps {
   siteKey?: string;
   returnTo: string;
-  children: ReactNode;
+  bookSlug: string;
+  releaseId: string;
+  entry: BookEntry;
 }
 
 export function ReviewerGate({
   siteKey,
   returnTo,
-  children,
+  bookSlug,
+  releaseId,
+  entry,
 }: ReviewerGateProps) {
   const [status, setStatus] = useState<
     "loading" | "anonymous" | "authenticated"
@@ -77,7 +79,11 @@ export function ReviewerGate({
     return (
       <>
         <p className="badge">Reviewing as @{identity?.login}</p>
-        {children}
+        <ReviewWorkspace
+          bookSlug={bookSlug}
+          releaseId={releaseId}
+          entry={entry}
+        />
       </>
     );
   }

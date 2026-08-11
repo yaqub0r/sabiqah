@@ -2,7 +2,6 @@
 import type { GetStaticPaths } from "astro";
 import type { BookEntry } from "@sabiqah/release-model";
 import { ReviewerGate } from "../../../components/ReviewerGate";
-import { ReviewWorkspace } from "../../../components/ReviewWorkspace";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { alIsabahRelease } from "../../../lib/release";
 
@@ -17,8 +16,13 @@ const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 <BaseLayout title={`Review ${entry.title.en}`}>
   <section class="shell narrow">
     <p class="breadcrumb"><a href={`/works/al-isabah/entry/${entry.id}/`}>← Return to entry</a></p>
-    <ReviewerGate siteKey={siteKey} returnTo={Astro.url.pathname} client:load>
-      <ReviewWorkspace bookSlug={alIsabahRelease.work.slug} releaseId={alIsabahRelease.release.id} entry={entry} />
-    </ReviewerGate>
+    <ReviewerGate
+      siteKey={siteKey}
+      returnTo={Astro.url.pathname}
+      bookSlug={alIsabahRelease.work.slug}
+      releaseId={alIsabahRelease.release.id}
+      entry={entry}
+      client:load
+    />
   </section>
 </BaseLayout>
