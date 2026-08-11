@@ -8,6 +8,10 @@ on:
       - ".github/workflows/infra-plan.yml"
       - ".github/workflows/infra-apply.yml"
       - ".github/workflows/r2-publisher-smoke.yml"
+      - ".github/workflows/credential-expiry-reminders.yml"
+      - "ops/credential-expirations.json"
+      - "scripts/credential_expiry.py"
+      - "tests/test_credential_expiry.py"
       - ".github/workflows/infra-validate.yml"
   push:
     branches:
@@ -18,6 +22,10 @@ on:
       - ".github/workflows/infra-plan.yml"
       - ".github/workflows/infra-apply.yml"
       - ".github/workflows/r2-publisher-smoke.yml"
+      - ".github/workflows/credential-expiry-reminders.yml"
+      - "ops/credential-expirations.json"
+      - "scripts/credential_expiry.py"
+      - "tests/test_credential_expiry.py"
       - ".github/workflows/infra-validate.yml"
 
 permissions:
@@ -44,6 +52,13 @@ jobs:
 
       - name: Check formatting
         run: tofu fmt -check -recursive
+
+      - name: Validate credential expiry automation
+        run: |
+          python -m unittest discover -s tests -p "test_credential_expiry.py"
+          python scripts/credential_expiry.py \
+            ops/credential-expirations.json \
+            --validate-only
 
       - name: Initialize providers without state
         working-directory: infra/cloudflare
