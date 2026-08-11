@@ -42,8 +42,8 @@ jobs:
 
       - name: Verify required configuration
         env:
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
           INVITE_CODE_DIGEST: ${{ secrets.INVITE_CODE_DIGEST }}
           INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
@@ -71,8 +71,8 @@ jobs:
 
       - name: Install runtime secrets
         env:
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
           INVITE_CODE_DIGEST: ${{ secrets.INVITE_CODE_DIGEST }}
           INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
