@@ -9,9 +9,9 @@
     "tree": "335273d71eb79e3db35f036c0c5829f337050148"
   },
   "archive": {
-    "format": "git-archive-tar",
-    "sha256": "6895ab4d9c641a4eb0730605c11350e751bbc6e905502f504a0fc20567f6b6f7",
-    "bytes": 12216320
+    "format": "canonical-git-tree-tar-v1",
+    "sha256": "e7d61d3f5c6cced7d40fa7ecc7071844c009644ab59510623f201ee42ababbb4",
+    "bytes": 11980800
   },
   "reviewCorpus": {
     "corpusId": "al-isabah-reading-a3b76bf-v3",
