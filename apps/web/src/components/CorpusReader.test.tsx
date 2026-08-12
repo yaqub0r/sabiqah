@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CorpusReader } from "./CorpusReader";
@@ -148,6 +154,20 @@ describe("CorpusReader", () => {
         },
       ],
       [
+        "/api/corpus/al-isabah/reviews",
+        {
+          corpusId,
+          reviewedItems: 1,
+          items: {
+            [firstItem.id]: {
+              approvalCount: 1,
+              currentUserApproved: false,
+              latestApprovalAt: 1_765_000_000,
+            },
+          },
+        },
+      ],
+      [
         `/api/corpus/al-isabah/sections/${sectionId}`,
         {
           schemaVersion: "2.0.0",
@@ -188,10 +208,27 @@ describe("CorpusReader", () => {
       ),
     ).toBeTruthy();
     expect(screen.getAllByText("Review record")).toHaveLength(2);
+    expect(
+      screen.getByText("Human reviewed · 1 current approval"),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Hide human-reviewed translations",
+      }),
+    );
+    expect(screen.queryByText("The first short translated record.")).toBeNull();
+    expect(
+      screen.getByText(
+        "The following short record continues in the same reading section.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("Showing 1 of 2 records in this section"),
+    ).toBeTruthy();
     await waitFor(() =>
       expect(
         document.querySelectorAll(".reading-record.short-record"),
-      ).toHaveLength(2),
+      ).toHaveLength(1),
     );
     expect(document.body.textContent?.toLocaleLowerCase()).not.toContain(
       "khadijah",

@@ -499,6 +499,20 @@ button {
 .reading-section-header p:last-child {
   color: var(--muted);
 }
+.reader-review-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.reader-review-filter .choice {
+  margin: 0;
+  color: var(--ink);
+}
 .reading-flow {
   counter-reset: records;
 }
@@ -581,6 +595,32 @@ button {
   font-size: 1.6rem;
   line-height: 2;
   text-align: right;
+}
+.translation-approval {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-left: 0.25rem solid var(--green);
+  background: var(--green-light);
+}
+.translation-approval p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.translation-approval .form-error {
+  grid-column: 1 / -1;
+  color: var(--warning);
+}
+.empty-reading-state {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  text-align: center;
 }
 .record-evidence {
   margin-top: 1.5rem;
@@ -730,6 +770,13 @@ footer p {
   }
   .section-pagination {
     flex-wrap: wrap;
+  }
+  .reader-review-filter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .translation-approval {
+    grid-template-columns: 1fr;
   }
   .arabic-card {
     max-width: 26rem;

@@ -73,3 +73,13 @@ Each corpus is exported reproducibly from pinned book-repository revisions.
 Deployment verifies the generated manifest before upload, uploads immutable
 objects first, and changes the Worker's pinned corpus ID through review. The
 browser never receives R2 credentials or a private object key.
+
+Human translation approvals are an operational overlay on this immutable
+corpus, not a rewrite of it. The Worker accepts an approval or withdrawal only
+from an active same-origin reviewer session and only after resolving the stable
+item ID against the pinned R2 corpus. Each event binds the decision to the
+corpus ID and exact object digest. Current counts and the reviewer's own state
+may be displayed and filtered in protected reader views, but these approvals do
+not alter the record's embedded review fields or satisfy canonical promotion.
+Promotion still requires the book repository's review policy and a pinned,
+versioned release.

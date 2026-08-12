@@ -10,6 +10,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
+import {
+  TranslationApproval,
+  type TranslationReviewState,
+  type TranslationReviewSummary,
+} from "./TranslationApproval";
 
 interface SessionIdentity {
   login: string;
@@ -121,7 +126,17 @@ function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
   );
 }
 
-function ReadingRecord({ item }: { item: ReviewCorpusItem }) {
+function ReadingRecord({
+  item,
+  reviewState,
+  onReviewStateChange,
+  reviewStateLoaded,
+}: {
+  item: ReviewCorpusItem;
+  reviewState?: TranslationReviewState;
+  onReviewStateChange: (state: TranslationReviewState) => void;
+  reviewStateLoaded: boolean;
+}) {
   const pages = [
     ...new Set(
       item.segments.flatMap((segment) =>
@@ -170,6 +185,12 @@ function ReadingRecord({ item }: { item: ReviewCorpusItem }) {
           </div>
         </section>
       ))}
+      <TranslationApproval
+        itemId={item.id}
+        state={reviewState}
+        onChange={onReviewStateChange}
+        ready={reviewStateLoaded}
+      />
       <ReviewEvidence item={item} />
     </article>
   );
@@ -179,6 +200,8 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   const [summary, setSummary] = useState<ReviewCorpusSummary>();
   const [index, setIndex] = useState<ReviewCorpusIndex>();
   const [section, setSection] = useState<ReviewCorpusSection>();
+  const [reviewSummary, setReviewSummary] =
+    useState<TranslationReviewSummary>();
   const [identity, setIdentity] = useState<SessionIdentity>();
   const [session, setSession] = useState<
     "loading" | "anonymous" | "active" | "limited"
@@ -188,6 +211,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   const [selectedVolume, setSelectedVolume] = useState(8);
   const [selectedSectionId, setSelectedSectionId] = useState("");
   const [pendingAnchor, setPendingAnchor] = useState("");
+  const [hideReviewed, setHideReviewed] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -241,6 +265,21 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           caught instanceof Error
             ? caught.message
             : "The table of contents could not be loaded.",
+        ),
+      );
+
+    fetch("/api/corpus/al-isabah/reviews", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error("Human review state could not be loaded.");
+        return (await response.json()) as TranslationReviewSummary;
+      })
+      .then(setReviewSummary)
+      .catch((caught) =>
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Human review state could not be loaded.",
         ),
       );
   }, [session]);
@@ -311,6 +350,31 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
       .slice(0, 50);
   }, [index, query]);
 
+  const visibleItems = useMemo(
+    () =>
+      section?.items.filter(
+        (item) =>
+          !hideReviewed ||
+          (reviewSummary?.items[item.id]?.approvalCount ?? 0) === 0,
+      ) ?? [],
+    [hideReviewed, reviewSummary, section],
+  );
+
+  function updateReviewState(itemId: string, state: TranslationReviewState) {
+    setReviewSummary((current) => {
+      const previousReviewed = (current?.items[itemId]?.approvalCount ?? 0) > 0;
+      const nextReviewed = state.approvalCount > 0;
+      return {
+        corpusId: current?.corpusId ?? section?.corpusId ?? "",
+        reviewedItems:
+          (current?.reviewedItems ?? 0) +
+          (nextReviewed ? 1 : 0) -
+          (previousReviewed ? 1 : 0),
+        items: { ...current?.items, [itemId]: state },
+      };
+    });
+  }
+
   function openSection(sectionId: string, anchor = "") {
     const target = index?.items.find((item) => item.sectionId === sectionId);
     if (target) setSelectedVolume(target.volume);
@@ -361,7 +425,10 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           <p className="edition-status">
             {summary.counts.translated.toLocaleString()} translated records ·{" "}
             {summary.counts.unresolvedItems.toLocaleString()} unresolved items ·{" "}
-            {summary.counts.humanReviewed.toLocaleString()} human reviewed
+            {(
+              reviewSummary?.reviewedItems ?? summary.counts.humanReviewed
+            ).toLocaleString()}{" "}
+            human reviewed
           </p>
         </section>
       )}
@@ -447,10 +514,41 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                       : "Selected translated passages; intervening text is not yet available"}
                   </p>
                 </header>
+                <div className="reader-review-filter">
+                  <label className="choice">
+                    <input
+                      type="checkbox"
+                      checked={hideReviewed}
+                      onChange={(event) =>
+                        setHideReviewed(event.target.checked)
+                      }
+                    />
+                    Hide human-reviewed translations
+                  </label>
+                  <span>
+                    Showing {visibleItems.length.toLocaleString()} of{" "}
+                    {section.items.length.toLocaleString()} records in this
+                    section
+                  </span>
+                </div>
                 <div className="reading-flow">
-                  {section.items.map((item) => (
-                    <ReadingRecord item={item} key={item.id} />
+                  {visibleItems.map((item) => (
+                    <ReadingRecord
+                      item={item}
+                      reviewState={reviewSummary?.items[item.id]}
+                      onReviewStateChange={(state) =>
+                        updateReviewState(item.id, state)
+                      }
+                      reviewStateLoaded={reviewSummary !== undefined}
+                      key={item.id}
+                    />
                   ))}
+                  {visibleItems.length === 0 && (
+                    <p className="empty-reading-state">
+                      Every record in this section has a current human approval.
+                      Show reviewed translations to read them again.
+                    </p>
+                  )}
                 </div>
                 <nav
                   className="section-pagination"
