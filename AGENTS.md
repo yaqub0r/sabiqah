@@ -34,3 +34,27 @@ pull requests.
 Use feature branches and pull requests after the repository bootstrap commit.
 Do not bypass required checks or environment protections. Keep generated state,
 local runtime data, and infrastructure state files out of Git.
+
+For requested repository implementation, Codex owns the complete delivery
+cycle by default. An open or draft pull request is an intermediate state, not
+the normal handoff point. Unless a required human approval, protected
+environment, or genuine external blocker remains, Codex must:
+
+1. associate the work with an accurately scoped issue;
+2. isolate the work on a feature branch or dedicated worktree and preserve
+   unrelated changes;
+3. run relevant verification and resolve in-scope failures;
+4. commit intentionally, push, and open or update a non-draft pull request;
+5. monitor required checks and reviews to a terminal state without weakening or
+   bypassing a gate;
+6. merge with a repository-supported method after all requirements pass;
+7. confirm the issue closes through the merged pull request and that remote
+   `main` contains the delivered change; and
+8. remove merged task branches and worktrees when safe, then fast-forward a
+   clean default-branch checkout and report any intentionally retained or
+   blocked cleanup.
+
+Full-cycle ownership does not authorize production deployment, release
+publication, identity or trust expansion, destructive history changes, secret
+handling outside established controls, or overwriting unrelated work. Those
+actions continue to require their normal explicit approvals and safeguards.
