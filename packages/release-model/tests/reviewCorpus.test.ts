@@ -7,7 +7,7 @@ import {
   parseReviewCorpusSummary,
 } from "../src/reviewCorpus";
 
-const corpusId = "al-isabah-reading-a3b76bf-v2";
+const corpusId = "al-isabah-reading-a3b76bf-v3";
 const item = {
   schemaVersion: "2.0.0" as const,
   corpusId,

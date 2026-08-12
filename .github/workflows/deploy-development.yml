@@ -21,6 +21,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_API_TOKEN }}
       PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+      AL_ISABAH_REVIEW_CORPUS_URI: ${{ vars.AL_ISABAH_REVIEW_CORPUS_URI }}
 
     steps:
       - name: Check out repository
@@ -54,6 +55,7 @@ jobs:
           test -n "${CLOUDFLARE_ACCOUNT_ID}"
           test -n "${CLOUDFLARE_API_TOKEN}"
           test -n "${PUBLIC_TURNSTILE_SITE_KEY}"
+          test -n "${AL_ISABAH_REVIEW_CORPUS_URI}"
           test -n "${GITHUB_CLIENT_ID}"
           test -n "${GITHUB_CLIENT_SECRET}"
           test -n "${INVITE_CODE_DIGEST}"
@@ -66,26 +68,7 @@ jobs:
       - name: Validate the release candidate
         run: pnpm check
 
-      - name: Check out pinned al-Isabah review source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          repository: yaqub0r/al-isabah
-          ref: a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178
-          path: .runtime/al-isabah-review-source
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Export and validate private review corpus
-        run: |
-          python3 scripts/export_al_isabah_review_corpus.py \
-            --git-dir .runtime/al-isabah-review-source/.git \
-            --output .runtime/al-isabah-review-corpus \
-            --generated-at 2026-08-12T00:00:00Z
-          python3 scripts/validate_review_corpus.py .runtime/al-isabah-review-corpus
-          REVIEW_CORPUS_PATH=.runtime/al-isabah-review-corpus \
-            pnpm test -- packages/release-model/tests/generatedReviewCorpus.test.ts
-
-      - name: Upload immutable corpus to private R2
+      - name: Download and verify pinned private review corpus
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -94,11 +77,17 @@ jobs:
           set -euo pipefail
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
           aws s3 cp \
+            "${AL_ISABAH_REVIEW_CORPUS_URI}" \
             .runtime/al-isabah-review-corpus \
-            "s3://sabiqah-assets-dev/review-corpora/al-isabah/al-isabah-reading-a3b76bf-v2/" \
             --recursive \
             --endpoint-url "${endpoint}" \
-            --no-cli-pager
+            --no-cli-pager --no-progress --only-show-errors
+          python3 scripts/validate_review_corpus.py .runtime/al-isabah-review-corpus
+          python3 scripts/verify_al_isabah_private_snapshot.py \
+            --manifest evidence/research-snapshots/al-isabah-a3b76bf.v1.json \
+            --corpus .runtime/al-isabah-review-corpus
+          REVIEW_CORPUS_PATH=.runtime/al-isabah-review-corpus \
+            pnpm test -- packages/release-model/tests/generatedReviewCorpus.test.ts
 
       - name: Apply forward-only D1 migrations
         env:

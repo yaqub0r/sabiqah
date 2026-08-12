@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "al-isabah-research-a3b76bf-v1",
+  "classification": "private-reference",
+  "promotionStatus": "blocked",
+  "source": {
+    "repository": "https://github.com/yaqub0r/al-isabah",
+    "commit": "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178",
+    "tree": "335273d71eb79e3db35f036c0c5829f337050148"
+  },
+  "archive": {
+    "format": "git-archive-tar-gzip",
+    "sha256": "0b3cd6c4679afd5b5428f61df6f215b1d88b861c3b5c7127d43cc9d767ae996d",
+    "bytes": 2205379
+  },
+  "reviewCorpus": {
+    "corpusId": "al-isabah-reading-a3b76bf-v3",
+    "generatedAt": "2026-08-12T00:00:00Z",
+    "manifestSha256": "07ed8d55130463cbd4391dee61f7cc7e1063b1e3eabcdee894cd65e24e57c386",
+    "manifestObjects": 1608,
+    "files": 1609,
+    "bytes": 18611908,
+    "counts": {
+      "entries": 1565,
+      "passages": 14,
+      "translated": 1579,
+      "needsAttention": 215,
+      "unresolvedItems": 288,
+      "humanReviewed": 0
+    }
+  },
+  "storage": {
+    "provider": "private-r2",
+    "archiveLocation": "runtime-configured",
+    "reviewCorpusLocation": "runtime-configured"
+  },
+  "contracts": ["content-source-compliance", "canonical-book-promotion"],
+  "notes": [
+    "The archive is a restorable snapshot for controlled research and future remediation, not a publication artifact.",
+    "The review corpus contains restricted intermediate text and is served only after active-membership authentication.",
+    "This public manifest records integrity and policy conclusions but no private object locator or restricted expression."
+  ]
+}

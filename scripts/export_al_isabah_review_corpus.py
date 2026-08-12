@@ -14,7 +14,7 @@ from typing import Any
 
 SOURCE_REF = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178"
 SOURCE_COMMIT = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178"
-CORPUS_ID = "al-isabah-reading-a3b76bf-v2"
+CORPUS_ID = "al-isabah-reading-a3b76bf-v3"
 ARTIFACT_SHA = "f12585cea28d7c7b318728f74b1a95a0d8b2812cb25d6e70f1b9e7b0b9422a3f"
 
 
@@ -49,7 +49,9 @@ def clean_output(output: Path) -> None:
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(value, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
 
 

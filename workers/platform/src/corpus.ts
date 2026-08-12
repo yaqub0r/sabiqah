@@ -1,6 +1,6 @@
 import { json } from "./http";
 
-export const CORPUS_ID = "al-isabah-reading-a3b76bf-v2";
+export const CORPUS_ID = "al-isabah-reading-a3b76bf-v3";
 const CORPUS_PREFIX = `review-corpora/al-isabah/${CORPUS_ID}`;
 const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$/;
 

@@ -48,19 +48,29 @@ As of 2026-08-11:
 
 ## Private review-corpus deployment
 
-The development deployment exports the review corpus from the exact
-`yaqub0r/al-isabah` revision pinned in the workflow. The export includes draft
-Arabic and English, machine findings, and the recorded translation workflow,
-but excludes raw restricted witnesses and private comparison artifacts. It is
-validated before upload to the private `sabiqah-assets-dev` R2 bucket under an
-immutable corpus ID.
+The one-time preservation workflow exports the review corpus from the exact
+`yaqub0r/al-isabah` research revision recorded in
+`evidence/research-snapshots/al-isabah-a3b76bf.v1.json`. It also creates a
+restorable Git archive of that revision. Both objects are validated against the
+public, non-sensitive integrity manifest before and after upload to private R2.
+The export includes draft Arabic and English, machine findings, and recorded
+translation workflow state, but excludes raw restricted witnesses and private
+comparison artifacts.
 
-To update the corpus, first review and merge the source work in the book
-repository, then change both the pinned source revision and corpus ID in a
-Sabiqah pull request. Never overwrite or delete a deployed corpus in place.
-Deploy the new immutable objects before switching the Worker to them. A rollback
-therefore restores the preceding Worker version, whose corpus ID still resolves
-to the preceding immutable objects.
+Ordinary development deployments do not check out the promotion-blocked public
+research branch. They download the immutable corpus selected by the protected
+`AL_ISABAH_REVIEW_CORPUS_URI` environment variable and reject it unless every
+hash, count, source commit, and blocked-promotion marker matches the manifest.
+The private archive location is likewise configured outside Git through
+`AL_ISABAH_RESEARCH_SNAPSHOT_URI`.
+
+To update the research corpus, produce a new immutable snapshot and corpus ID in
+Sabiqah's governed workflow. Publication-ready records are promoted separately
+to the canonical book repository through the canonical-book-promotion contract.
+Never overwrite or delete a deployed corpus in place. Upload and verify the new
+immutable objects before switching the Worker to them. A rollback therefore
+restores the preceding Worker version, whose corpus ID still resolves to the
+preceding immutable objects.
 
 The public summary endpoint must expose only inventory counts and the
 volume/section map. The index, section, and item endpoints must return `403`
