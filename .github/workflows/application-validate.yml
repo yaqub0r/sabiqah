@@ -7,6 +7,9 @@ on:
       - "packages/**"
       - "workers/**"
       - "fixtures/**"
+      - "scripts/export_al_isabah_review_corpus.py"
+      - "scripts/validate_review_corpus.py"
+      - "scripts/test_*review_corpus.py"
       - "migrations/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -23,6 +26,9 @@ on:
       - "packages/**"
       - "workers/**"
       - "fixtures/**"
+      - "scripts/export_al_isabah_review_corpus.py"
+      - "scripts/validate_review_corpus.py"
+      - "scripts/test_*review_corpus.py"
       - "migrations/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -64,6 +70,9 @@ jobs:
 
       - name: Validate application and Worker bundle
         run: pnpm check
+
+      - name: Test review corpus exporter and validator
+        run: python3 -m unittest discover -s scripts -p "test_*review_corpus.py"
 
       - name: Audit production dependencies
         run: pnpm audit:prod

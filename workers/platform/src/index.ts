@@ -5,6 +5,7 @@ import {
   githubAuthorizationUrl,
 } from "./github";
 import { cookie, json, parseCookies, safeReturnTo } from "./http";
+import { canReadCorpus, corpusJson, corpusObjectKey } from "./corpus";
 
 interface RateLimitBinding {
   limit(input: { key: string }): Promise<{ success: boolean }>;
@@ -13,6 +14,7 @@ interface RateLimitBinding {
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  REVIEW_CORPUS: R2Bucket;
   ENROLLMENT_RATE_LIMITER: RateLimitBinding;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
@@ -65,6 +67,38 @@ export default {
         return getSession(request, env);
       if (url.pathname === "/api/reputation/me" && request.method === "GET")
         return getReputation(request, env);
+      if (
+        url.pathname === "/api/corpus/al-isabah/summary" &&
+        request.method === "GET"
+      )
+        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("summary"));
+      if (
+        url.pathname === "/api/corpus/al-isabah/index" &&
+        request.method === "GET"
+      ) {
+        const member = await authenticatedMember(request, env);
+        if (!canReadCorpus(member))
+          return json(
+            { error: "Active reviewer access required" },
+            { status: 403 },
+          );
+        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("index"));
+      }
+      const corpusItem = url.pathname.match(
+        /^\/api\/corpus\/al-isabah\/items\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
+      );
+      if (corpusItem && request.method === "GET") {
+        const member = await authenticatedMember(request, env);
+        if (!canReadCorpus(member))
+          return json(
+            { error: "Active reviewer access required" },
+            { status: 403 },
+          );
+        return corpusJson(
+          env.REVIEW_CORPUS,
+          corpusObjectKey("item", corpusItem[1]),
+        );
+      }
       if (url.pathname === "/api/logout" && request.method === "POST") {
         return json(
           { ok: true },

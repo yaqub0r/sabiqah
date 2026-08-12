@@ -49,3 +49,23 @@ The three initial fixtures are deliberately synthetic and cover:
 
 They test interface behavior and make no claim to be publishable Al-Isabah
 scholarship.
+
+## Intermediate review corpus
+
+The public reader contract above remains restricted to approved book releases.
+Research and pre-publication material uses a separate `review-corpus` contract.
+Its public summary contains only non-sensitive counts, collection descriptions,
+coverage accounting, immutable source commits, and the explicit promotion
+decision. It never contains source or translated text.
+
+The review index and item records may contain restricted Arabic, draft English,
+unresolved readings, and editorial decisions. They live in private R2 under an
+immutable corpus ID and are served only by the Worker after active-membership
+authentication. A successful parse or machine test means that the record is
+structurally usable; it does not change the source classification or make the
+content publication-ready.
+
+Each corpus is exported reproducibly from pinned book-repository revisions.
+Deployment verifies the generated manifest before upload, uploads immutable
+objects first, and changes the Worker's pinned corpus ID through review. The
+browser never receives R2 credentials or a private object key.

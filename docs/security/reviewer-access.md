@@ -20,6 +20,13 @@ Cloudflare, R2, D1, or repository-administration access. Open Authoring creates
 a user-owned fork and pull request. Book maintainers decide what becomes
 canonical.
 
+Active membership also grants read access to the private intermediate corpus
+through Sabiqah's Worker. The Worker validates the signed session on every
+index and item request and reads the pinned corpus from private R2. Limited and
+suspended memberships receive no corpus text. The public work page receives
+only the non-sensitive summary and coverage counts; neither browser code nor
+reviewers receive R2 credentials or direct object URLs.
+
 ## Limitations and response
 
 A global code can leak and cannot identify who shared it. If abuse appears,

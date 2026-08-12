@@ -1,37 +1,28 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { alIsabahRelease } from "../../../lib/release";
+import { CorpusBrowser } from "../../../components/CorpusBrowser";
+
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
-<BaseLayout title={alIsabahRelease.work.titleEn}>
+<BaseLayout title="Al-Isabah fi Tamyiz al-Sahabah">
   <section class="shell">
-    <p class="eyebrow">Beta reader · synthetic fixtures</p>
+    <p class="eyebrow">Working translation · transparent review</p>
     <div class="section-heading">
       <div>
-        <h1>{alIsabahRelease.work.titleEn}</h1>
-        <p class="lede" lang="ar" dir="rtl">{alIsabahRelease.work.titleAr}</p>
+        <h1>Al-Isabah fi Tamyiz al-Sahabah</h1>
+        <p class="lede" lang="ar" dir="rtl">
+          الإصابة في تمييز الصحابة
+        </p>
       </div>
-      <span class="badge">Release {alIsabahRelease.release.id}</span>
+      <span class="badge warning">Public promotion blocked</span>
     </div>
     <p class="issue-banner">
-      These three records are interface fixtures, not publishable scholarship. They exercise normal,
-      page-spanning, and disputed-source states before real release ingestion.
+      This page surfaces the work as it actually stands: translated,
+      machine-checked, unresolved, and awaiting human review. It is not an
+      approved scholarly release. The public inventory is safe to share;
+      restricted text and intermediate evidence require reviewer access.
     </p>
-    <ol class="entry-list">
-      {alIsabahRelease.entries.map((entry) => (
-        <li>
-          <a class="entry-card" href={`/works/al-isabah/entry/${entry.id}/`}>
-            <span class="entry-number">{entry.sequence}</span>
-            <span>
-              <h2>{entry.title.en}</h2>
-              <p lang="ar" dir="rtl">{entry.title.ar}</p>
-            </span>
-            <span class:list={["badge", { warning: entry.issues.length > 0 }]}>
-              {entry.issues.length > 0 ? "Needs attention" : "Ready to read"}
-            </span>
-          </a>
-        </li>
-      ))}
-    </ol>
+    <CorpusBrowser client:load siteKey={siteKey} />
   </section>
 </BaseLayout>
