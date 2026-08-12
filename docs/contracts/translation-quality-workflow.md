@@ -1,0 +1,225 @@
+# Translation quality workflow contract
+
+- **Contract ID:** `translation-quality-workflow`
+- **Status:** Active
+- **Issue:** [#49](https://github.com/yaqub0r/sabiqah/issues/49)
+
+## Purpose
+
+This contract governs how Sabiqah turns a locked source edition into an
+English candidate that is ready for human scholarly review. It is
+book-independent: a book-specific profile may tighten these requirements but
+must not weaken them.
+
+The workflow optimizes for traceable accuracy, not fluent output alone. Human
+review is the last scholarly quality gate. Sabiqah must exhaust the applicable
+autonomous checks and witnesses before asking a reviewer to inspect the work.
+A reviewer receives a bounded evidence package, not an unexplained text dump.
+
+## Ownership boundary
+
+Sabiqah owns acquisition, restricted research evidence, translation runs,
+comparison, pre-publication review, and promotion preparation. A canonical
+book repository owns only approved records, public provenance, stable
+identifiers, editorial history, validation, and versioned releases.
+
+FirstLight and other products consume checksum-pinned canonical releases. They
+do not own source corpora, translation candidates, or private review evidence.
+
+This contract works with `content-source-compliance` and
+`canonical-book-promotion`. It does not authorize redistribution, declare a
+translation canonical, or replace book-repository validation.
+
+## Required source bundle
+
+Every in-scope work must identify these roles, including pending roles:
+
+1. a complete human-viewable facsimile of the locked authoritative edition;
+2. machine-readable source text aligned to that edition;
+3. explicitly classified alternative editions, translation witnesses,
+   collateral works, and lexical references used to resolve uncertainty;
+4. page- or entry-addressable structured English with provenance and review
+   state;
+5. a human-viewable English presentation generated from the structured
+   English, with the authoritative language beside it when useful; and
+6. alignment and quality evidence binding all derived artifacts to their exact
+   inputs.
+
+Structured English is the editable English authority. HTML, PDF, EPUB, search
+indexes, and reader pages are reproducible derivatives and must never be
+edited as the source of truth.
+
+## Workflow state machine
+
+The stages run in this order. A stage may iterate, but it may not be skipped or
+reported complete without the evidence defined by the work profile.
+
+```text
+source_locked
+  -> source_text_aligned
+  -> translation_scope_locked
+  -> blind_translation_complete
+  -> independent_critique_complete
+  -> witness_resolution_complete
+  -> adjudication_complete
+  -> machine_validation_complete
+  -> review_presentation_ready
+  -> human_review
+  -> promotion_eligible
+```
+
+### 1. Source lock
+
+Record the work, edition, publisher, date, editor or investigator, volume plan,
+extent, pagination, provider landing pages, local or private object IDs,
+languages, hashes, rights classifications, and known witnesses. A matching
+title is not proof that two artifacts represent the same edition.
+
+Prefer a provider that pairs a complete facsimile and machine-readable text for
+the same edition. Keep an independent facsimile when it materially improves
+recovery or verification. Source and witness acquisition must follow
+`content-source-compliance`.
+
+### 2. Source-text alignment
+
+Map machine text to stable facsimile locations and meaningful units such as
+pages, entries, headings, isnads, notes, or poetry. Measure missing, duplicated,
+reordered, truncated, and corrupt units. OCR or text repairs require an
+append-only ledger containing the original reading, replacement, evidence,
+reason, exact location, and hashes.
+
+### 3. Translation-scope lock
+
+Define every substantive unit that must receive English, and explicitly list
+excluded front matter, indexes, repeated furniture, or unavailable passages.
+Coverage is measured against this locked inventory. Topic-focused cohorts must
+also record inclusion and exclusion decisions so later whole-book fills can
+extend the corpus without changing existing identities.
+
+### 4. Blind translation
+
+Produce English directly from the authoritative source without exposing a
+modern English witness as an answer key. Bind every result to the source hash,
+prompt or policy version, schema version, model identity, reasoning setting,
+and run identity. Preserve names, isnads, negation, dates, numerals, entry
+numbers, citations, notes, poetry, uncertainty, and cross-unit continuation.
+
+### 5. Independent critique
+
+Audit each translated unit independently for omissions, additions, reversals,
+name or relationship errors, damaged syntax, structural loss, and unsupported
+normalization. Criticism records exact concerns and locations; it does not
+silently rewrite the candidate.
+
+### 6. Witness resolution
+
+Send only material uncertainties to the smallest useful set of witnesses.
+Prefer another machine-readable edition of the same work when the locked text
+is damaged. Use Urdu, Persian, Turkish, or other established scholarly
+translations when they clarify language or context. Use collateral works only
+for shared people, reports, citations, or terminology.
+
+Every result records the query, witness role, edition or work identity,
+passage, location, retrieval status, and hash. A provider failure is
+`unavailable`, never `no_match`. Alternative editions and collateral works may
+support a transparent emendation but may not silently replace clear canonical
+wording.
+
+### 7. Adjudication
+
+Produce a complete final candidate from the source, blind translation,
+critique, and witness findings. Record each material decision and its basis.
+Anything not resolved remains explicit on the affected unit; fluency must not
+hide uncertainty.
+
+### 8. Machine validation
+
+Fail closed unless validation proves:
+
+- exact locked-scope coverage and ordering;
+- current hashes and complete provenance for every upstream stage;
+- no duplicated or missing substantive unit;
+- preservation of material numbers, names, notes, citations, and boundaries;
+- consistent terminology and durable name identities;
+- a complete unresolved-item inventory; and
+- separation of machine assessment from human-review state.
+
+Where appropriate, use reference-based or quality-estimation metrics such as
+COMET or XCOMET, back-translation diagnostics, terminology checks, named-entity
+consistency, and targeted entailment or omission tests. Such signals prioritize
+investigation; none independently certifies historical or theological
+accuracy.
+
+### 9. Review presentation
+
+Generate a readable English surface from the validated structured records. It
+must preserve headings, entry numbers, page or entry boundaries, notes,
+uncertainty signals, and links to the authoritative source. The presentation
+records the structured-English hash so drift is detectable.
+
+The reviewer handoff includes:
+
+- the machine-readable English candidate and its generated presentation;
+- authoritative source text and facsimile locations;
+- all remaining uncertainties and interventions;
+- stage, coverage, model, witness, and provenance summaries; and
+- a searchable durable name and mention index when names are in scope.
+
+Only this state opens human review. Automation may mark machine assessment
+complete or needing attention; it must never set `reviewed` or `verified`.
+
+### 10. Human review and promotion
+
+Human review records reviewer identity, scope, date, decisions, and unresolved
+flags. Approval makes a record eligible for compliance and canonical-repository
+promotion; it does not perform promotion itself. Promotion follows
+`canonical-book-promotion` and the receiving repository independently validates
+the proposed records.
+
+## Confidence is evidence, not one percentage
+
+Do not collapse confidence into a single model-generated score. Record a
+vector of independently inspectable evidence:
+
+- facsimile integrity and edition identity;
+- source-text accuracy and alignment coverage;
+- translation coverage, omissions, additions, and semantic findings;
+- structural fidelity for names, isnads, numbers, notes, poetry, and citations;
+- agreement or disagreement among classified witnesses;
+- model and reasoning calibration evidence;
+- unresolved-item severity and disposition; and
+- human-review scope and state.
+
+Thresholds belong in a versioned book profile or evaluation policy. Changing a
+threshold never rewrites the measurements that supported an earlier decision.
+
+## Names and identities
+
+Names are durable JSON data even when a database projection exists. Store a
+stable identity, observed forms, normalized English and Arabic forms when
+available, aliases, mentions, exact source locations, confidence evidence,
+review state, and merge or split history. Generated databases and search
+indexes are rebuildable projections.
+
+Names must remain reviewable without requiring application infrastructure.
+Operator teaching examples may update a versioned recognition policy and
+trigger reassessment, but must not silently rewrite approved identities.
+
+## Reproducibility and resumability
+
+Every autonomous stage must be content-addressed or fingerprinted by all inputs
+that affect its result. A checkpoint is reusable only when source, upstream
+records, prompt or policy, schema, model, reasoning setting, and attached
+evidence still match. Writes are atomic, failures remain retryable, and parallel
+shards merge only through a validator that rejects stale, missing, overlapping,
+or incompatible results.
+
+Credentials, private object keys, and restricted witness text must not appear
+in prompts, public manifests, logs, or canonical repositories.
+
+## Fail-closed conditions
+
+The workflow does not open human review or promotion when any required input is
+missing, stale, unclassified, misaligned, provider-indeterminate, structurally
+incomplete, or unsupported by current hashes. The blocked state must state the
+reason and the evidence needed to continue.
