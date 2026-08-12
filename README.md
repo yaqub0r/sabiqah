@@ -1,8 +1,17 @@
 # Sabiqah
 
-Sabiqah is the public reader and editorial application for open scholarly
-Islamic editions. It begins with the Al-Isabah edition while remaining
-independent of any single work.
+Sabiqah is the governed acquisition-to-publication system for open scholarly
+Islamic editions. It supports source discovery and acquisition, rights
+assessment and clearance, private research evidence, textual comparison,
+translation and review, promotion into canonical book repositories, and public
+presentation. It begins with the Al-Isabah edition while remaining independent
+of any single work.
+
+Sabiqah does not treat public availability as permission to reproduce or
+redistribute material. Research witnesses that are not approved for public
+release remain outside public repositories and deployment artifacts. See the
+[content-governance operating model](docs/architecture/content-governance.md)
+for repository responsibilities and trust boundaries.
 
 ## Repository status
 
@@ -19,15 +28,21 @@ production remains protected and undeployed.
 - Credential rotation: [`docs/operations/credential-rotation.md`](docs/operations/credential-rotation.md)
 - Secret-handling policy: [`SECURITY.md`](SECURITY.md)
 - Application architecture: [`docs/architecture/application-platform.md`](docs/architecture/application-platform.md)
+- Content-governance model: [`docs/architecture/content-governance.md`](docs/architecture/content-governance.md)
 - Book release contract: [`docs/architecture/book-release-contract.md`](docs/architecture/book-release-contract.md)
 - Reviewer access model: [`docs/security/reviewer-access.md`](docs/security/reviewer-access.md)
 
 ## Project boundaries
 
-- **Sabiqah** owns the reader/editor application and its deployment.
-- **Al-Isabah** owns the canonical scholarly dataset and versioned releases.
+- **Sabiqah** governs acquisition, rights assessment, private research
+  evidence, comparison, translation and review workflows, promotion, and the
+  reader/editor application.
+- **Al-Isabah** owns its approved canonical scholarly dataset, book-specific
+  provenance and editorial history, and versioned releases.
 - **FirstLight** consumes pinned scholarly releases as a downstream product.
-- Large facsimiles and page images belong in versioned object storage, not Git.
+- Restricted research witnesses belong in governed private storage, never in a
+  public Git repository or deployment artifact. Approved public facsimiles and
+  page images belong in versioned object storage rather than Git.
 
 ## Local development
 

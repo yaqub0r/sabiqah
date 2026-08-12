@@ -18,6 +18,17 @@ pull requests.
 - Record role purpose and policy intent, but not credentials or personal
   recovery information.
 
+## Content governance
+
+- Follow `docs/architecture/content-governance.md` when acquiring, comparing,
+  translating, promoting, or presenting scholarly content.
+- Treat public availability as provenance, not permission to reproduce, adapt,
+  or redistribute an artifact.
+- Keep restricted research witnesses and private comparison evidence out of
+  public repositories and deployment artifacts.
+- Promote content into a canonical book repository only through an explicit,
+  reviewable manifest; never silently overwrite canonical book content.
+
 ## Delivery
 
 Use feature branches and pull requests after the repository bootstrap commit.
