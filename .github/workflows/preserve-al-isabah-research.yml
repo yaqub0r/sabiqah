@@ -56,13 +56,13 @@ jobs:
             --generated-at 2026-08-12T00:00:00Z
           python3 scripts/validate_review_corpus.py .runtime/al-isabah-review-corpus
           git -C .runtime/al-isabah-review-source archive \
-            --format=tar.gz \
-            --output=../al-isabah-research-a3b76bf.tar.gz \
+            --format=tar \
+            --output=../al-isabah-research-a3b76bf.tar \
             a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178
           python3 scripts/verify_al_isabah_private_snapshot.py \
             --manifest evidence/research-snapshots/al-isabah-a3b76bf.v1.json \
             --corpus .runtime/al-isabah-review-corpus \
-            --archive .runtime/al-isabah-research-a3b76bf.tar.gz
+            --archive .runtime/al-isabah-research-a3b76bf.tar
 
       - name: Upload immutable objects to private R2
         env:
@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
           aws s3 cp \
-            .runtime/al-isabah-research-a3b76bf.tar.gz \
+            .runtime/al-isabah-research-a3b76bf.tar \
             "${AL_ISABAH_RESEARCH_SNAPSHOT_URI}" \
             --endpoint-url "${endpoint}" \
             --no-cli-pager --no-progress --only-show-errors
@@ -94,7 +94,7 @@ jobs:
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
           aws s3 cp \
             "${AL_ISABAH_RESEARCH_SNAPSHOT_URI}" \
-            .runtime/verified-al-isabah-research.tar.gz \
+            .runtime/verified-al-isabah-research.tar \
             --endpoint-url "${endpoint}" \
             --no-cli-pager --no-progress --only-show-errors
           aws s3 cp \
@@ -107,4 +107,4 @@ jobs:
           python3 scripts/verify_al_isabah_private_snapshot.py \
             --manifest evidence/research-snapshots/al-isabah-a3b76bf.v1.json \
             --corpus .runtime/verified-al-isabah-review-corpus \
-            --archive .runtime/verified-al-isabah-research.tar.gz
+            --archive .runtime/verified-al-isabah-research.tar
