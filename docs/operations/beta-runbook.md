@@ -44,9 +44,33 @@ As of 2026-08-11:
   for protected Arabic corrections;
 - production remained protected and unchanged.
 
+## Private review-corpus deployment
+
+The development deployment exports the review corpus from the exact
+`yaqub0r/al-isabah` revision pinned in the workflow. The export includes draft
+Arabic and English, machine findings, and the recorded translation workflow,
+but excludes raw restricted witnesses and private comparison artifacts. It is
+validated before upload to the private `sabiqah-assets-dev` R2 bucket under an
+immutable corpus ID.
+
+To update the corpus, first review and merge the source work in the book
+repository, then change both the pinned source revision and corpus ID in a
+Sabiqah pull request. Never overwrite or delete a deployed corpus in place.
+Deploy the new immutable objects before switching the Worker to them. A rollback
+therefore restores the preceding Worker version, whose corpus ID still resolves
+to the preceding immutable objects.
+
+The public summary endpoint must expose only inventory and coverage counts. The
+index and item endpoints must return `403` without an active reviewer session;
+limited and suspended members must receive the same denial. Do not place R2
+credentials, object keys, draft text, or source witnesses in deployment logs.
+
 ## Smoke checks
 
-- Public reader loads without a session and all three fixture states render.
+- Public work inventory loads without a session and contains no corpus text.
+- Anonymous access to the corpus index and every item returns `403`.
+- An active reviewer can filter the complete index and open bilingual items,
+  unresolved work, provenance, and workflow history.
 - A wrong invite fails without revealing whether Turnstile or the code failed.
 - A correct invite completes GitHub OAuth and creates one active membership.
 - Repeating OAuth updates mutable profile data without duplicating identity.

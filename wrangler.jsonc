@@ -18,6 +18,12 @@
       "migrations_dir": "migrations",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "REVIEW_CORPUS",
+      "bucket_name": "sabiqah-assets-dev",
+    },
+  ],
   "unsafe": {
     "bindings": [
       {

@@ -204,6 +204,12 @@ button {
   margin-bottom: 0.35rem;
   font-size: 1.45rem;
 }
+.entry-card h3 {
+  margin-bottom: 0.35rem;
+  font:
+    1.45rem/1.2 Georgia,
+    serif;
+}
 .entry-card p {
   color: var(--muted);
   margin: 0;
@@ -268,6 +274,178 @@ button {
 .source-list {
   margin-top: 3rem;
   color: var(--muted);
+}
+.corpus-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 2rem 0;
+}
+.corpus-stats article {
+  min-height: 8rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+}
+.corpus-stats strong,
+.corpus-stats span {
+  display: block;
+}
+.corpus-stats strong {
+  color: var(--green);
+  font:
+    2.2rem Georgia,
+    serif;
+}
+.corpus-stats span {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.collection-grid article,
+.coverage-accounting,
+.corpus-browser,
+.review-notes article {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+}
+.collection-grid h2,
+.corpus-browser h2,
+.review-notes h2 {
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+}
+.coverage-accounting {
+  margin-bottom: 2rem;
+}
+.coverage-accounting summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.coverage-accounting dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.coverage-accounting dl div {
+  padding: 0.75rem;
+  background: var(--paper-deep);
+}
+.coverage-accounting dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.coverage-accounting dd {
+  margin: 0.25rem 0 0;
+  color: var(--green);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.corpus-access,
+.corpus-browser {
+  margin-top: 2rem;
+}
+.corpus-filters {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2fr) 1fr 1fr;
+  gap: 1rem;
+}
+.result-count {
+  margin: 1.5rem 0 0.75rem;
+  color: var(--muted);
+}
+.corpus-list .entry-card {
+  text-decoration: none;
+}
+.corpus-list small {
+  color: var(--muted);
+}
+.pagination,
+.review-state-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.corpus-review-shell {
+  max-width: 70rem;
+}
+.corpus-review-item .entry-title h1 {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+}
+.review-state-bar {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin: 0 0 2rem;
+}
+.corpus-text {
+  white-space: pre-wrap;
+}
+.review-notes {
+  margin-top: 3rem;
+}
+.workflow-timeline {
+  margin-top: 3rem;
+}
+.workflow-timeline ol {
+  padding: 0;
+  list-style: none;
+}
+.workflow-timeline > ol > li {
+  position: relative;
+  margin-left: 0.7rem;
+  padding: 0 0 2rem 2rem;
+  border-left: 2px solid var(--line);
+}
+.workflow-timeline > ol > li::before {
+  position: absolute;
+  top: 0.15rem;
+  left: -0.5rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--green);
+  content: "";
+}
+.workflow-timeline > ol > li > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.workflow-timeline h3 {
+  margin-bottom: 0;
+  text-transform: capitalize;
+}
+.workflow-timeline details,
+.stage-issues article {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: #fffaf1;
+}
+.workflow-timeline summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.review-notes article {
+  margin-bottom: 1rem;
+}
+.review-notes h3 {
+  text-transform: capitalize;
+}
+.source-list code {
+  overflow-wrap: anywhere;
 }
 .review-editor,
 .enrollment-card,
@@ -352,7 +530,15 @@ footer p {
 @media (max-width: 720px) {
   .hero,
   .entry-title,
-  .bilingual-segment {
+  .bilingual-segment,
+  .collection-grid,
+  .corpus-filters {
+    grid-template-columns: 1fr;
+  }
+  .corpus-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .coverage-accounting dl {
     grid-template-columns: 1fr;
   }
   .arabic-card {

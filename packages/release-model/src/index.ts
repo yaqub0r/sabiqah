@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export * from "./reviewCorpus";
+
 const identifier = z
   .string()
   .min(3)

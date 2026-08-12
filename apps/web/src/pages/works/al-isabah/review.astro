@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { CorpusItemReview } from "../../../components/CorpusItemReview";
+
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+---
+
+<BaseLayout title="Review al-Isabah working corpus">
+  <main class="shell narrow corpus-review-shell">
+    <p class="breadcrumb">
+      <a href="/works/al-isabah/">Al-Isabah working corpus</a> / Review item
+    </p>
+    <CorpusItemReview client:load siteKey={siteKey} />
+  </main>
+</BaseLayout>
