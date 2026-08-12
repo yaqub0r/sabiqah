@@ -20,6 +20,10 @@ pull requests.
 
 ## Content governance
 
+- Before changing a governed surface, read `docs/contracts/INDEX.md` and every
+  contract selected for the changed paths by
+  `docs/contracts/contracts.registry.json`. List the applicable contract IDs in
+  the pull request.
 - Follow `docs/architecture/content-governance.md` when acquiring, comparing,
   translating, promoting, or presenting scholarly content.
 - Treat public availability as provenance, not permission to reproduce, adapt,

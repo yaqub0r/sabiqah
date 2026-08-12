@@ -1,0 +1,33 @@
+name: Contract acknowledgement gate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: contract-ack-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  contract-ack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test contract tooling
+        run: node --test tools/contracts/check-contract-ack.node-test.mjs
+
+      - name: Enforce contract acknowledgements
+        env:
+          CONTRACT_ACK_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CONTRACT_ACK_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node tools/contracts/check-contract-ack.mjs
