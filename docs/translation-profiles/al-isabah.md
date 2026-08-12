@@ -16,10 +16,26 @@ It contains policy and non-sensitive implementation requirements only. Private
 facsimiles, OCR, model outputs, comparison passages, object locations, and
 credentials remain in Sabiqah-controlled storage.
 
+Every durable Al-Isabah Arabic/English record and generated reading
+presentation is a public work product. It must satisfy the public-output
+invariant in `translation-quality-workflow` before it is created or replaced.
+Enrollment protects contribution and private research capabilities, not
+ordinary reading.
+
 ## Authority and witnesses
 
-The locked Arabic edition is authoritative. Its facsimile and aligned
-machine-readable Arabic must remain hash-bound throughout the workflow.
+The authoritative Arabic base must be a verified public-domain or otherwise
+publication-approved witness of Ibn Hajar's text. Its facsimile and aligned
+machine-readable Arabic remain hash-bound throughout the workflow. Modern
+editorial introductions, footnotes, manuscript apparatus, indexes, and similar
+paratext are outside the translation scope unless separately approved.
+
+The 1995 Dar al-Kutub al-Ilmiyyah edition currently represented by the legacy
+Usul-aligned research corpus is `private-reference`, not the public Arabic
+authority. It may be consulted privately as an alternative-edition witness,
+but neither its modern editorial expression nor a machine transcription that
+embeds that expression may enter public records. Usul's availability is
+provenance, not permission.
 
 Witness roles are explicit:
 
@@ -30,8 +46,9 @@ Witness roles are explicit:
 - dictionaries or specialist references are **lexical references**.
 
 A witness may reveal damage or clarify ambiguity. It never silently becomes
-the translation base. Clear canonical Arabic remains decisive; a corrected
-reading requires a cited, reviewable emendation.
+the translation base or supplies public wording. Clear Arabic from the
+publication-approved authority remains decisive; a corrected reading requires
+a cited, independently written, reviewable emendation.
 
 ## Stable units
 
@@ -55,21 +72,31 @@ Every translated unit binds at minimum:
 
 The established pipeline implements the general state machine as follows:
 
-1. align the locked Usul machine text to the same-edition facsimile and audit
-   page, entry, and sequence coverage;
-2. perform a provenance-bound blind Codex Arabic-to-English pass;
-3. independently critique omissions, additions, names, isnads, negation,
+1. establish and rights-classify a publication-approved Arabic authority,
+   excluding modern editorial paratext before alignment;
+2. align its machine text to its facsimile and audit page, entry, and sequence
+   coverage;
+3. perform a provenance-bound blind Codex Arabic-to-English pass;
+4. independently critique omissions, additions, names, isnads, negation,
    numbering, notes, and cross-page continuations;
-4. resolve only flagged concerns against classified translation witnesses,
+5. resolve only flagged concerns against classified translation witnesses,
    alternative Al-Isabah editions, and exact-heading collateral searches;
-5. adjudicate every substantive unit into a complete candidate while retaining
-   explicit unresolved findings;
-6. validate exact scope, hashes, entry numbering, material numerals, notes,
+6. adjudicate every substantive unit into a complete, independently worded
+   candidate while retaining explicit unresolved findings;
+7. validate exact scope, hashes, entry numbering, material numerals, notes,
    boundaries, model lineage, and all-stage coverage;
-7. build stable JSON name candidates and mentions, preserving operator decisions
+8. build stable JSON name candidates and mentions, preserving operator decisions
    across reruns;
-8. generate the bilingual English review presentation from validated JSONL; and
-9. publish a machine-readiness record only after all preceding checks pass.
+9. generate the publicly consumable bilingual reading presentation from
+   validated JSONL; and
+10. publish a machine-readiness record only after all preceding checks pass.
+
+The existing `al-isabah-reading-a3b76bf-v3` corpus predates this invariant and
+is explicitly promotion-blocked private research material. It must not be made
+anonymous or relabeled public. Its stable identities and Sabiqah-authored
+English may be migrated only after each displayed Arabic unit and resulting
+record is reproducibly rebuilt or audited against the approved public source
+bundle. Restricted workflow evidence remains private after migration.
 
 The former FirstLight implementation and closed Al-Isabah development branches
 are historical evidence, not the governing location. Sabiqah owns future
@@ -115,6 +142,11 @@ names, workflow history, interventions, and unresolved findings. Name review and
 English approval stay closed until the relevant source and presentation satisfy
 machine readiness.
 
+Anyone may read the public bilingual presentation and its honest review state.
+An active invited reviewer additionally receives approval and correction
+controls plus authorized private evidence. Reviewer identity and
+reviewer-specific decisions are never part of the anonymous response.
+
 Human approval is append-only review evidence. It does not erase uncertainties,
 alter canonical Arabic, or directly publish a release.
 
@@ -125,3 +157,8 @@ immutable Sabiqah corpus and evidence hashes without exposing restricted
 expression or private object locations. The Al-Isabah repository independently
 validates stable identifiers, reviewed Arabic and English, public provenance,
 compliance status, and promotion lineage before accepting canonical content.
+
+Public readability precedes and does not bypass this promotion boundary. A
+working record may be publicly consumable while still labeled unreviewed,
+unresolved, or promotion-ineligible; canonical publication still requires the
+independent gates above.
