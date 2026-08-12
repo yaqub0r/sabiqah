@@ -1,0 +1,200 @@
+// @vitest-environment jsdom
+
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { CorpusReader } from "./CorpusReader";
+
+const corpusId = "al-isabah-reading-a3b76bf-v2";
+const sectionId = "volume-08-pages-0001-0025";
+
+function item(id: string, sequence: number, title: string, sentence: string) {
+  return {
+    schemaVersion: "2.0.0",
+    corpusId,
+    id,
+    kind: "entry",
+    sequence,
+    printedEntryNumber: sequence,
+    volume: 8,
+    title: { en: title, ar: "اسم" },
+    translationState: "translated",
+    machineAssessment: "passed",
+    humanReview: "unreviewed",
+    segments: [
+      {
+        id: `${id}-segment-1`,
+        arabic: "نص عربي قصير.",
+        english: sentence,
+        pages: [
+          {
+            volume: 8,
+            printedPage: 3,
+            readerPage: 3916,
+            providerPage: "https://usul.ai/t/isaba-fi-tamyiz/3916",
+          },
+        ],
+        machineState: "machine_validated_unreviewed",
+      },
+    ],
+    names: [],
+    unresolved: [],
+    workflowStages: [
+      {
+        stage: "machine_validation",
+        state: "complete",
+        summary: "Machine validation passed.",
+      },
+    ],
+    provenance: {
+      sourceArtifactId: `al-isabah:entry:${sequence}`,
+      sourceArtifactSha256:
+        "f12585cea28d7c7b318728f74b1a95a0d8b2812cb25d6e70f1b9e7b0b9422a3f",
+    },
+  };
+}
+
+const firstItem = item(
+  "isabah-entry-00010759",
+  10759,
+  "First short entry",
+  "The first short translated record.",
+);
+const secondItem = item(
+  "isabah-entry-00010760",
+  10760,
+  "Second short entry",
+  "The following short record continues in the same reading section.",
+);
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  window.history.replaceState(null, "", "/");
+});
+
+describe("CorpusReader", () => {
+  it("presents consecutive short records inside a volume reading section", async () => {
+    const responses = new Map<string, unknown>([
+      [
+        "/api/corpus/al-isabah/summary",
+        {
+          schemaVersion: "2.0.0",
+          work: {
+            slug: "al-isabah",
+            titleAr: "الإصابة في تمييز الصحابة",
+            titleEn: "Al-Isabah fi Tamyiz al-Sahabah",
+          },
+          corpus: {
+            id: corpusId,
+            sourceRepository: "https://github.com/yaqub0r/al-isabah",
+            sourceCommit: "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178",
+            generatedAt: "2026-08-12T00:00:00.000Z",
+            promotionStatus: "blocked",
+          },
+          counts: {
+            entries: 2,
+            passages: 0,
+            translated: 2,
+            needsAttention: 0,
+            unresolvedItems: 0,
+            humanReviewed: 0,
+          },
+          volumes: [
+            {
+              id: "volume-08",
+              number: 8,
+              label: "Volume 8",
+              availability: "complete_translation",
+              itemCount: 2,
+              sectionCount: 1,
+              firstPrintedPage: 3,
+              lastPrintedPage: 3,
+              description: "Complete working translation.",
+            },
+          ],
+        },
+      ],
+      [
+        "/api/session",
+        {
+          identity: {
+            login: "reader",
+            membershipStatus: "active",
+          },
+        },
+      ],
+      [
+        "/api/corpus/al-isabah/index",
+        {
+          schemaVersion: "2.0.0",
+          corpusId,
+          items: [firstItem, secondItem].map((record) => ({
+            id: record.id,
+            kind: record.kind,
+            sequence: record.sequence,
+            printedEntryNumber: record.printedEntryNumber,
+            volume: record.volume,
+            printedPageStart: 3,
+            printedPageEnd: 3,
+            sectionId,
+            titleEn: record.title.en,
+            titleAr: record.title.ar,
+            translationState: record.translationState,
+            machineAssessment: record.machineAssessment,
+            humanReview: record.humanReview,
+            unresolvedCount: 0,
+          })),
+        },
+      ],
+      [
+        `/api/corpus/al-isabah/sections/${sectionId}`,
+        {
+          schemaVersion: "2.0.0",
+          corpusId,
+          id: sectionId,
+          volume: 8,
+          label: "Pages 1–25",
+          availability: "complete_translation",
+          position: 1,
+          totalSections: 1,
+          printedPageStart: 3,
+          printedPageEnd: 3,
+          previousSectionId: null,
+          nextSectionId: null,
+          items: [firstItem, secondItem],
+        },
+      ],
+    ]);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const path = typeof input === "string" ? input : input.toString();
+        const body = responses.get(path);
+        return { ok: body !== undefined, json: async () => body };
+      }),
+    );
+
+    render(<CorpusReader />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Pages 1–25" }),
+    ).toBeTruthy();
+    expect(screen.getByText("The first short translated record.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "The following short record continues in the same reading section.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByText("Review record")).toHaveLength(2);
+    await waitFor(() =>
+      expect(
+        document.querySelectorAll(".reading-record.short-record"),
+      ).toHaveLength(2),
+    );
+    expect(document.body.textContent?.toLocaleLowerCase()).not.toContain(
+      "khadijah",
+    );
+  });
+});

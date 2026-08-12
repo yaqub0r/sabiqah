@@ -133,7 +133,7 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
           <div className="arabic-column" lang="ar" dir="rtl">
             <p className="arabic corpus-text">
               {segment.arabic ||
-                "Arabic source text is not included in this contextual review record."}
+                "Arabic source text is not included in this review record."}
             </p>
             <p className="segment-meta">
               {segment.pages

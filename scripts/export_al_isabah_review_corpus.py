@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export private al-Isabah research branches to the Sabiqah review contract."""
+"""Export the available al-Isabah work to Sabiqah's protected reading contract."""
 
 from __future__ import annotations
 
@@ -12,10 +12,9 @@ from pathlib import Path
 from typing import Any
 
 
-VOLUME_REF = "20264a5ca018fe2a2890dc070f9c6bd904e3cb84"
-COHORT_REF = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178"
-COHORT_COMMIT = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178"
-CORPUS_ID = "al-isabah-review-a3b76bf"
+SOURCE_REF = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178"
+SOURCE_COMMIT = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178"
+CORPUS_ID = "al-isabah-reading-a3b76bf-v2"
 ARTIFACT_SHA = "f12585cea28d7c7b318728f74b1a95a0d8b2812cb25d6e70f1b9e7b0b9422a3f"
 
 
@@ -76,7 +75,6 @@ def normalized_unresolved(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def entry_item(
     entry: dict[str, Any],
-    collection_ids: list[str],
     blind: dict[int, dict[str, Any]],
     critic: dict[int, dict[str, Any]],
     adjudicated: dict[int, dict[str, Any]],
@@ -89,9 +87,7 @@ def entry_item(
     source_artifact_id = provenance.get("source_artifact_id")
     source_artifact_sha256 = provenance.get("source_artifact_sha256")
     if not source_artifact_id:
-        source_artifact_id = (
-            f"al-isabah:cohort:{provenance['cohort_id']}:entry:{sequence}"
-        )
+        source_artifact_id = f"al-isabah:entry:{sequence}"
         source_artifact_sha256 = provenance["source_sha256"]
     workflow_stages: list[dict[str, Any]] = [
         {
@@ -167,13 +163,13 @@ def entry_item(
         ]
     )
     return {
-        "schemaVersion": "1.0.0",
+        "schemaVersion": "2.0.0",
         "corpusId": CORPUS_ID,
         "id": entry["id"],
         "kind": "entry",
         "sequence": sequence,
         "printedEntryNumber": sequence,
-        "volume": str(segments[0]["volume"]),
+        "volume": int(segments[0]["volume"]),
         "title": {
             "en": entry["title"]["english"],
             "ar": entry["title"]["arabic_observed"],
@@ -181,7 +177,6 @@ def entry_item(
         "translationState": translation["state"],
         "machineAssessment": translation["machine_assessment"],
         "humanReview": translation["human_review"],
-        "collectionIds": collection_ids,
         "segments": [
             {
                 "id": segment["id"],
@@ -189,7 +184,7 @@ def entry_item(
                 "english": segment["english"],
                 "pages": [
                     {
-                        "volume": str(segment["volume"]),
+                        "volume": int(segment["volume"]),
                         "printedPage": segment.get("printed_page"),
                         "readerPage": segment.get("reader_page"),
                         "providerPage": segment.get("reader_url"),
@@ -239,28 +234,27 @@ def context_item(
         for issue in critic_value.get("issues", [])
     ]
     return {
-        "schemaVersion": "1.0.0",
+        "schemaVersion": "2.0.0",
         "corpusId": CORPUS_ID,
-        "id": f"khadijah-context-{sequence:04d}",
-        "kind": "context",
+        "id": f"isabah-passage-{hashlib.sha256(value['result_id'].encode('utf-8')).hexdigest()[:12]}",
+        "kind": "passage",
         "sequence": sequence,
         "printedEntryNumber": None,
-        "volume": str(pages[0]["volume"]),
+        "volume": int(pages[0]["volume"]),
         "title": {"en": title_en, "ar": title_ar},
         "relationship": source["relationship"],
         "rationale": source["rationale"],
         "translationState": "translated",
         "machineAssessment": "needs_attention" if unresolved else "passed",
         "humanReview": "unreviewed",
-        "collectionIds": ["khadijah-immediate", "khadijah-context"],
         "segments": [
             {
-                "id": f"khadijah-context-{sequence:04d}-segment-0001",
+                "id": f"isabah-passage-{hashlib.sha256(value['result_id'].encode('utf-8')).hexdigest()[:12]}-segment-0001",
                 "arabic": classified_value["relevant_arabic"],
                 "english": value["english_text"],
                 "pages": [
                     {
-                        "volume": str(page["volume"]),
+                        "volume": int(page["volume"]),
                         "printedPage": int(page["page"]),
                         "readerPage": int(page["index"]) + 1,
                         "providerPage": f"https://usul.ai/t/isaba-fi-tamyiz/{int(page['index']) + 1}",
@@ -314,26 +308,39 @@ def context_item(
             },
         ],
         "provenance": {
-            "sourceArtifactId": f"al-isabah:khadijah-context:{value['result_id']}",
+            "sourceArtifactId": f"al-isabah:passage:{value['result_id']}",
             "sourceArtifactSha256": source["source"]["text_sha256"],
         },
     }
 
 
-def list_item(item: dict[str, Any]) -> dict[str, Any]:
+def printed_page_bounds(item: dict[str, Any]) -> tuple[int | None, int | None]:
+    pages = [
+        page["printedPage"]
+        for segment in item["segments"]
+        for page in segment["pages"]
+        if page["printedPage"] is not None
+    ]
+    return (min(pages), max(pages)) if pages else (None, None)
+
+
+def list_item(item: dict[str, Any], section_id: str) -> dict[str, Any]:
+    page_start, page_end = printed_page_bounds(item)
     return {
         "id": item["id"],
         "kind": item["kind"],
         "sequence": item["sequence"],
         "printedEntryNumber": item["printedEntryNumber"],
         "volume": item["volume"],
+        "printedPageStart": page_start,
+        "printedPageEnd": page_end,
+        "sectionId": section_id,
         "titleEn": item["title"]["en"],
         "titleAr": item["title"]["ar"],
         "translationState": item["translationState"],
         "machineAssessment": item["machineAssessment"],
         "humanReview": item["humanReview"],
         "unresolvedCount": len(item["unresolved"]),
-        "collectionIds": item["collectionIds"],
         **(
             {"relationship": item["relationship"]}
             if item.get("relationship")
@@ -346,37 +353,28 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
     clean_output(output)
     entry_paths = [
         path
-        for path in git(git_dir, "ls-tree", "-r", "--name-only", COHORT_REF, "content/entries").splitlines()
+        for path in git(git_dir, "ls-tree", "-r", "--name-only", SOURCE_REF, "content/entries").splitlines()
         if path.endswith(".json")
     ]
-    volume_ids = set(
-        path.rsplit("/", 1)[-1].removesuffix(".json")
-        for path in git(git_dir, "ls-tree", "-r", "--name-only", VOLUME_REF, "content/entries").splitlines()
-        if path.endswith(".json")
-    )
-    cohort_bundle = git_json(
-        git_dir, COHORT_REF, "derived/cohorts/khadijah-immediate.bundle.json"
-    )
-    cohort_ids = {entry["id"] for entry in cohort_bundle["entries"]}
     context = git_json(
         git_dir,
-        COHORT_REF,
+        SOURCE_REF,
         "derived/cohorts/khadijah-immediate.context-adjudicated.json",
     )
     cohort_blind = git_json(
-        git_dir, COHORT_REF, "derived/cohorts/khadijah-immediate.blind.json"
+        git_dir, SOURCE_REF, "derived/cohorts/khadijah-immediate.blind.json"
     )
     cohort_critic = git_json(
-        git_dir, COHORT_REF, "derived/cohorts/khadijah-immediate.critic.json"
+        git_dir, SOURCE_REF, "derived/cohorts/khadijah-immediate.critic.json"
     )
     cohort_adjudicated = git_json(
-        git_dir, COHORT_REF, "derived/cohorts/khadijah-immediate.adjudicated.json"
+        git_dir, SOURCE_REF, "derived/cohorts/khadijah-immediate.adjudicated.json"
     )
     context_blind = git_json(
-        git_dir, COHORT_REF, "derived/cohorts/khadijah-immediate.context-blind.json"
+        git_dir, SOURCE_REF, "derived/cohorts/khadijah-immediate.context-blind.json"
     )
     context_critic = git_json(
-        git_dir, COHORT_REF, "derived/cohorts/khadijah-immediate.context-critic.json"
+        git_dir, SOURCE_REF, "derived/cohorts/khadijah-immediate.context-critic.json"
     )
     blind_by_entry = {int(value["entry_number"]): value for value in cohort_blind["entries"]}
     critic_by_entry = {int(value["entry_number"]): value for value in cohort_critic["entries"]}
@@ -387,7 +385,7 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
     critic_by_context = {value["result_id"]: value for value in context_critic["items"]}
     classifications = git_json(
         git_dir,
-        COHORT_REF,
+        SOURCE_REF,
         "derived/cohorts/khadijah-immediate.mention-classification.json",
     )
     classified_by_context = {
@@ -398,18 +396,10 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
 
     items: list[dict[str, Any]] = []
     for path in entry_paths:
-        entry = git_json(git_dir, COHORT_REF, path)
-        collections: list[str] = []
-        if entry["id"] in volume_ids:
-            collections.append("volume-08")
-        if entry["id"] in cohort_ids:
-            collections.append("khadijah-immediate")
-        if not collections:
-            raise ValueError(f"{entry['id']} is not assigned to a review collection")
+        entry = git_json(git_dir, SOURCE_REF, path)
         items.append(
             entry_item(
                 entry,
-                collections,
                 blind_by_entry,
                 critic_by_entry,
                 adjudicated_by_entry,
@@ -426,18 +416,108 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
             )
         )
 
-    list_items = sorted((list_item(item) for item in items), key=lambda x: (x["kind"], x["sequence"]))
+    items.sort(
+        key=lambda item: (
+            item["volume"],
+            printed_page_bounds(item)[0] or 10**9,
+            item["printedEntryNumber"] or 10**9,
+            item["sequence"],
+        )
+    )
+
+    sections: list[dict[str, Any]] = []
+    item_sections: dict[str, str] = {}
+    volume_summaries: list[dict[str, Any]] = []
+    for volume in sorted({item["volume"] for item in items}):
+        volume_items = [item for item in items if item["volume"] == volume]
+        availability = (
+            "complete_translation" if volume == 8 else "selected_passages"
+        )
+        grouped: list[tuple[str, list[dict[str, Any]]]] = []
+        if volume == 8:
+            page_groups: dict[int, list[dict[str, Any]]] = {}
+            for item in volume_items:
+                page_start, _ = printed_page_bounds(item)
+                bucket = ((page_start or 1) - 1) // 25
+                page_groups.setdefault(bucket, []).append(item)
+            for bucket, grouped_items in sorted(page_groups.items()):
+                page_start = bucket * 25 + 1
+                page_end = page_start + 24
+                grouped.append(
+                    (
+                        f"volume-{volume:02d}-pages-{page_start:04d}-{page_end:04d}",
+                        grouped_items,
+                    )
+                )
+        else:
+            grouped.append((f"volume-{volume:02d}-selected-passages", volume_items))
+
+        total_sections = len(grouped)
+        volume_pages = [
+            page
+            for item in volume_items
+            for page in printed_page_bounds(item)
+            if page is not None
+        ]
+        volume_summaries.append(
+            {
+                "id": f"volume-{volume:02d}",
+                "number": volume,
+                "label": f"Volume {volume}",
+                "availability": availability,
+                "itemCount": len(volume_items),
+                "sectionCount": total_sections,
+                "firstPrintedPage": min(volume_pages) if volume_pages else None,
+                "lastPrintedPage": max(volume_pages) if volume_pages else None,
+                "description": (
+                    "Complete working translation, grouped into continuous reading sections."
+                    if volume == 8
+                    else "Selected translated passages; this is not a complete volume."
+                ),
+            }
+        )
+        for position, (section_id, section_items) in enumerate(grouped, start=1):
+            section_pages = [
+                page
+                for item in section_items
+                for page in printed_page_bounds(item)
+                if page is not None
+            ]
+            section_start = min(section_pages) if section_pages else None
+            section_end = max(section_pages) if section_pages else None
+            previous_id = grouped[position - 2][0] if position > 1 else None
+            next_id = grouped[position][0] if position < total_sections else None
+            if volume == 8:
+                _, bucket_start, bucket_end = section_id.rsplit("-", 2)
+                label = f"Pages {int(bucket_start)}–{int(bucket_end)}"
+            else:
+                label = "Selected translated passages"
+            section = {
+                "schemaVersion": "2.0.0",
+                "corpusId": CORPUS_ID,
+                "id": section_id,
+                "volume": volume,
+                "label": label,
+                "availability": availability,
+                "position": position,
+                "totalSections": total_sections,
+                "printedPageStart": section_start,
+                "printedPageEnd": section_end,
+                "previousSectionId": previous_id,
+                "nextSectionId": next_id,
+                "items": section_items,
+            }
+            sections.append(section)
+            for item in section_items:
+                item_sections[item["id"]] = section_id
+
+    list_items = [list_item(item, item_sections[item["id"]]) for item in items]
     translated = sum(item["translationState"] == "translated" for item in list_items)
     needs_attention = sum(item["machineAssessment"] == "needs_attention" for item in list_items)
     unresolved_count = sum(item["unresolvedCount"] for item in list_items)
     human_reviewed = sum(item["humanReview"] in {"reviewed", "verified"} for item in list_items)
-    decisions: dict[str, int] = {}
-    for result in classifications["items"]:
-        decision = str(result["decision"])
-        decisions[decision] = decisions.get(decision, 0) + 1
-
     summary = {
-        "schemaVersion": "1.0.0",
+        "schemaVersion": "2.0.0",
         "work": {
             "slug": "al-isabah",
             "titleAr": "الإصابة في تمييز الصحابة",
@@ -446,43 +526,22 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
         "corpus": {
             "id": CORPUS_ID,
             "sourceRepository": "https://github.com/yaqub0r/al-isabah",
-            "sourceCommit": COHORT_COMMIT,
+            "sourceCommit": SOURCE_COMMIT,
             "generatedAt": generated_at,
             "promotionStatus": "blocked",
         },
         "counts": {
             "entries": len(entry_paths),
-            "contextualPassages": len(context["items"]),
+            "passages": len(context["items"]),
             "translated": translated,
             "needsAttention": needs_attention,
             "unresolvedItems": unresolved_count,
             "humanReviewed": human_reviewed,
         },
-        "collections": [
-            {
-                "id": "volume-08",
-                "title": "Volume 8",
-                "kind": "volume",
-                "itemCount": len(volume_ids),
-                "reviewState": "unreviewed",
-                "description": "Complete machine-validated Volume 8 translation awaiting human and compliance review.",
-            },
-            {
-                "id": "khadijah-immediate",
-                "title": "Khadijah and her immediate associates",
-                "kind": "cohort",
-                "itemCount": len(cohort_ids) + len(context["items"]),
-                "reviewState": "unreviewed",
-                "description": "Fifteen complete biographies and fourteen additional contextual passages ready for human review.",
-            },
-        ],
-        "coverage": {
-            "sourceResults": int(classifications["source_result_count"]),
-            "decisions": decisions,
-        },
+        "volumes": volume_summaries,
     }
     index = {
-        "schemaVersion": "1.0.0",
+        "schemaVersion": "2.0.0",
         "corpusId": CORPUS_ID,
         "items": list_items,
     }
@@ -490,6 +549,8 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
     write_json(output / "index.json", index)
     for item in items:
         write_json(output / "items" / f"{item['id']}.json", item)
+    for section in sections:
+        write_json(output / "sections" / f"{section['id']}.json", section)
 
     manifest_files = []
     for path in sorted(path for path in output.rglob("*.json") if path.name != "manifest.json"):
@@ -502,9 +563,9 @@ def export(git_dir: Path, output: Path, generated_at: str) -> dict[str, Any]:
             }
         )
     manifest = {
-        "schemaVersion": "1.0.0",
+        "schemaVersion": "2.0.0",
         "corpusId": CORPUS_ID,
-        "sourceCommit": COHORT_COMMIT,
+        "sourceCommit": SOURCE_COMMIT,
         "generatedAt": generated_at,
         "objectCount": len(manifest_files),
         "files": manifest_files,
@@ -525,7 +586,7 @@ def main() -> int:
     summary = export(args.git_dir.resolve(), args.output.resolve(), args.generated_at)
     print(
         f"Exported {summary['counts']['entries']} entries and "
-        f"{summary['counts']['contextualPassages']} contexts to {args.output}."
+        f"{summary['counts']['passages']} passages to {args.output}."
     )
     return 0
 

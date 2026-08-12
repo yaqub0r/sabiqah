@@ -1,6 +1,6 @@
 import { json } from "./http";
 
-const CORPUS_ID = "al-isabah-review-a3b76bf";
+const CORPUS_ID = "al-isabah-reading-a3b76bf-v2";
 const CORPUS_PREFIX = `review-corpora/al-isabah/${CORPUS_ID}`;
 const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$/;
 
@@ -10,13 +10,18 @@ export interface CorpusMember {
 
 export function corpusObjectKey(path: "summary" | "index"): string;
 export function corpusObjectKey(path: "item", id: string): string;
+export function corpusObjectKey(path: "section", id: string): string;
 export function corpusObjectKey(
-  path: "summary" | "index" | "item",
+  path: "summary" | "index" | "item" | "section",
   id?: string,
 ): string {
   if (path === "item") {
     if (!id || !ITEM_ID.test(id)) throw new Error("Invalid corpus item ID");
     return `${CORPUS_PREFIX}/items/${id}.json`;
+  }
+  if (path === "section") {
+    if (!id || !ITEM_ID.test(id)) throw new Error("Invalid corpus section ID");
+    return `${CORPUS_PREFIX}/sections/${id}.json`;
   }
   return `${CORPUS_PREFIX}/${path}.json`;
 }

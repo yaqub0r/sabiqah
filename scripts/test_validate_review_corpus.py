@@ -20,35 +20,50 @@ class ValidateCorpusTests(unittest.TestCase):
         item_id = "isabah-entry-00010759"
         detail = {
             "id": item_id,
-            "corpusId": "al-isabah-review-a3b76bf",
+            "corpusId": "al-isabah-reading-a3b76bf-v2",
             "unresolved": [],
         }
         index = {
-            "corpusId": "al-isabah-review-a3b76bf",
+            "corpusId": "al-isabah-reading-a3b76bf-v2",
             "items": [
                 {
                     "id": item_id,
                     "unresolvedCount": 0,
                     "machineAssessment": "passed",
+                    "volume": 8,
+                    "sectionId": "volume-08-pages-0001-0025",
                 }
             ],
         }
         summary = {
             "corpus": {
-                "id": "al-isabah-review-a3b76bf",
+                "id": "al-isabah-reading-a3b76bf-v2",
                 "promotionStatus": "blocked",
             },
             "counts": {
                 "entries": 1,
-                "contextualPassages": 0,
+                "passages": 0,
                 "unresolvedItems": 0,
                 "needsAttention": 0,
             },
+            "volumes": [
+                {
+                    "number": 8,
+                    "sectionCount": 1,
+                    "itemCount": 1,
+                }
+            ],
+        }
+        section = {
+            "id": "volume-08-pages-0001-0025",
+            "corpusId": "al-isabah-reading-a3b76bf-v2",
+            "items": [detail],
         }
         paths = {
             "summary.json": summary,
             "index.json": index,
             f"items/{item_id}.json": detail,
+            "sections/volume-08-pages-0001-0025.json": section,
         }
         records = []
         for relative, value in paths.items():
@@ -65,7 +80,7 @@ class ValidateCorpusTests(unittest.TestCase):
         (root / "manifest.json").write_text(
             json.dumps(
                 {
-                    "corpusId": "al-isabah-review-a3b76bf",
+                    "corpusId": "al-isabah-reading-a3b76bf-v2",
                     "objectCount": len(records),
                     "files": records,
                 }

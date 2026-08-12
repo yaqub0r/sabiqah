@@ -52,7 +52,7 @@ class ExportCorpusTests(unittest.TestCase):
                 "source_artifact_sha256": MODULE.ARTIFACT_SHA,
             },
         }
-        projected = MODULE.entry_item(entry, ["volume-08"], {}, {}, {})
+        projected = MODULE.entry_item(entry, {}, {}, {})
         self.assertEqual(projected["machineAssessment"], "needs_attention")
         self.assertEqual(projected["unresolved"][0]["category"], "vocalization")
         self.assertEqual(projected["segments"][0]["arabic"], "أرنب")
@@ -96,10 +96,10 @@ class ExportCorpusTests(unittest.TestCase):
                 "source_sha256": "90ff486a9564ec6867a8bb0eecc58769bbe62ddf33935d1f0b54818d8d2873bf",
             },
         }
-        projected = MODULE.entry_item(entry, ["khadijah-immediate"], {}, {}, {})
+        projected = MODULE.entry_item(entry, {}, {}, {})
         self.assertEqual(
             projected["provenance"]["sourceArtifactId"],
-            "al-isabah:cohort:khadijah-immediate:entry:1805",
+            "al-isabah:entry:1805",
         )
 
     def test_list_projection_never_contains_text(self):
@@ -108,20 +108,27 @@ class ExportCorpusTests(unittest.TestCase):
             "kind": "entry",
             "sequence": 10786,
             "printedEntryNumber": 10786,
-            "volume": "8",
+            "volume": 8,
             "title": {"en": "Arnab", "ar": "أرنب"},
             "translationState": "translated",
             "machineAssessment": "needs_attention",
             "humanReview": "unreviewed",
-            "collectionIds": ["volume-08"],
-            "segments": [{"arabic": "restricted", "english": "draft"}],
+            "segments": [
+                {
+                    "arabic": "restricted",
+                    "english": "draft",
+                    "pages": [{"printedPage": 6}],
+                }
+            ],
             "unresolved": [{"category": "vocalization"}],
         }
-        listed = MODULE.list_item(item)
+        listed = MODULE.list_item(item, "volume-08-pages-0001-0025")
         serialized = json.dumps(listed)
         self.assertNotIn("restricted", serialized)
         self.assertNotIn("draft\"", serialized)
         self.assertEqual(listed["unresolvedCount"], 1)
+        self.assertEqual(listed["printedPageStart"], 6)
+        self.assertEqual(listed["sectionId"], "volume-08-pages-0001-0025")
 
     def test_context_projection_preserves_classified_arabic_and_workflow(self):
         result_id = "source-result-001"
@@ -148,6 +155,8 @@ class ExportCorpusTests(unittest.TestCase):
             {result_id: {"relevant_arabic": "ومن النساء خديجة"}},
         )
         self.assertEqual(projected["segments"][0]["arabic"], "ومن النساء خديجة")
+        self.assertEqual(projected["kind"], "passage")
+        self.assertNotIn("khadijah", projected["id"])
         self.assertEqual(
             [stage["stage"] for stage in projected["workflowStages"]],
             [

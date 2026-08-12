@@ -60,14 +60,49 @@ def validate(root: Path) -> list[str]:
         needs_attention += item.get("machineAssessment") == "needs_attention"
 
     counts = summary.get("counts", {})
-    if len(items) != int(counts.get("entries", 0)) + int(
-        counts.get("contextualPassages", 0)
-    ):
+    if len(items) != int(counts.get("entries", 0)) + int(counts.get("passages", 0)):
         errors.append("summary: item counts do not equal index length")
     if unresolved != counts.get("unresolvedItems"):
         errors.append("summary: unresolved count does not equal index")
     if needs_attention != counts.get("needsAttention"):
         errors.append("summary: needs-attention count does not equal index")
+
+    section_ids: set[str] = set()
+    section_item_ids: list[str] = []
+    for volume in summary.get("volumes", []):
+        matching_sections = {
+            item.get("sectionId")
+            for item in items
+            if item.get("volume") == volume.get("number")
+        }
+        if len(matching_sections) != volume.get("sectionCount"):
+            errors.append(
+                f"summary: section count differs for volume {volume.get('number')}"
+            )
+        if sum(item.get("volume") == volume.get("number") for item in items) != volume.get(
+            "itemCount"
+        ):
+            errors.append(
+                f"summary: item count differs for volume {volume.get('number')}"
+            )
+        section_ids.update(value for value in matching_sections if isinstance(value, str))
+
+    for section_id in sorted(section_ids):
+        section_path = root / "sections" / f"{section_id}.json"
+        if not section_path.is_file():
+            errors.append(f"index: missing section {section_id}")
+            continue
+        section = load(section_path)
+        if section.get("id") != section_id or section.get("corpusId") != corpus_id:
+            errors.append(f"section: inconsistent identity for {section_id}")
+        for item in section.get("items", []):
+            if isinstance(item, dict) and isinstance(item.get("id"), str):
+                section_item_ids.append(item["id"])
+
+    if sorted(section_item_ids) != sorted(ids):
+        errors.append("sections: items do not account for the index exactly once")
+    if "khadijah" in json.dumps(summary, ensure_ascii=False).lower():
+        errors.append("summary: research cohort must not be reader-facing taxonomy")
 
     manifest_paths: set[str] = set()
     for record in manifest.get("files", []):
