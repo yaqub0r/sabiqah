@@ -21,13 +21,13 @@ const { entry } = Astro.props;
     {entry.issues.map((issue) => <aside class="issue-banner"><strong>{issue.severity}:</strong> {issue.summary}</aside>)}
     {entry.segments.map((segment) => (
       <section class="bilingual-segment" id={segment.id}>
-        <div>
-          <p class="arabic" lang="ar" dir="rtl">{segment.arabic.text}</p>
-          <p class="segment-meta"><span>Arabic: {segment.arabic.reviewState}</span></p>
-        </div>
-        <div>
+        <div class="english-column" lang="en" dir="ltr">
           <p>{segment.english.text || "Translation not yet available."}</p>
           <p class="segment-meta"><span>English: {segment.english.reviewState}</span></p>
+        </div>
+        <div class="arabic-column" lang="ar" dir="rtl">
+          <p class="arabic">{segment.arabic.text}</p>
+          <p class="segment-meta"><span>Arabic: {segment.arabic.reviewState}</span></p>
         </div>
       </section>
     ))}
