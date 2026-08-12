@@ -33,7 +33,7 @@ test("glob matching respects directory boundaries", () => {
   assert.equal(matcher.test("packages/editor/src/index.ts"), false);
 });
 
-test("release fixtures require both initial contracts", () => {
+test("release fixtures require all scholarly-content contracts", () => {
   const { required } = requiredContracts(
     ["fixtures/releases/al-isabah-beta-v1.json"],
     registry,
@@ -41,7 +41,20 @@ test("release fixtures require both initial contracts", () => {
   assert.deepEqual([...required].sort(), [
     "canonical-book-promotion",
     "content-source-compliance",
+    "translation-quality-workflow",
   ]);
+});
+
+test("translation implementation paths require the quality contract", () => {
+  const { required } = requiredContracts(
+    [
+      "docs/translation-profiles/al-isabah.md",
+      "scripts/translation/run_book_pipeline.py",
+      "workers/platform/tests/translationReviews.test.ts",
+    ],
+    registry,
+  );
+  assert.deepEqual([...required], ["translation-quality-workflow"]);
 });
 
 test("acknowledgements are read only from the contract section", () => {
@@ -71,6 +84,7 @@ test("all required acknowledgements pass", () => {
 - [ ] None required
 - \`content-source-compliance\`
 - \`canonical-book-promotion\`
+- \`translation-quality-workflow\`
 `,
     registry,
   );
@@ -86,7 +100,10 @@ test("a missing required contract fails", () => {
 `,
     registry,
   );
-  assert.deepEqual([...result.missing], ["canonical-book-promotion"]);
+  assert.deepEqual(
+    [...result.missing],
+    ["canonical-book-promotion", "translation-quality-workflow"],
+  );
   assert.match(result.errors.join("\n"), /Missing contract ids/);
 });
 

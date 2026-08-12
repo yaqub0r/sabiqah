@@ -13,10 +13,18 @@ responsibilities.
 
 ## Active contracts
 
-| Contract ID                 | Governs                                                                                                                             | Contract                                                       |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `content-source-compliance` | Source acquisition, rights classification, provenance, restricted evidence, comparison, translation lineage, and public eligibility | [`content-source-compliance.md`](content-source-compliance.md) |
-| `canonical-book-promotion`  | Promotion of approved scholarly content into canonical book repositories and consumption of pinned releases                         | [`canonical-book-promotion.md`](canonical-book-promotion.md)   |
+| Contract ID                    | Governs                                                                                                                             | Contract                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `content-source-compliance`    | Source acquisition, rights classification, provenance, restricted evidence, comparison, translation lineage, and public eligibility | [`content-source-compliance.md`](content-source-compliance.md)       |
+| `translation-quality-workflow` | Source lock, autonomous translation quality, witness use, machine readiness, names, presentation, and final human-review handoff    | [`translation-quality-workflow.md`](translation-quality-workflow.md) |
+| `canonical-book-promotion`     | Promotion of approved scholarly content into canonical book repositories and consumption of pinned releases                         | [`canonical-book-promotion.md`](canonical-book-promotion.md)         |
+
+## Book profiles
+
+Book profiles specialize active contracts without weakening them. The active
+[Al-Isabah translation profile](../translation-profiles/al-isabah.md) maps the
+general translation workflow to the Arabic authority, classified witnesses,
+stable entry identities, Volume 8 pipeline, and fillable cohort model.
 
 ## Contributor workflow
 
@@ -28,4 +36,4 @@ responsibilities.
 
 Select `None required` only when no changed path matches the registry. Contract
 documents and registry metadata are themselves governed, so changes to this
-system require acknowledging both active contracts.
+system require acknowledging all active contracts.
