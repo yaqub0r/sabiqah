@@ -20,11 +20,11 @@ class ValidateCorpusTests(unittest.TestCase):
         item_id = "isabah-entry-00010759"
         detail = {
             "id": item_id,
-            "corpusId": "al-isabah-reading-a3b76bf-v2",
+            "corpusId": "al-isabah-reading-a3b76bf-v3",
             "unresolved": [],
         }
         index = {
-            "corpusId": "al-isabah-reading-a3b76bf-v2",
+            "corpusId": "al-isabah-reading-a3b76bf-v3",
             "items": [
                 {
                     "id": item_id,
@@ -37,7 +37,7 @@ class ValidateCorpusTests(unittest.TestCase):
         }
         summary = {
             "corpus": {
-                "id": "al-isabah-reading-a3b76bf-v2",
+                "id": "al-isabah-reading-a3b76bf-v3",
                 "promotionStatus": "blocked",
             },
             "counts": {
@@ -56,7 +56,7 @@ class ValidateCorpusTests(unittest.TestCase):
         }
         section = {
             "id": "volume-08-pages-0001-0025",
-            "corpusId": "al-isabah-reading-a3b76bf-v2",
+            "corpusId": "al-isabah-reading-a3b76bf-v3",
             "items": [detail],
         }
         paths = {
@@ -80,7 +80,7 @@ class ValidateCorpusTests(unittest.TestCase):
         (root / "manifest.json").write_text(
             json.dumps(
                 {
-                    "corpusId": "al-isabah-reading-a3b76bf-v2",
+                    "corpusId": "al-isabah-reading-a3b76bf-v3",
                     "objectCount": len(records),
                     "files": records,
                 }

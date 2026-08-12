@@ -1,0 +1,110 @@
+name: Preserve private al-Isabah research snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sabiqah-al-isabah-research-preservation
+  cancel-in-progress: false
+
+jobs:
+  preserve:
+    name: Build, upload, and verify immutable research objects
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: development
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      AL_ISABAH_RESEARCH_SNAPSHOT_URI: ${{ vars.AL_ISABAH_RESEARCH_SNAPSHOT_URI }}
+      AL_ISABAH_REVIEW_CORPUS_URI: ${{ vars.AL_ISABAH_REVIEW_CORPUS_URI }}
+
+    steps:
+      - name: Check out Sabiqah
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check out pinned al-Isabah research source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: yaqub0r/al-isabah
+          ref: a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178
+          path: .runtime/al-isabah-review-source
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Verify required private-storage configuration
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_ACCOUNT_ID}"
+          test -n "${AL_ISABAH_RESEARCH_SNAPSHOT_URI}"
+          test -n "${AL_ISABAH_REVIEW_CORPUS_URI}"
+          test -n "${R2_ACCESS_KEY_ID}"
+          test -n "${R2_SECRET_ACCESS_KEY}"
+
+      - name: Build and validate immutable research objects
+        run: |
+          set -euo pipefail
+          python3 scripts/export_al_isabah_review_corpus.py \
+            --git-dir .runtime/al-isabah-review-source/.git \
+            --output .runtime/al-isabah-review-corpus \
+            --generated-at 2026-08-12T00:00:00Z
+          python3 scripts/validate_review_corpus.py .runtime/al-isabah-review-corpus
+          git -C .runtime/al-isabah-review-source archive \
+            --format=tar.gz \
+            --output=../al-isabah-research-a3b76bf.tar.gz \
+            a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178
+          python3 scripts/verify_al_isabah_private_snapshot.py \
+            --manifest evidence/research-snapshots/al-isabah-a3b76bf.v1.json \
+            --corpus .runtime/al-isabah-review-corpus \
+            --archive .runtime/al-isabah-research-a3b76bf.tar.gz
+
+      - name: Upload immutable objects to private R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp \
+            .runtime/al-isabah-research-a3b76bf.tar.gz \
+            "${AL_ISABAH_RESEARCH_SNAPSHOT_URI}" \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager --no-progress --only-show-errors
+          aws s3 cp \
+            .runtime/al-isabah-review-corpus \
+            "${AL_ISABAH_REVIEW_CORPUS_URI}" \
+            --recursive \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager --no-progress --only-show-errors
+
+      - name: Download and verify the stored objects
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp \
+            "${AL_ISABAH_RESEARCH_SNAPSHOT_URI}" \
+            .runtime/verified-al-isabah-research.tar.gz \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager --no-progress --only-show-errors
+          aws s3 cp \
+            "${AL_ISABAH_REVIEW_CORPUS_URI}" \
+            .runtime/verified-al-isabah-review-corpus \
+            --recursive \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager --no-progress --only-show-errors
+          python3 scripts/validate_review_corpus.py .runtime/verified-al-isabah-review-corpus
+          python3 scripts/verify_al_isabah_private_snapshot.py \
+            --manifest evidence/research-snapshots/al-isabah-a3b76bf.v1.json \
+            --corpus .runtime/verified-al-isabah-review-corpus \
+            --archive .runtime/verified-al-isabah-research.tar.gz

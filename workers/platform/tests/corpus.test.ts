@@ -12,7 +12,7 @@ describe("private review corpus", () => {
 
   it("builds only pinned, sanitized object keys", () => {
     expect(corpusObjectKey("summary")).toContain(
-      "al-isabah-reading-a3b76bf-v2",
+      "al-isabah-reading-a3b76bf-v3",
     );
     expect(corpusObjectKey("item", "isabah-entry-00010759")).toMatch(
       /items\/isabah-entry-00010759\.json$/,
