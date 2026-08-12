@@ -34,9 +34,9 @@ translation canonical, or replace book-repository validation.
 
 Sabiqah produces durable translation work only when that work is suitable for
 public consumption. Every structured Arabic and English record, name record,
-public provenance record, and generated reading presentation must be safe to
-serve without an invitation from the moment it is written. Restricting access
-is not a substitute for establishing a publication right.
+public provenance record, and generated reading presentation must satisfy this
+invariant from the moment it is written. Access restrictions are not a
+substitute for publication eligibility.
 
 For this contract, a **work product** is a durable, book-facing source,
 translation, name, provenance, or presentation record. Translation attempts,
@@ -70,9 +70,9 @@ and, where applicable, verification against a publication-approved source.
 Public consumability is not canonical status. A machine-ready or unreviewed
 record may be publicly readable when it satisfies this invariant, while human
 approval, compliance approval, book-repository acceptance, and versioned
-canonical release remain separate later gates. Invitations may control
-approval, correction, editing, and access to private evidence; they must not be
-required merely to read a public work product.
+canonical release remain separate later gates. Public consumability is a
+property of the work product, independent of its human-review and canonical-
+promotion state.
 
 ## Required source bundle
 
@@ -125,8 +125,8 @@ The public source authority must be classified `approved-for-publication`
 before durable translation work begins. If the best available machine text or
 facsimile is restricted, it may be retained only as a private witness while a
 publication-approved base is established. The workflow must not create a
-nominally private translation corpus with the expectation that access controls
-will later cure source or output eligibility.
+translation corpus before establishing source and output eligibility, then
+expect a later classification or presentation change to cure it.
 
 Prefer a provider that pairs a complete facsimile and machine-readable text for
 the same edition. Keep an independent facsimile when it materially improves
@@ -220,10 +220,9 @@ must preserve headings, entry numbers, page or entry boundaries, notes,
 uncertainty signals, and links to the authoritative source. The presentation
 records the structured-English hash so drift is detectable.
 
-The ordinary reading presentation contains only public work products and is
-available without enrollment. Reviewer identity, approval controls, correction
-tools, private evidence, and restricted witness access remain authenticated
-surfaces layered on top of that public presentation.
+The ordinary reading presentation contains only public work products. Reviewer
+evidence packages remain separate from the presentation and may contain
+restricted evidence only as governed by `content-source-compliance`.
 
 The reviewer handoff includes:
 

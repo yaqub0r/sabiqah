@@ -19,8 +19,6 @@ credentials remain in Sabiqah-controlled storage.
 Every durable Al-Isabah Arabic/English record and generated reading
 presentation is a public work product. It must satisfy the public-output
 invariant in `translation-quality-workflow` before it is created or replaced.
-Enrollment protects contribution and private research capabilities, not
-ordinary reading.
 
 ## Authority and witnesses
 
@@ -137,15 +135,15 @@ material quality regression.
 
 ## Reviewer handoff
 
-The reviewer sees continuous bilingual reading, search, stable entry navigation,
-names, workflow history, interventions, and unresolved findings. Name review and
-English approval stay closed until the relevant source and presentation satisfy
-machine readiness.
+The public bilingual presentation exposes the work product and its honest
+review state through continuous reading, search, stable entry navigation,
+names, workflow history, interventions, and unresolved findings. Name review
+and English approval stay closed until the relevant source and presentation
+satisfy machine readiness.
 
-Anyone may read the public bilingual presentation and its honest review state.
-An active invited reviewer additionally receives approval and correction
-controls plus authorized private evidence. Reviewer identity and
-reviewer-specific decisions are never part of the anonymous response.
+The reviewer evidence package is a separate governed artifact. It may reference
+restricted evidence without copying that evidence into the public
+presentation.
 
 Human approval is append-only review evidence. It does not erase uncertainties,
 alter canonical Arabic, or directly publish a release.
