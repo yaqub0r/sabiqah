@@ -11,12 +11,20 @@ describe("private review corpus", () => {
   });
 
   it("builds only pinned, sanitized object keys", () => {
-    expect(corpusObjectKey("summary")).toContain("al-isabah-review-a3b76bf");
+    expect(corpusObjectKey("summary")).toContain(
+      "al-isabah-reading-a3b76bf-v2",
+    );
     expect(corpusObjectKey("item", "isabah-entry-00010759")).toMatch(
       /items\/isabah-entry-00010759\.json$/,
     );
     expect(() => corpusObjectKey("item", "../source.pdf")).toThrow(
       "Invalid corpus item ID",
+    );
+    expect(corpusObjectKey("section", "volume-08-pages-0001-0025")).toMatch(
+      /sections\/volume-08-pages-0001-0025\.json$/,
+    );
+    expect(() => corpusObjectKey("section", "../index")).toThrow(
+      "Invalid corpus section ID",
     );
   });
 

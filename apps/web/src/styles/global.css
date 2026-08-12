@@ -275,108 +275,23 @@ button {
   margin-top: 3rem;
   color: var(--muted);
 }
-.corpus-stats {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 2rem 0;
-}
-.corpus-stats article {
-  min-height: 8rem;
-  padding: 1.15rem;
-  border: 1px solid var(--line);
-  background: #fffaf1;
-}
-.corpus-stats strong,
-.corpus-stats span {
-  display: block;
-}
-.corpus-stats strong {
-  color: var(--green);
-  font:
-    2.2rem Georgia,
-    serif;
-}
-.corpus-stats span {
-  margin-top: 0.35rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-.collection-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin: 2rem 0;
-}
-.collection-grid article,
-.coverage-accounting,
-.corpus-browser,
 .review-notes article {
   padding: 1.5rem;
   border: 1px solid var(--line);
   background: #fffaf1;
 }
-.collection-grid h2,
-.corpus-browser h2,
 .review-notes h2 {
   font-size: clamp(1.7rem, 3vw, 2.4rem);
 }
-.coverage-accounting {
-  margin-bottom: 2rem;
-}
-.coverage-accounting summary {
-  cursor: pointer;
-  font-weight: 800;
-}
-.coverage-accounting dl {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-.coverage-accounting dl div {
-  padding: 0.75rem;
-  background: var(--paper-deep);
-}
-.coverage-accounting dt {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-.coverage-accounting dd {
-  margin: 0.25rem 0 0;
-  color: var(--green);
-  font-size: 1.4rem;
-  font-weight: 800;
-}
-.corpus-access,
-.corpus-browser {
+.corpus-access {
   margin-top: 2rem;
 }
-.corpus-filters {
-  display: grid;
-  grid-template-columns: minmax(16rem, 2fr) 1fr 1fr;
-  gap: 1rem;
-}
-.result-count {
-  margin: 1.5rem 0 0.75rem;
-  color: var(--muted);
-}
-.corpus-list .entry-card {
-  text-decoration: none;
-}
-.corpus-list small {
-  color: var(--muted);
-}
-.pagination,
 .review-state-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   margin-top: 1.5rem;
-}
-.pagination button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 .corpus-review-shell {
   max-width: 70rem;
@@ -446,6 +361,272 @@ button {
 }
 .source-list code {
   overflow-wrap: anywhere;
+}
+.edition-overview {
+  margin: 2.5rem 0;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--line);
+  background: #fffaf1;
+}
+.edition-overview > div:first-child {
+  max-width: 48rem;
+}
+.edition-overview h2 {
+  font-size: clamp(2rem, 4vw, 3.75rem);
+}
+.volume-shelf {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(5.5rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+.volume-shelf button {
+  display: grid;
+  min-height: 9rem;
+  align-content: space-between;
+  padding: 1rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--paper-deep);
+  color: var(--ink);
+  text-align: left;
+}
+.volume-shelf button:hover,
+.volume-shelf button.selected {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
+.volume-shelf button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.volume-shelf strong {
+  font:
+    2.5rem/1 Georgia,
+    serif;
+}
+.volume-shelf span,
+.volume-shelf small {
+  display: block;
+}
+.volume-shelf span {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.volume-shelf small {
+  margin-top: 0.35rem;
+  color: inherit;
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+.edition-status {
+  margin: 1.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.book-reader {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  margin-top: 3rem;
+}
+.reader-contents {
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  padding-right: 0.75rem;
+}
+.reader-contents h2 {
+  font-size: 1.8rem;
+}
+.reader-contents > ol,
+.reader-index ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.reader-contents li + li {
+  border-top: 1px solid var(--line);
+}
+.reader-contents li button {
+  display: grid;
+  width: 100%;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+.reader-contents li button:hover,
+.reader-contents li button.selected {
+  background: var(--green-light);
+}
+.reader-contents li button.selected {
+  box-shadow: inset 0.25rem 0 var(--green);
+}
+.reader-contents li small {
+  color: var(--muted);
+}
+.reader-index {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+.reader-index > summary,
+.record-evidence > summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.reader-index label {
+  margin: 1rem 0;
+}
+.reading-page {
+  min-width: 0;
+  max-width: 76rem;
+}
+.reading-section-header {
+  padding-bottom: 2rem;
+  border-bottom: 0.3rem solid var(--green);
+}
+.reading-section-header h2 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+}
+.reading-section-header p:last-child {
+  color: var(--muted);
+}
+.reading-flow {
+  counter-reset: records;
+}
+.reading-record {
+  padding: clamp(2rem, 4vw, 3.5rem) 0;
+  scroll-margin-top: 1.5rem;
+}
+.reading-record + .reading-record {
+  border-top: 1px solid var(--line);
+}
+.reading-record.short-record {
+  padding: clamp(1.35rem, 2.5vw, 2.1rem) 0;
+}
+.reading-record.short-record h3 {
+  font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+}
+.reading-record.short-record > header {
+  margin-bottom: 0.65rem;
+}
+.reading-record.short-record .reading-bilingual p {
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+.reading-record.short-record .reading-bilingual .arabic {
+  font-size: 1.35rem;
+  line-height: 1.8;
+}
+.reading-record.short-record .record-evidence {
+  margin-top: 0.8rem;
+  font-size: 0.78rem;
+}
+.reading-record > header {
+  margin-bottom: 1.25rem;
+}
+.reading-record > header > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: baseline;
+}
+.reading-record h3 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.35rem);
+}
+.reading-record header div > p {
+  margin: 0;
+  font:
+    1.8rem/1.7 Georgia,
+    "Traditional Arabic",
+    serif;
+  text-align: right;
+}
+.record-number {
+  margin: 0 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.passage-context {
+  margin: 0 0 1rem;
+  padding-left: 0.75rem;
+  border-left: 0.2rem solid var(--line);
+  color: var(--muted);
+  font-style: italic;
+}
+.reading-bilingual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 5vw, 4rem);
+}
+.reading-bilingual p {
+  margin: 0;
+  font:
+    1.16rem/1.85 Georgia,
+    serif;
+}
+.reading-bilingual .arabic {
+  font-size: 1.6rem;
+  line-height: 2;
+  text-align: right;
+}
+.record-evidence {
+  margin-top: 1.5rem;
+  color: var(--muted);
+}
+.record-evidence[open] {
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+}
+.record-evidence section {
+  margin-top: 1.5rem;
+}
+.record-evidence h4 {
+  color: var(--ink);
+  font-size: 1.2rem;
+}
+.record-evidence article {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.compact-workflow {
+  padding-left: 1.25rem;
+}
+.compact-workflow li {
+  margin-bottom: 1rem;
+}
+.compact-workflow .badge {
+  margin-left: 0.5rem;
+}
+.compact-workflow p {
+  margin: 0.35rem 0;
+}
+.provenance-line code {
+  overflow-wrap: anywhere;
+}
+.section-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+.section-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 .review-editor,
 .enrollment-card,
@@ -530,16 +711,25 @@ footer p {
 @media (max-width: 720px) {
   .hero,
   .entry-title,
-  .bilingual-segment,
-  .collection-grid,
-  .corpus-filters {
+  .bilingual-segment {
     grid-template-columns: 1fr;
   }
-  .corpus-stats {
+  .volume-shelf {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .coverage-accounting dl {
+  .book-reader {
     grid-template-columns: 1fr;
+  }
+  .reader-contents {
+    position: static;
+    max-height: none;
+  }
+  .reading-record > header > div,
+  .reading-bilingual {
+    grid-template-columns: 1fr;
+  }
+  .section-pagination {
+    flex-wrap: wrap;
   }
   .arabic-card {
     max-width: 26rem;

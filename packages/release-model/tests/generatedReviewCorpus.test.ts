@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseReviewCorpusIndex,
   parseReviewCorpusItem,
+  parseReviewCorpusSection,
   parseReviewCorpusSummary,
 } from "../src/reviewCorpus";
 
@@ -22,12 +23,26 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
 
     expect(index.corpusId).toBe(summary.corpus.id);
     expect(index.items).toHaveLength(
-      summary.counts.entries + summary.counts.contextualPassages,
+      summary.counts.entries + summary.counts.passages,
     );
     for (const listed of index.items) {
       const item = parseReviewCorpusItem(load(`items/${listed.id}.json`));
       expect(item.id).toBe(listed.id);
       expect(item.corpusId).toBe(index.corpusId);
     }
+    const sectionIds = new Set(index.items.map((item) => item.sectionId));
+    const sectionItems: string[] = [];
+    for (const sectionId of sectionIds) {
+      const section = parseReviewCorpusSection(
+        load(`sections/${sectionId}.json`),
+      );
+      sectionItems.push(...section.items.map((item) => item.id));
+    }
+    expect(sectionItems.sort()).toEqual(
+      index.items.map((item) => item.id).sort(),
+    );
+    expect(JSON.stringify(summary).toLocaleLowerCase()).not.toContain(
+      "khadijah",
+    );
   });
 });

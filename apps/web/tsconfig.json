@@ -2,7 +2,11 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "baseUrl": ".",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@sabiqah/editor": ["../../packages/editor/src/index.ts"],
+      "@sabiqah/release-model": ["../../packages/release-model/src/index.ts"]
+    }
   },
   "include": [".astro/types.d.ts", "**/*"]
 }

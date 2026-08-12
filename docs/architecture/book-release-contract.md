@@ -54,16 +54,20 @@ scholarship.
 
 The public reader contract above remains restricted to approved book releases.
 Research and pre-publication material uses a separate `review-corpus` contract.
-Its public summary contains only non-sensitive counts, collection descriptions,
-coverage accounting, immutable source commits, and the explicit promotion
-decision. It never contains source or translated text.
+Its public summary contains only non-sensitive counts, the work's volume and
+reading-section map, immutable source commits, and the explicit promotion
+decision. It never contains source or translated text. Research cohorts and
+acquisition paths remain provenance; they do not become the reader's navigation
+or imply that one person or topic is the organizing subject of the book.
 
-The review index and item records may contain restricted Arabic, draft English,
-unresolved readings, and editorial decisions. They live in private R2 under an
-immutable corpus ID and are served only by the Worker after active-membership
-authentication. A successful parse or machine test means that the record is
-structurally usable; it does not change the source classification or make the
-content publication-ready.
+The protected table of contents, continuous reading sections, and item records
+may contain restricted Arabic, draft English, unresolved readings, and editorial
+decisions. They live in private R2 under an immutable corpus ID and are served
+only by the Worker after active-membership authentication. Short entries remain
+in book order inside larger sections so the default experience reads like a
+book; search and per-item review views are secondary tools. A successful parse
+or machine test means that the record is structurally usable; it does not change
+the source classification or make the content publication-ready.
 
 Each corpus is exported reproducibly from pinned book-repository revisions.
 Deployment verifies the generated manifest before upload, uploads immutable

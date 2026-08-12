@@ -95,7 +95,7 @@ jobs:
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
           aws s3 cp \
             .runtime/al-isabah-review-corpus \
-            "s3://sabiqah-assets-dev/review-corpora/al-isabah/al-isabah-review-a3b76bf/" \
+            "s3://sabiqah-assets-dev/review-corpora/al-isabah/al-isabah-reading-a3b76bf-v2/" \
             --recursive \
             --endpoint-url "${endpoint}" \
             --no-cli-pager
@@ -140,3 +140,6 @@ jobs:
           status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
             "${DEVELOPMENT_BASE_URL}/api/corpus/al-isabah/index")"
           test "${status}" = "403"
+          section_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            "${DEVELOPMENT_BASE_URL}/api/corpus/al-isabah/sections/volume-08-pages-0001-0025")"
+          test "${section_status}" = "403"

@@ -99,6 +99,21 @@ export default {
           corpusObjectKey("item", corpusItem[1]),
         );
       }
+      const corpusSection = url.pathname.match(
+        /^\/api\/corpus\/al-isabah\/sections\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
+      );
+      if (corpusSection && request.method === "GET") {
+        const member = await authenticatedMember(request, env);
+        if (!canReadCorpus(member))
+          return json(
+            { error: "Active reviewer access required" },
+            { status: 403 },
+          );
+        return corpusJson(
+          env.REVIEW_CORPUS,
+          corpusObjectKey("section", corpusSection[1]),
+        );
+      }
       if (url.pathname === "/api/logout" && request.method === "POST") {
         return json(
           { ok: true },

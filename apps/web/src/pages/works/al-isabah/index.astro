@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { CorpusBrowser } from "../../../components/CorpusBrowser";
+import { CorpusReader } from "../../../components/CorpusReader";
 
 const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
@@ -23,6 +23,6 @@ const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       approved scholarly release. The public inventory is safe to share;
       restricted text and intermediate evidence require reviewer access.
     </p>
-    <CorpusBrowser client:load siteKey={siteKey} />
+    <CorpusReader client:load siteKey={siteKey} />
   </section>
 </BaseLayout>

@@ -18,9 +18,28 @@ export const reviewStateSchema = z.enum([
   "needs_attention",
 ]);
 
+const availabilitySchema = z.enum([
+  "complete_translation",
+  "selected_passages",
+]);
+
+const volumeSchema = z
+  .object({
+    id: identifier,
+    number: z.number().int().positive(),
+    label: z.string().min(1),
+    availability: availabilitySchema,
+    itemCount: z.number().int().nonnegative(),
+    sectionCount: z.number().int().positive(),
+    firstPrintedPage: z.number().int().nonnegative().nullable(),
+    lastPrintedPage: z.number().int().nonnegative().nullable(),
+    description: z.string().min(1),
+  })
+  .strict();
+
 export const reviewCorpusSummarySchema = z
   .object({
-    schemaVersion: z.literal("1.0.0"),
+    schemaVersion: z.literal("2.0.0"),
     work: z
       .object({
         slug: z.literal("al-isabah"),
@@ -40,58 +59,40 @@ export const reviewCorpusSummarySchema = z
     counts: z
       .object({
         entries: z.number().int().nonnegative(),
-        contextualPassages: z.number().int().nonnegative(),
+        passages: z.number().int().nonnegative(),
         translated: z.number().int().nonnegative(),
         needsAttention: z.number().int().nonnegative(),
         unresolvedItems: z.number().int().nonnegative(),
         humanReviewed: z.number().int().nonnegative(),
       })
       .strict(),
-    collections: z
-      .array(
-        z
-          .object({
-            id: identifier,
-            title: z.string().min(1),
-            kind: z.enum(["volume", "cohort"]),
-            itemCount: z.number().int().nonnegative(),
-            reviewState: reviewStateSchema,
-            description: z.string().min(1),
-          })
-          .strict(),
-      )
-      .min(1),
-    coverage: z
-      .object({
-        sourceResults: z.number().int().nonnegative(),
-        decisions: z.record(z.string(), z.number().int().nonnegative()),
-      })
-      .strict()
-      .optional(),
+    volumes: z.array(volumeSchema).min(1),
   })
   .strict();
 
 export const reviewCorpusListItemSchema = z
   .object({
     id: identifier,
-    kind: z.enum(["entry", "context"]),
+    kind: z.enum(["entry", "passage"]),
     sequence: z.number().int().nonnegative(),
     printedEntryNumber: z.number().int().positive().nullable(),
-    volume: z.string().min(1),
+    volume: z.number().int().positive(),
+    printedPageStart: z.number().int().nonnegative().nullable(),
+    printedPageEnd: z.number().int().nonnegative().nullable(),
+    sectionId: identifier,
     titleEn: z.string().min(1),
     titleAr: z.string(),
     translationState: reviewStateSchema,
     machineAssessment: z.enum(["pending", "passed", "needs_attention"]),
     humanReview: reviewStateSchema,
     unresolvedCount: z.number().int().nonnegative(),
-    collectionIds: z.array(identifier).min(1),
     relationship: z.string().optional(),
   })
   .strict();
 
 export const reviewCorpusIndexSchema = z
   .object({
-    schemaVersion: z.literal("1.0.0"),
+    schemaVersion: z.literal("2.0.0"),
     corpusId: identifier,
     items: z.array(reviewCorpusListItemSchema),
   })
@@ -116,20 +117,19 @@ const corpusUnresolvedSchema = z
 
 export const reviewCorpusItemSchema = z
   .object({
-    schemaVersion: z.literal("1.0.0"),
+    schemaVersion: z.literal("2.0.0"),
     corpusId: identifier,
     id: identifier,
-    kind: z.enum(["entry", "context"]),
+    kind: z.enum(["entry", "passage"]),
     sequence: z.number().int().nonnegative(),
     printedEntryNumber: z.number().int().positive().nullable(),
-    volume: z.string().min(1),
+    volume: z.number().int().positive(),
     title: z.object({ en: z.string().min(1), ar: z.string() }).strict(),
     relationship: z.string().optional(),
     rationale: z.string().optional(),
     translationState: reviewStateSchema,
     machineAssessment: z.enum(["pending", "passed", "needs_attention"]),
     humanReview: reviewStateSchema,
-    collectionIds: z.array(identifier).min(1),
     segments: z
       .array(
         z
@@ -140,7 +140,7 @@ export const reviewCorpusItemSchema = z
             pages: z.array(
               z
                 .object({
-                  volume: z.string().min(1),
+                  volume: z.number().int().positive(),
                   printedPage: z.number().int().nonnegative().nullable(),
                   readerPage: z.number().int().nonnegative().nullable(),
                   providerPage: z.url().nullable(),
@@ -211,10 +211,29 @@ export const reviewCorpusItemSchema = z
   })
   .strict();
 
+export const reviewCorpusSectionSchema = z
+  .object({
+    schemaVersion: z.literal("2.0.0"),
+    corpusId: identifier,
+    id: identifier,
+    volume: z.number().int().positive(),
+    label: z.string().min(1),
+    availability: availabilitySchema,
+    position: z.number().int().positive(),
+    totalSections: z.number().int().positive(),
+    printedPageStart: z.number().int().nonnegative().nullable(),
+    printedPageEnd: z.number().int().nonnegative().nullable(),
+    previousSectionId: identifier.nullable(),
+    nextSectionId: identifier.nullable(),
+    items: z.array(reviewCorpusItemSchema).min(1),
+  })
+  .strict();
+
 export type ReviewCorpusSummary = z.infer<typeof reviewCorpusSummarySchema>;
 export type ReviewCorpusListItem = z.infer<typeof reviewCorpusListItemSchema>;
 export type ReviewCorpusIndex = z.infer<typeof reviewCorpusIndexSchema>;
 export type ReviewCorpusItem = z.infer<typeof reviewCorpusItemSchema>;
+export type ReviewCorpusSection = z.infer<typeof reviewCorpusSectionSchema>;
 
 export function parseReviewCorpusSummary(value: unknown): ReviewCorpusSummary {
   return reviewCorpusSummarySchema.parse(value);
@@ -226,4 +245,8 @@ export function parseReviewCorpusIndex(value: unknown): ReviewCorpusIndex {
 
 export function parseReviewCorpusItem(value: unknown): ReviewCorpusItem {
   return reviewCorpusItemSchema.parse(value);
+}
+
+export function parseReviewCorpusSection(value: unknown): ReviewCorpusSection {
+  return reviewCorpusSectionSchema.parse(value);
 }

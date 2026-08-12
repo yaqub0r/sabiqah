@@ -60,17 +60,23 @@ Deploy the new immutable objects before switching the Worker to them. A rollback
 therefore restores the preceding Worker version, whose corpus ID still resolves
 to the preceding immutable objects.
 
-The public summary endpoint must expose only inventory and coverage counts. The
-index and item endpoints must return `403` without an active reviewer session;
-limited and suspended members must receive the same denial. Do not place R2
-credentials, object keys, draft text, or source witnesses in deployment logs.
+The public summary endpoint must expose only inventory counts and the
+volume/section map. The index, section, and item endpoints must return `403`
+without an active reviewer session; limited and suspended members must receive
+the same denial. Do not place R2 credentials, object keys, draft text, or source
+witnesses in deployment logs.
 
 ## Smoke checks
 
 - Public work inventory loads without a session and contains no corpus text.
-- Anonymous access to the corpus index and every item returns `403`.
-- An active reviewer can filter the complete index and open bilingual items,
-  unresolved work, provenance, and workflow history.
+- Anonymous access to the corpus index, every reading section, and every item
+  returns `403`.
+- An active reviewer can move through volumes and substantial reading sections
+  in book order, with English on the left and Arabic on the right.
+- Search can locate a record without replacing volume/section navigation as the
+  primary reading experience.
+- Unresolved work, provenance, and workflow history remain available from the
+  relevant record without interrupting the default continuous reading flow.
 - A wrong invite fails without revealing whether Turnstile or the code failed.
 - A correct invite completes GitHub OAuth and creates one active membership.
 - Repeating OAuth updates mutable profile data without duplicating identity.
