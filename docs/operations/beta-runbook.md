@@ -5,6 +5,8 @@
 1. Confirm the `sabiqah-platform-dev` D1 binding in `wrangler.jsonc` matches
    Cloudflare database `fecd6d21-6348-4d47-acb7-95c83055ee6e`.
 2. Apply `migrations/0001_beta_identity.sql` with Wrangler.
+   Apply all later migrations in filename order, including the append-only
+   translation-review ledger, before deploying code that uses them.
 3. Create a GitHub OAuth app with the development callback URL
    `/api/auth/github/callback`.
 4. Store its credentials in the GitHub development environment as
@@ -77,6 +79,14 @@ witnesses in deployment logs.
   primary reading experience.
 - Unresolved work, provenance, and workflow history remain available from the
   relevant record without interrupting the default continuous reading flow.
+- An active reviewer can approve an English translation from the continuous or
+  individual record view, see the current approval count, hide human-reviewed
+  records, and withdraw their own approval.
+- Repeating the same approval action does not append a duplicate event. A
+  withdrawal appends a reversal and restores the record to the unreviewed
+  filter when no other current approvals remain.
+- Anonymous, limited, suspended, and cross-origin requests cannot read or write
+  translation-approval state.
 - A wrong invite fails without revealing whether Turnstile or the code failed.
 - A correct invite completes GitHub OAuth and creates one active membership.
 - Repeating OAuth updates mutable profile data without duplicating identity.

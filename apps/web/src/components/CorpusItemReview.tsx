@@ -5,6 +5,11 @@ import {
 import { useEffect, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
+import {
+  TranslationApproval,
+  type TranslationReviewState,
+  type TranslationReviewSummary,
+} from "./TranslationApproval";
 
 interface SessionIdentity {
   login: string;
@@ -17,6 +22,7 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
   >("loading");
   const [identity, setIdentity] = useState<SessionIdentity>();
   const [item, setItem] = useState<ReviewCorpusItem>();
+  const [reviewState, setReviewState] = useState<TranslationReviewState>();
   const [error, setError] = useState("");
   const [itemId, setItemId] = useState("");
 
@@ -45,14 +51,25 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
       setError("Choose an item from the working corpus.");
       return;
     }
-    fetch(`/api/corpus/al-isabah/items/${encodeURIComponent(itemId)}`, {
-      credentials: "same-origin",
-    })
-      .then(async (response) => {
+    Promise.all([
+      fetch(`/api/corpus/al-isabah/items/${encodeURIComponent(itemId)}`, {
+        credentials: "same-origin",
+      }).then(async (response) => {
         if (!response.ok) throw new Error("This review item is not available.");
         return parseReviewCorpusItem(await response.json());
+      }),
+      fetch("/api/corpus/al-isabah/reviews", {
+        credentials: "same-origin",
+      }).then(async (response) => {
+        if (!response.ok)
+          throw new Error("Human review state could not be loaded.");
+        return (await response.json()) as TranslationReviewSummary;
+      }),
+    ])
+      .then(([nextItem, reviews]) => {
+        setItem(nextItem);
+        setReviewState(reviews.items[nextItem.id]);
       })
-      .then(setItem)
       .catch((caught) =>
         setError(
           caught instanceof Error
@@ -146,6 +163,11 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
           </div>
         </section>
       ))}
+      <TranslationApproval
+        itemId={item.id}
+        state={reviewState}
+        onChange={setReviewState}
+      />
       {item.unresolved.length > 0 && (
         <section className="review-notes">
           <h2>Unresolved work</h2>

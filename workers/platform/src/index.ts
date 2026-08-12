@@ -6,6 +6,12 @@ import {
 } from "./github";
 import { cookie, json, parseCookies, safeReturnTo } from "./http";
 import { canReadCorpus, corpusJson, corpusObjectKey } from "./corpus";
+import {
+  getTranslationReviewSummary,
+  isSameOrigin,
+  parseTranslationReviewAction,
+  recordTranslationReview,
+} from "./translationReviews";
 
 interface RateLimitBinding {
   limit(input: { key: string }): Promise<{ success: boolean }>;
@@ -83,6 +89,49 @@ export default {
             { status: 403 },
           );
         return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("index"));
+      }
+      if (
+        url.pathname === "/api/corpus/al-isabah/reviews" &&
+        request.method === "GET"
+      ) {
+        const member = await authenticatedMember(request, env);
+        if (!canReadCorpus(member))
+          return json(
+            { error: "Active reviewer access required" },
+            { status: 403 },
+          );
+        return json(await getTranslationReviewSummary(env.DB, member!.id));
+      }
+      const corpusReview = url.pathname.match(
+        /^\/api\/corpus\/al-isabah\/reviews\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
+      );
+      if (corpusReview && request.method === "POST") {
+        const member = await authenticatedMember(request, env);
+        if (!canReadCorpus(member))
+          return json(
+            { error: "Active reviewer access required" },
+            { status: 403 },
+          );
+        if (!isSameOrigin(request))
+          return json(
+            { error: "Same-origin request required" },
+            { status: 403 },
+          );
+        const action = parseTranslationReviewAction(
+          await request.json().catch(() => null),
+        );
+        if (!action)
+          return json({ error: "Invalid review action" }, { status: 400 });
+        const state = await recordTranslationReview(
+          env.DB,
+          env.REVIEW_CORPUS,
+          member!.id,
+          corpusReview[1],
+          action,
+        );
+        if (!state)
+          return json({ error: "Review item not found" }, { status: 404 });
+        return json({ itemId: corpusReview[1], state });
       }
       const corpusItem = url.pathname.match(
         /^\/api\/corpus\/al-isabah\/items\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,

@@ -27,6 +27,14 @@ suspended memberships receive no corpus text. The public work page receives
 only the non-sensitive summary and coverage counts; neither browser code nor
 reviewers receive R2 credentials or direct object URLs.
 
+An active reviewer may record or withdraw approval of an English translation
+through a same-origin Worker endpoint. The Worker first verifies the item in
+the pinned private R2 corpus, then appends a D1 event containing its immutable
+corpus ID, stable item ID, and object digest. Repeated identical decisions are
+idempotent. Reviewers can see aggregate current approval counts and their own
+current decision, but not another reviewer's identity. Approval does not grant
+merge, publication, or moderation authority.
+
 ## Limitations and response
 
 A global code can leak and cannot identify who shared it. If abuse appears,
