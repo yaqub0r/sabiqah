@@ -162,12 +162,21 @@ prompt or policy version, schema version, model identity, reasoning setting,
 and run identity. Preserve names, isnads, negation, dates, numerals, entry
 numbers, citations, notes, poetry, uncertainty, and cross-unit continuation.
 
+Preserve every honorific and devotional formula from the authoritative source
+at the corresponding occurrence in the English candidate, using its Arabic
+written form rather than an English translation or transliteration. When the
+source uses a compact form such as `ﷺ`, carry that form unchanged. Do not omit,
+expand, substitute, or add a formula that is absent from the source. A versioned
+book profile may define reversible typography-only normalization, but it must
+record both source and rendered forms and must not change the formula, referent,
+grammatical number, or gender.
+
 ### 5. Independent critique
 
 Audit each translated unit independently for omissions, additions, reversals,
 name or relationship errors, damaged syntax, structural loss, and unsupported
-normalization. Criticism records exact concerns and locations; it does not
-silently rewrite the candidate.
+normalization, including honorific preservation errors. Criticism records exact
+concerns and locations; it does not silently rewrite the candidate.
 
 ### 6. Witness resolution
 
@@ -203,6 +212,9 @@ Fail closed unless validation proves:
 - public-source eligibility and public-output provenance;
 - no duplicated or missing substantive unit;
 - preservation of material numbers, names, notes, citations, and boundaries;
+- preservation and placement of every source honorific and devotional formula
+  in Arabic written form, with no omitted, translated, transliterated,
+  substituted, or added formula;
 - consistent terminology and durable name identities;
 - a complete unresolved-item inventory; and
 - separation of machine assessment from human-review state.
