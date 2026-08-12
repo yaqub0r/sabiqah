@@ -16,7 +16,7 @@ responsibilities.
 | Contract ID                    | Governs                                                                                                                             | Contract                                                             |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `content-source-compliance`    | Source acquisition, rights classification, provenance, restricted evidence, comparison, translation lineage, and public eligibility | [`content-source-compliance.md`](content-source-compliance.md)       |
-| `translation-quality-workflow` | Source lock, autonomous translation quality, witness use, machine readiness, names, presentation, and final human-review handoff    | [`translation-quality-workflow.md`](translation-quality-workflow.md) |
+| `translation-quality-workflow` | Public-output eligibility, source lock, translation quality, witness use, machine readiness, presentation, and human-review handoff | [`translation-quality-workflow.md`](translation-quality-workflow.md) |
 | `canonical-book-promotion`     | Promotion of approved scholarly content into canonical book repositories and consumption of pinned releases                         | [`canonical-book-promotion.md`](canonical-book-promotion.md)         |
 
 ## Book profiles

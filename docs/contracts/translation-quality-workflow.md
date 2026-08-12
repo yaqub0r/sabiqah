@@ -30,16 +30,61 @@ This contract works with `content-source-compliance` and
 `canonical-book-promotion`. It does not authorize redistribution, declare a
 translation canonical, or replace book-repository validation.
 
+## Public-output invariant
+
+Sabiqah produces durable translation work only when that work is suitable for
+public consumption. Every structured Arabic and English record, name record,
+public provenance record, and generated reading presentation must be safe to
+serve without an invitation from the moment it is written. Restricting access
+is not a substitute for establishing a publication right.
+
+For this contract, a **work product** is a durable, book-facing source,
+translation, name, provenance, or presentation record. Translation attempts,
+critiques, restricted witness excerpts, model traces, and rights evidence are
+workflow evidence rather than work products; they remain private when required
+and can never be promoted in place. The pipeline may retain that evidence for
+reproducibility, but the only durable records it emits into the book-facing
+corpus satisfy this invariant.
+
+This invariant applies to expression, not merely file placement. A public work
+product must:
+
+- derive its displayed source text from an artifact classified
+  `approved-for-publication` under `content-source-compliance`;
+- contain Sabiqah-authored English and independently written editorial notes;
+- exclude modern introductions, annotations, critical apparatus, indexes, or
+  other protected expression unless that exact material is independently
+  approved for publication;
+- expose no private object locator, restricted witness passage, credential,
+  correspondence, or internal model trace; and
+- retain honest machine, human-review, uncertainty, and promotion states so a
+  public reader cannot mistake a working translation for an approved edition.
+
+Restricted editions, scans, comparison passages, and other private witnesses
+may remain controlled research evidence. They may identify a question or
+support an independently reasoned decision, but their expression must not be
+copied, closely paraphrased, or silently normalized into the public work
+product. Facts learned from a witness require an independently written record
+and, where applicable, verification against a publication-approved source.
+
+Public consumability is not canonical status. A machine-ready or unreviewed
+record may be publicly readable when it satisfies this invariant, while human
+approval, compliance approval, book-repository acceptance, and versioned
+canonical release remain separate later gates. Invitations may control
+approval, correction, editing, and access to private evidence; they must not be
+required merely to read a public work product.
+
 ## Required source bundle
 
 Every in-scope work must identify these roles, including pending roles:
 
-1. a complete human-viewable facsimile of the locked authoritative edition;
-2. machine-readable source text aligned to that edition;
+1. a complete human-viewable facsimile approved as the public source authority;
+2. machine-readable source text aligned to that facsimile and independently
+   approved for publication;
 3. explicitly classified alternative editions, translation witnesses,
    collateral works, and lexical references used to resolve uncertainty;
-4. page- or entry-addressable structured English with provenance and review
-   state;
+4. page- or entry-addressable, publicly consumable structured Arabic and
+   English with provenance and review state;
 5. a human-viewable English presentation generated from the structured
    English, with the authoritative language beside it when useful; and
 6. alignment and quality evidence binding all derived artifacts to their exact
@@ -56,6 +101,7 @@ reported complete without the evidence defined by the work profile.
 
 ```text
 source_locked
+  -> public_source_eligible
   -> source_text_aligned
   -> translation_scope_locked
   -> blind_translation_complete
@@ -74,6 +120,13 @@ Record the work, edition, publisher, date, editor or investigator, volume plan,
 extent, pagination, provider landing pages, local or private object IDs,
 languages, hashes, rights classifications, and known witnesses. A matching
 title is not proof that two artifacts represent the same edition.
+
+The public source authority must be classified `approved-for-publication`
+before durable translation work begins. If the best available machine text or
+facsimile is restricted, it may be retained only as a private witness while a
+publication-approved base is established. The workflow must not create a
+nominally private translation corpus with the expectation that access controls
+will later cure source or output eligibility.
 
 Prefer a provider that pairs a complete facsimile and machine-readable text for
 the same edition. Keep an independent facsimile when it materially improves
@@ -95,6 +148,11 @@ excluded front matter, indexes, repeated furniture, or unavailable passages.
 Coverage is measured against this locked inventory. Topic-focused cohorts must
 also record inclusion and exclusion decisions so later whole-book fills can
 extend the corpus without changing existing identities.
+
+The scope inventory must also identify and exclude unapproved modern
+paratextual material. Exclusion is explicit and reproducible; deleting
+footnotes after translation is not an acceptable substitute for starting from
+the publication-approved source authority.
 
 ### 4. Blind translation
 
@@ -132,12 +190,17 @@ critique, and witness findings. Record each material decision and its basis.
 Anything not resolved remains explicit on the affected unit; fluency must not
 hide uncertainty.
 
+Adjudication also confirms that the resulting expression is independently
+written and traceable to the publication-approved source authority. A private
+witness may justify a recorded intervention but may not supply public wording.
+
 ### 8. Machine validation
 
 Fail closed unless validation proves:
 
 - exact locked-scope coverage and ordering;
 - current hashes and complete provenance for every upstream stage;
+- public-source eligibility and public-output provenance;
 - no duplicated or missing substantive unit;
 - preservation of material numbers, names, notes, citations, and boundaries;
 - consistent terminology and durable name identities;
@@ -157,6 +220,11 @@ must preserve headings, entry numbers, page or entry boundaries, notes,
 uncertainty signals, and links to the authoritative source. The presentation
 records the structured-English hash so drift is detectable.
 
+The ordinary reading presentation contains only public work products and is
+available without enrollment. Reviewer identity, approval controls, correction
+tools, private evidence, and restricted witness access remain authenticated
+surfaces layered on top of that public presentation.
+
 The reviewer handoff includes:
 
 - the machine-readable English candidate and its generated presentation;
@@ -175,6 +243,9 @@ flags. Approval makes a record eligible for compliance and canonical-repository
 promotion; it does not perform promotion itself. Promotion follows
 `canonical-book-promotion` and the receiving repository independently validates
 the proposed records.
+
+Human review may improve or approve a publicly consumable working record, but
+it must never be used to retroactively legalize restricted source expression.
 
 ## Confidence is evidence, not one percentage
 
@@ -223,3 +294,11 @@ The workflow does not open human review or promotion when any required input is
 missing, stale, unclassified, misaligned, provider-indeterminate, structurally
 incomplete, or unsupported by current hashes. The blocked state must state the
 reason and the evidence needed to continue.
+
+The workflow must also refuse to write a durable translation record or reading
+presentation when the displayed source authority lacks
+`approved-for-publication` status, when output contains unapproved modern
+editorial expression, or when public-output provenance is incomplete. Existing
+records produced under an earlier policy remain quarantined until a
+reproducible audit either proves this invariant or rebuilds them from an
+approved source bundle.
