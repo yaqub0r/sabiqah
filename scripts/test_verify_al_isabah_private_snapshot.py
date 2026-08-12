@@ -44,7 +44,7 @@ class PrivateSnapshotTests(unittest.TestCase):
             corpus / "manifest.json",
             {"corpusId": "corpus-v1", "sourceCommit": source_commit, "objectCount": 2},
         )
-        archive = root / "snapshot.tar.gz"
+        archive = root / "snapshot.tar"
         archive.write_bytes(b"snapshot")
         files = list(corpus.rglob("*"))
         files = [path for path in files if path.is_file()]
