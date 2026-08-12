@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "contracts": [
+    {
+      "id": "content-source-compliance",
+      "title": "Content source compliance contract",
+      "status": "active",
+      "contractPath": "docs/contracts/content-source-compliance.md",
+      "paths": [
+        "docs/contracts/**",
+        "docs/architecture/content-governance.md",
+        "AGENTS.md",
+        ".github/pull_request_template.md",
+        ".github/workflows/contract-ack.yml",
+        "evidence/**",
+        "fixtures/releases/**",
+        "ops/content/**",
+        "scripts/acquisition/**",
+        "tools/contracts/**"
+      ]
+    },
+    {
+      "id": "canonical-book-promotion",
+      "title": "Canonical book promotion contract",
+      "status": "active",
+      "contractPath": "docs/contracts/canonical-book-promotion.md",
+      "paths": [
+        "docs/contracts/**",
+        "docs/architecture/book-release-contract.md",
+        "docs/architecture/content-governance.md",
+        "AGENTS.md",
+        ".github/pull_request_template.md",
+        ".github/workflows/contract-ack.yml",
+        "fixtures/releases/**",
+        "packages/release-model/**",
+        "apps/web/src/lib/release.ts",
+        "tools/contracts/**"
+      ]
+    }
+  ]
+}

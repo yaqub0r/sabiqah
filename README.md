@@ -29,6 +29,7 @@ production remains protected and undeployed.
 - Secret-handling policy: [`SECURITY.md`](SECURITY.md)
 - Application architecture: [`docs/architecture/application-platform.md`](docs/architecture/application-platform.md)
 - Content-governance model: [`docs/architecture/content-governance.md`](docs/architecture/content-governance.md)
+- Repository contracts: [`docs/contracts/INDEX.md`](docs/contracts/INDEX.md)
 - Book release contract: [`docs/architecture/book-release-contract.md`](docs/architecture/book-release-contract.md)
 - Reviewer access model: [`docs/security/reviewer-access.md`](docs/security/reviewer-access.md)
 
