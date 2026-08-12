@@ -80,6 +80,121 @@ afterEach(() => {
 });
 
 describe("CorpusReader", () => {
+  it("lets anonymous visitors read while keeping approval controls gated", async () => {
+    const responses = new Map<string, unknown>([
+      [
+        "/api/corpus/al-isabah/summary",
+        {
+          schemaVersion: "2.0.0",
+          work: {
+            slug: "al-isabah",
+            titleAr: "Ø§Ù„Ø¥ØµØ§Ø¨Ø©",
+            titleEn: "Al-Isabah fi Tamyiz al-Sahabah",
+          },
+          corpus: {
+            id: corpusId,
+            sourceRepository: "https://github.com/yaqub0r/al-isabah",
+            sourceCommit: "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178",
+            generatedAt: "2026-08-12T00:00:00.000Z",
+            promotionStatus: "blocked",
+          },
+          counts: {
+            entries: 2,
+            passages: 0,
+            translated: 2,
+            needsAttention: 0,
+            unresolvedItems: 0,
+            humanReviewed: 0,
+          },
+          volumes: [
+            {
+              id: "volume-08",
+              number: 8,
+              label: "Volume 8",
+              availability: "complete_translation",
+              itemCount: 2,
+              sectionCount: 1,
+              firstPrintedPage: 3,
+              lastPrintedPage: 3,
+              description: "Complete working translation.",
+            },
+          ],
+        },
+      ],
+      [
+        "/api/corpus/al-isabah/index",
+        {
+          schemaVersion: "2.0.0",
+          corpusId,
+          items: [firstItem, secondItem].map((record) => ({
+            id: record.id,
+            kind: record.kind,
+            sequence: record.sequence,
+            printedEntryNumber: record.printedEntryNumber,
+            volume: record.volume,
+            printedPageStart: 3,
+            printedPageEnd: 3,
+            sectionId,
+            titleEn: record.title.en,
+            titleAr: record.title.ar,
+            translationState: record.translationState,
+            machineAssessment: record.machineAssessment,
+            humanReview: record.humanReview,
+            unresolvedCount: 0,
+          })),
+        },
+      ],
+      [
+        "/api/corpus/al-isabah/reviews",
+        { corpusId, reviewedItems: 0, items: {} },
+      ],
+      [
+        `/api/corpus/al-isabah/sections/${sectionId}`,
+        {
+          schemaVersion: "2.0.0",
+          corpusId,
+          id: sectionId,
+          volume: 8,
+          label: "Pages 1â€“25",
+          availability: "complete_translation",
+          position: 1,
+          totalSections: 1,
+          printedPageStart: 3,
+          printedPageEnd: 3,
+          previousSectionId: null,
+          nextSectionId: null,
+          items: [firstItem, secondItem],
+        },
+      ],
+    ]);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const path = typeof input === "string" ? input : input.toString();
+        if (path === "/api/session") {
+          return { ok: false, json: async () => ({ error: "anonymous" }) };
+        }
+        const body = responses.get(path);
+        return { ok: body !== undefined, json: async () => body };
+      }),
+    );
+
+    render(<CorpusReader />);
+
+    expect(
+      await screen.findByText("The first short translated record."),
+    ).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Have an invitation to review or correct the text?",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Approve this translation" }),
+    ).toBeNull();
+  });
+
   it("presents consecutive short records inside a volume reading section", async () => {
     const responses = new Map<string, unknown>([
       [

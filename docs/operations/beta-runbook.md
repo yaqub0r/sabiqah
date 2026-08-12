@@ -46,23 +46,31 @@ As of 2026-08-11:
   for protected Arabic corrections;
 - production remained protected and unchanged.
 
-## Private review-corpus deployment
+## Private research preservation and public-corpus deployment
 
 The one-time preservation workflow exports the review corpus from the exact
 `yaqub0r/al-isabah` research revision recorded in
 `evidence/research-snapshots/al-isabah-a3b76bf.v1.json`. It also creates a
-restorable Git archive of that revision. Both objects are validated against the
-public, non-sensitive integrity manifest before and after upload to private R2.
+restorable Git archive of that revision. Both private objects are validated
+against the non-sensitive integrity manifest before and after upload to R2.
 The export includes draft Arabic and English, machine findings, and recorded
 translation workflow state, but excludes raw restricted witnesses and private
 comparison artifacts.
 
-Ordinary development deployments do not check out the promotion-blocked public
-research branch. They download the immutable corpus selected by the protected
-`AL_ISABAH_REVIEW_CORPUS_URI` environment variable and reject it unless every
-hash, count, source commit, and blocked-promotion marker matches the manifest.
-The private archive location is likewise configured outside Git through
-`AL_ISABAH_RESEARCH_SNAPSHOT_URI`.
+The preservation workflow then rebuilds the reader corpus from that legacy
+inventory and the pinned OpenITI source authority in
+`evidence/source-authorities/al-isabah.v1.json`. It replaces displayed Arabic,
+removes restricted apparatus and locators, enforces the honorific inventory,
+and emits a quarantine ledger. Validation fails unless every legacy record is
+accounted for exactly once as public or quarantined and every public record is
+bound to the approved source and license.
+
+Ordinary development deployments download only the immutable public corpus
+selected by `AL_ISABAH_PUBLIC_CORPUS_URI`. They validate its complete manifest,
+source hash, eligibility flags, quarantine accounting, and absence of forbidden
+private provenance before deploying. `AL_ISABAH_REVIEW_CORPUS_URI` and
+`AL_ISABAH_RESEARCH_SNAPSHOT_URI` remain private preservation inputs; the
+runtime reader never serves them.
 
 To update the research corpus, produce a new immutable snapshot and corpus ID in
 Sabiqah's governed workflow. Publication-ready records are promoted separately
@@ -72,18 +80,17 @@ immutable objects before switching the Worker to them. A rollback therefore
 restores the preceding Worker version, whose corpus ID still resolves to the
 preceding immutable objects.
 
-The public summary endpoint must expose only inventory counts and the
-volume/section map. The index, section, and item endpoints must return `403`
-without an active reviewer session; limited and suspended members must receive
-the same denial. Do not place R2 credentials, object keys, draft text, or source
-witnesses in deployment logs.
+The summary, index, section, item, and aggregate-review endpoints are public.
+The Worker is the only R2 origin client and returns cacheable reader responses;
+do not place R2 credentials or object keys in browser code or deployment logs.
+Review mutation endpoints still require an active same-origin session. Limited,
+suspended, and anonymous users can read, but cannot approve or correct.
 
 ## Smoke checks
 
-- Public work inventory loads without a session and contains no corpus text.
-- Anonymous access to the corpus index, every reading section, and every item
-  returns `403`.
-- An active reviewer can move through volumes and substantial reading sections
+- Public work inventory, reading sections, items, and aggregate approval counts
+  load without a session.
+- An anonymous reader can move through volumes and substantial reading sections
   in book order, with English on the left and Arabic on the right.
 - Search can locate a record without replacing volume/section navigation as the
   primary reading experience.
@@ -95,8 +102,8 @@ witnesses in deployment logs.
 - Repeating the same approval action does not append a duplicate event. A
   withdrawal appends a reversal and restores the record to the unreviewed
   filter when no other current approvals remain.
-- Anonymous, limited, suspended, and cross-origin requests cannot read or write
-  translation-approval state.
+- Anonymous readers can see aggregate translation-approval state but cannot
+  write it. Limited, suspended, and cross-origin requests also cannot write it.
 - A wrong invite fails without revealing whether Turnstile or the code failed.
 - A correct invite completes GitHub OAuth and creates one active membership.
 - Repeating OAuth updates mutable profile data without duplicating identity.

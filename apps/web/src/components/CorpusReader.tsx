@@ -119,8 +119,26 @@ function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
         </ol>
       </section>
       <p className="provenance-line">
-        Provenance <code>{item.provenance.sourceArtifactId}</code> · integrity{" "}
-        <code>{item.provenance.sourceArtifactSha256}</code>
+        {item.source ? (
+          <>
+            Public source{" "}
+            <a href={item.source.sourceUrl}>
+              OpenITI entry {item.source.entryNumber}
+            </a>{" "}
+            · {item.source.license.spdx} · integrity{" "}
+            <code>{item.source.sourceTextSha256}</code>
+          </>
+        ) : (
+          <>
+            Provenance{" "}
+            <code>
+              {"sourceArtifactId" in item.provenance
+                ? item.provenance.sourceArtifactId
+                : item.provenance.sourceAuthorityId}
+            </code>{" "}
+            · integrity <code>{item.provenance.sourceArtifactSha256}</code>
+          </>
+        )}
       </p>
     </details>
   );
@@ -131,11 +149,13 @@ function ReadingRecord({
   reviewState,
   onReviewStateChange,
   reviewStateLoaded,
+  canReview,
 }: {
   item: ReviewCorpusItem;
   reviewState?: TranslationReviewState;
   onReviewStateChange: (state: TranslationReviewState) => void;
   reviewStateLoaded: boolean;
+  canReview: boolean;
 }) {
   const pages = [
     ...new Set(
@@ -185,12 +205,14 @@ function ReadingRecord({
           </div>
         </section>
       ))}
-      <TranslationApproval
-        itemId={item.id}
-        state={reviewState}
-        onChange={onReviewStateChange}
-        ready={reviewStateLoaded}
-      />
+      {canReview && (
+        <TranslationApproval
+          itemId={item.id}
+          state={reviewState}
+          onChange={onReviewStateChange}
+          ready={reviewStateLoaded}
+        />
+      )}
       <ReviewEvidence item={item} />
     </article>
   );
@@ -235,6 +257,21 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
         ),
       );
 
+    fetch("/api/corpus/al-isabah/index", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error("The public table of contents could not be loaded.");
+        return parseReviewCorpusIndex(await response.json());
+      })
+      .then(setIndex)
+      .catch((caught) =>
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "The table of contents could not be loaded.",
+        ),
+      );
+
     fetch("/api/session", { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok) throw new Error("anonymous");
@@ -250,24 +287,6 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   }, []);
 
   useEffect(() => {
-    if (session !== "active") return;
-    fetch("/api/corpus/al-isabah/index", { credentials: "same-origin" })
-      .then(async (response) => {
-        if (!response.ok)
-          throw new Error(
-            "The protected table of contents could not be loaded.",
-          );
-        return parseReviewCorpusIndex(await response.json());
-      })
-      .then(setIndex)
-      .catch((caught) =>
-        setError(
-          caught instanceof Error
-            ? caught.message
-            : "The table of contents could not be loaded.",
-        ),
-      );
-
     fetch("/api/corpus/al-isabah/reviews", { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok)
@@ -297,7 +316,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   }, [index, links, selectedSectionId]);
 
   useEffect(() => {
-    if (session !== "active" || !selectedSectionId) return;
+    if (!selectedSectionId) return;
     setSection(undefined);
     fetch(
       `/api/corpus/al-isabah/sections/${encodeURIComponent(selectedSectionId)}`,
@@ -327,7 +346,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
             : "The reading section could not be loaded.",
         ),
       );
-  }, [selectedSectionId, session]);
+  }, [selectedSectionId]);
 
   useEffect(() => {
     if (!section || !pendingAnchor) return;
@@ -395,9 +414,10 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
             <p className="eyebrow">Available working edition</p>
             <h2 id="edition-map-title">Read by the book’s own volumes</h2>
             <p>
-              Volume 8 is available as a complete working translation. Earlier
-              volumes contain selected translated passages only; gaps are shown
-              honestly rather than disguised as a complete text.
+              Read the records that have passed public-source, apparatus, and
+              honorific checks. Coverage is partial and every visible entry is
+              still labeled as working or human-reviewed rather than presented
+              as a finished canonical edition.
             </p>
           </div>
           <div className="volume-shelf" aria-label="Available volumes">
@@ -409,16 +429,11 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                   setSelectedVolume(volume.number);
                   setSelectedSectionId("");
                 }}
-                disabled={session !== "active"}
                 key={volume.id}
               >
                 <strong>{volume.number}</strong>
                 <span>{volume.itemCount.toLocaleString()} records</span>
-                <small>
-                  {volume.availability === "complete_translation"
-                    ? "complete working translation"
-                    : "selected passages"}
-                </small>
+                <small>partial working coverage</small>
               </button>
             ))}
           </div>
@@ -429,21 +444,25 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
               reviewSummary?.reviewedItems ?? summary.counts.humanReviewed
             ).toLocaleString()}{" "}
             human reviewed
+            {summary.counts.quarantined !== undefined &&
+              ` · ${summary.counts.quarantined.toLocaleString()} quarantined for remediation`}
           </p>
         </section>
       )}
 
-      {session === "loading" && <p>Checking reviewer access…</p>}
       {session === "anonymous" && (
-        <CorpusAccess siteKey={siteKey} returnTo="/works/al-isabah/" />
+        <details className="reviewer-invitation">
+          <summary>Have an invitation to review or correct the text?</summary>
+          <CorpusAccess siteKey={siteKey} returnTo="/works/al-isabah/" />
+        </details>
       )}
       {session === "limited" && (
         <p className="issue-banner">
-          @{identity?.login} does not currently have access to restricted review
-          text.
+          @{identity?.login} can read the public working edition, but does not
+          currently have access to submit reviews or corrections.
         </p>
       )}
-      {session === "active" && index && (
+      {index && (
         <section
           className="book-reader"
           aria-label="Al-Isabah working translation"
@@ -540,6 +559,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                         updateReviewState(item.id, state)
                       }
                       reviewStateLoaded={reviewSummary !== undefined}
+                      canReview={session === "active"}
                       key={item.id}
                     />
                   ))}

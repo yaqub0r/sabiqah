@@ -5,7 +5,7 @@ import {
   githubAuthorizationUrl,
 } from "./github";
 import { cookie, json, parseCookies, safeReturnTo } from "./http";
-import { canReadCorpus, corpusJson, corpusObjectKey } from "./corpus";
+import { canReviewCorpus, corpusJson, corpusObjectKey } from "./corpus";
 import {
   getTranslationReviewSummary,
   isSameOrigin,
@@ -81,33 +81,26 @@ export default {
       if (
         url.pathname === "/api/corpus/al-isabah/index" &&
         request.method === "GET"
-      ) {
-        const member = await authenticatedMember(request, env);
-        if (!canReadCorpus(member))
-          return json(
-            { error: "Active reviewer access required" },
-            { status: 403 },
-          );
+      )
         return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("index"));
-      }
       if (
         url.pathname === "/api/corpus/al-isabah/reviews" &&
         request.method === "GET"
       ) {
         const member = await authenticatedMember(request, env);
-        if (!canReadCorpus(member))
-          return json(
-            { error: "Active reviewer access required" },
-            { status: 403 },
-          );
-        return json(await getTranslationReviewSummary(env.DB, member!.id));
+        return json(
+          await getTranslationReviewSummary(
+            env.DB,
+            canReviewCorpus(member) ? member!.id : null,
+          ),
+        );
       }
       const corpusReview = url.pathname.match(
         /^\/api\/corpus\/al-isabah\/reviews\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
       );
       if (corpusReview && request.method === "POST") {
         const member = await authenticatedMember(request, env);
-        if (!canReadCorpus(member))
+        if (!canReviewCorpus(member))
           return json(
             { error: "Active reviewer access required" },
             { status: 403 },
@@ -137,12 +130,6 @@ export default {
         /^\/api\/corpus\/al-isabah\/items\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
       );
       if (corpusItem && request.method === "GET") {
-        const member = await authenticatedMember(request, env);
-        if (!canReadCorpus(member))
-          return json(
-            { error: "Active reviewer access required" },
-            { status: 403 },
-          );
         return corpusJson(
           env.REVIEW_CORPUS,
           corpusObjectKey("item", corpusItem[1]),
@@ -152,12 +139,6 @@ export default {
         /^\/api\/corpus\/al-isabah\/sections\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
       );
       if (corpusSection && request.method === "GET") {
-        const member = await authenticatedMember(request, env);
-        if (!canReadCorpus(member))
-          return json(
-            { error: "Active reviewer access required" },
-            { status: 403 },
-          );
         return corpusJson(
           env.REVIEW_CORPUS,
           corpusObjectKey("section", corpusSection[1]),

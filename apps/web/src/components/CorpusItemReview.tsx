@@ -90,8 +90,8 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
   if (session === "limited")
     return (
       <p className="issue-banner">
-        @{identity?.login} does not currently have access to restricted review
-        text.
+        @{identity?.login} can read this record in the public edition, but does
+        not currently have access to submit a review.
       </p>
     );
   if (error) return <p className="issue-banner">{error}</p>;
@@ -111,8 +111,8 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
         </p>
       </header>
       <aside className="issue-banner">
-        <strong>Promotion blocked.</strong> This is intermediate research
-        material for review, not an approved public edition or release.
+        <strong>Canonical promotion blocked.</strong> This is a publicly
+        consumable working record, not a human-approved scholarly release.
       </aside>
       <div className="review-state-bar">
         <span className="badge">
@@ -244,7 +244,12 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
       <section className="source-list">
         <h2>Provenance</h2>
         <p>
-          Source artifact: <code>{item.provenance.sourceArtifactId}</code>
+          Source authority:{" "}
+          {"sourceArtifactId" in item.provenance ? (
+            <code>{item.provenance.sourceArtifactId}</code>
+          ) : (
+            <code>{item.provenance.sourceAuthorityId}</code>
+          )}
         </p>
         <p>
           Integrity: <code>{item.provenance.sourceArtifactSha256}</code>

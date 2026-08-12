@@ -69,11 +69,11 @@ export function parseTranslationReviewAction(
 
 export async function getTranslationReviewSummary(
   db: D1Database,
-  reviewerMemberId: number,
+  reviewerMemberId: number | null,
 ): Promise<TranslationReviewSummary> {
   const result = await db
     .prepare(reviewStateQuery)
-    .bind(CORPUS_ID, reviewerMemberId)
+    .bind(CORPUS_ID, reviewerMemberId ?? -1)
     .all<ReviewRow>();
   const items = Object.fromEntries(
     result.results.map((row) => [

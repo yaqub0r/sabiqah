@@ -50,36 +50,32 @@ The three initial fixtures are deliberately synthetic and cover:
 They test interface behavior and make no claim to be publishable Al-Isabah
 scholarship.
 
-## Intermediate review corpus
+## Public working corpus and private evidence
 
-The public reader contract above remains restricted to approved book releases.
-Research and pre-publication material uses a separate `review-corpus` contract.
-Its public summary contains only non-sensitive counts, the work's volume and
-reading-section map, immutable source commits, and the explicit promotion
-decision. It never contains source or translated text. Research cohorts and
-acquisition paths remain provenance; they do not become the reader's navigation
-or imply that one person or topic is the organizing subject of the book.
+Research inputs and public reading records are separate products. Restricted
+facsimiles, comparison transcriptions, editorial apparatus, model traces, and
+other pre-publication evidence remain in private R2. They are never made safe by
+removing a hostname or relabeling an old record.
 
-The protected table of contents, continuous reading sections, and item records
-may contain restricted Arabic, draft English, unresolved readings, and editorial
-decisions. They live in private R2 under an immutable corpus ID and are served
-only by the Worker after active-membership authentication. Short entries remain
-in book order inside larger sections so the default experience reads like a
-book; search and per-item review views are secondary tools. A successful parse
-or machine test means that the record is structurally usable; it does not change
-the source classification or make the content publication-ready.
+A `public-working` corpus is rebuilt from an approved, pinned source authority.
+Its generated manifest proves the source artifact and license, replaces any
+restricted displayed Arabic, excludes modern apparatus, removes private
+locators, applies the work's honorific rules, and accounts for every legacy
+record as either eligible or quarantined. A failed record is omitted from the
+reader, not silently repaired or dropped. Publicly readable means compliant and
+attributable; it does not mean human-reviewed or canonical.
 
-Each corpus is exported reproducibly from pinned book-repository revisions.
-Deployment verifies the generated manifest before upload, uploads immutable
-objects first, and changes the Worker's pinned corpus ID through review. The
-browser never receives R2 credentials or a private object key.
+Validated public-working summaries, indexes, sections, and items live under an
+immutable R2 prefix. R2 remains a private origin: the Worker serves these
+objects anonymously with public cache headers, while the browser receives
+neither R2 credentials nor object keys. Short entries remain in book order
+inside substantial sections so the default experience reads like a book.
 
 Human translation approvals are an operational overlay on this immutable
-corpus, not a rewrite of it. The Worker accepts an approval or withdrawal only
-from an active same-origin reviewer session and only after resolving the stable
-item ID against the pinned R2 corpus. Each event binds the decision to the
-corpus ID and exact object digest. Current counts and the reviewer's own state
-may be displayed and filtered in protected reader views, but these approvals do
-not alter the record's embedded review fields or satisfy canonical promotion.
-Promotion still requires the book repository's review policy and a pinned,
-versioned release.
+public corpus. The Worker accepts an approval or withdrawal only from an active
+same-origin reviewer session after resolving the stable item ID against the
+pinned corpus. Each event binds the decision to the corpus ID and exact object
+digest. Anonymous readers receive aggregate approval counts; an active reviewer
+also receives their own current state. Approval does not alter the record or
+satisfy canonical promotion. Promotion still requires the book repository's
+independent review policy and a pinned, versioned release.

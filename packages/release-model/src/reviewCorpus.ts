@@ -39,7 +39,7 @@ const volumeSchema = z
 
 export const reviewCorpusSummarySchema = z
   .object({
-    schemaVersion: z.literal("2.0.0"),
+    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
     work: z
       .object({
         slug: z.literal("al-isabah"),
@@ -54,6 +54,16 @@ export const reviewCorpusSummarySchema = z
         sourceCommit: z.string().regex(/^[a-f0-9]{40}$/),
         generatedAt: z.iso.datetime(),
         promotionStatus: z.literal("blocked"),
+        sourceAuthorityId: identifier.optional(),
+        sourceArtifactSha256: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
+        publicationStatus: z.literal("public-working").optional(),
+        license: z
+          .object({ spdx: z.string().min(1), url: z.url() })
+          .strict()
+          .optional(),
       })
       .strict(),
     counts: z
@@ -64,6 +74,8 @@ export const reviewCorpusSummarySchema = z
         needsAttention: z.number().int().nonnegative(),
         unresolvedItems: z.number().int().nonnegative(),
         humanReviewed: z.number().int().nonnegative(),
+        sourceInventory: z.number().int().nonnegative().optional(),
+        quarantined: z.number().int().nonnegative().optional(),
       })
       .strict(),
     volumes: z.array(volumeSchema).min(1),
@@ -76,6 +88,7 @@ export const reviewCorpusListItemSchema = z
     kind: z.enum(["entry", "passage"]),
     sequence: z.number().int().nonnegative(),
     printedEntryNumber: z.number().int().positive().nullable(),
+    sourceEntryNumber: z.number().int().positive().optional(),
     volume: z.number().int().positive(),
     printedPageStart: z.number().int().nonnegative().nullable(),
     printedPageEnd: z.number().int().nonnegative().nullable(),
@@ -86,13 +99,14 @@ export const reviewCorpusListItemSchema = z
     machineAssessment: z.enum(["pending", "passed", "needs_attention"]),
     humanReview: reviewStateSchema,
     unresolvedCount: z.number().int().nonnegative(),
+    publicEligibility: z.literal("eligible").optional(),
     relationship: z.string().optional(),
   })
   .strict();
 
 export const reviewCorpusIndexSchema = z
   .object({
-    schemaVersion: z.literal("2.0.0"),
+    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
     corpusId: identifier,
     items: z.array(reviewCorpusListItemSchema),
   })
@@ -117,12 +131,13 @@ const corpusUnresolvedSchema = z
 
 export const reviewCorpusItemSchema = z
   .object({
-    schemaVersion: z.literal("2.0.0"),
+    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
     corpusId: identifier,
     id: identifier,
     kind: z.enum(["entry", "passage"]),
     sequence: z.number().int().nonnegative(),
     printedEntryNumber: z.number().int().positive().nullable(),
+    sourceEntryNumber: z.number().int().positive().optional(),
     volume: z.number().int().positive(),
     title: z.object({ en: z.string().min(1), ar: z.string() }).strict(),
     relationship: z.string().optional(),
@@ -130,6 +145,7 @@ export const reviewCorpusItemSchema = z
     translationState: reviewStateSchema,
     machineAssessment: z.enum(["pending", "passed", "needs_attention"]),
     humanReview: reviewStateSchema,
+    publicEligibility: z.literal("eligible").optional(),
     segments: z
       .array(
         z
@@ -202,18 +218,60 @@ export const reviewCorpusItemSchema = z
           .strict(),
       )
       .min(1),
-    provenance: z
+    source: z
       .object({
-        sourceArtifactId: z.string().min(1),
-        sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
+        authorityId: identifier,
+        entryNumber: z.number().int().positive(),
+        pages: z.array(z.string().regex(/^V\d{2}P\d{3}$/)),
+        sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
+        sourceUrl: z.url(),
+        license: z.object({ spdx: z.string().min(1), url: z.url() }).strict(),
+        alignment: z
+          .object({
+            method: z.string().min(1),
+            titleScore: z.number().min(0).max(1),
+            bodyScore: z.number().min(0).max(1),
+          })
+          .strict(),
       })
-      .strict(),
+      .strict()
+      .optional(),
+    remediation: z
+      .object({
+        legacyAllocationNumber: z.number().int().positive(),
+        sourceArabicReplaced: z.literal(true),
+        privateLocatorsRemoved: z.literal(true),
+        honorificInventory: z.record(
+          z.string(),
+          z.number().int().nonnegative(),
+        ),
+        honorificTypeCorrections: z.number().int().nonnegative(),
+        removedApparatusParagraphs: z.number().int().nonnegative(),
+        removedEditorialNotes: z.number().int().nonnegative(),
+      })
+      .strict()
+      .optional(),
+    provenance: z.union([
+      z
+        .object({
+          sourceArtifactId: z.string().min(1),
+          sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
+        })
+        .strict(),
+      z
+        .object({
+          sourceAuthorityId: identifier,
+          sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
+          sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
+        })
+        .strict(),
+    ]),
   })
   .strict();
 
 export const reviewCorpusSectionSchema = z
   .object({
-    schemaVersion: z.literal("2.0.0"),
+    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
     corpusId: identifier,
     id: identifier,
     volume: z.number().int().positive(),

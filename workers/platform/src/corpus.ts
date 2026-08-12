@@ -1,7 +1,7 @@
 import { json } from "./http";
 
-export const CORPUS_ID = "al-isabah-reading-a3b76bf-v3";
-const CORPUS_PREFIX = `review-corpora/al-isabah/${CORPUS_ID}`;
+export const CORPUS_ID = "al-isabah-public-openiti-5835c18-v1";
+const CORPUS_PREFIX = `public-corpora/al-isabah/${CORPUS_ID}`;
 const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$/;
 
 export interface CorpusMember {
@@ -26,7 +26,7 @@ export function corpusObjectKey(
   return `${CORPUS_PREFIX}/${path}.json`;
 }
 
-export function canReadCorpus(member: CorpusMember | null): boolean {
+export function canReviewCorpus(member: CorpusMember | null): boolean {
   return member?.status === "active";
 }
 
@@ -40,7 +40,7 @@ export async function corpusJson(
   return new Response(object.body, {
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "private, no-store",
+      "cache-control": "public, max-age=300, s-maxage=3600",
       "x-content-type-options": "nosniff",
     },
   });

@@ -36,11 +36,10 @@ export function CorpusAccess({
   return (
     <section className="enrollment-card corpus-access">
       <p className="eyebrow">Reviewer access</p>
-      <h2>Open the working corpus</h2>
+      <h2>Review or correct the working corpus</h2>
       <p>
-        The inventory is public. Draft Arabic, translated text, unresolved
-        readings, and editorial decisions are available to active reviewers.
-        Enter the shared invitation once, then continue with GitHub.
+        Reading does not require an account. Enter the shared invitation once,
+        then continue with GitHub to approve translations or submit corrections.
       </p>
       <form onSubmit={enroll}>
         <label>

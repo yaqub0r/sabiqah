@@ -75,11 +75,13 @@ merge authority. Accepted changes and review discussion remain in each book
 repository. D1 stores cross-book evidence events such as enrollment, submitted
 review, maintainer acceptance, reversal, and moderation action.
 
-Translation approval in the private working reader is a separate, append-only
+Translation approval in the public working reader is a separate, append-only
 D1 evidence stream. An active reviewer may approve the English translation of
 an exact item in the Worker's pinned immutable corpus, or append a withdrawal
 of their own approval. The event records the corpus ID, stable item ID, and
-SHA-256 digest of the private R2 object. It does not approve the Arabic source,
+SHA-256 digest of the R2 object. Public read endpoints expose the validated
+working corpus without enrollment; invitations gate only review and correction
+actions. An approval does not approve the Arabic source,
 resolve editorial notes, merge a book-repository change, or promote the item to
 a public release. The reader derives current approval counts from each
 reviewer's latest event and may hide items with at least one current approval.

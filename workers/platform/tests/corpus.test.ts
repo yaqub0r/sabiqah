@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { canReadCorpus, corpusJson, corpusObjectKey } from "../src/corpus";
+import { canReviewCorpus, corpusJson, corpusObjectKey } from "../src/corpus";
 
-describe("private review corpus", () => {
-  it("requires an active member for corpus text", () => {
-    expect(canReadCorpus(null)).toBe(false);
-    expect(canReadCorpus({ status: "limited" })).toBe(false);
-    expect(canReadCorpus({ status: "suspended" })).toBe(false);
-    expect(canReadCorpus({ status: "active" })).toBe(true);
+describe("public working corpus", () => {
+  it("requires an active member only for review actions", () => {
+    expect(canReviewCorpus(null)).toBe(false);
+    expect(canReviewCorpus({ status: "limited" })).toBe(false);
+    expect(canReviewCorpus({ status: "suspended" })).toBe(false);
+    expect(canReviewCorpus({ status: "active" })).toBe(true);
   });
 
   it("builds only pinned, sanitized object keys", () => {
     expect(corpusObjectKey("summary")).toContain(
-      "al-isabah-reading-a3b76bf-v3",
+      "al-isabah-public-openiti-5835c18-v1",
     );
     expect(corpusObjectKey("item", "isabah-entry-00010759")).toMatch(
       /items\/isabah-entry-00010759\.json$/,
@@ -28,13 +28,15 @@ describe("private review corpus", () => {
     );
   });
 
-  it("returns corpus JSON with private no-store caching", async () => {
+  it("returns public corpus JSON with bounded shared caching", async () => {
     const bucket = {
       get: async () => ({ body: JSON.stringify({ ok: true }) }),
     } as unknown as R2Bucket;
     const response = await corpusJson(bucket, corpusObjectKey("summary"));
     expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=300, s-maxage=3600",
+    );
     expect(await response.json()).toEqual({ ok: true });
   });
 
