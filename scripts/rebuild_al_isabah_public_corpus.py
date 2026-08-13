@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v3"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v4"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -200,24 +200,37 @@ def compact_registry_aliases(value: str, language: str) -> str:
         )
     if not aliases:
         return value
+    aliases_pattern = "|".join(
+        re.escape(alias)
+        for alias, _entry in sorted(
+            aliases.values(), key=lambda candidate: len(candidate[0]), reverse=True
+        )
+    )
     pattern = re.compile(
-        "|".join(
-            re.escape(alias)
-            for alias, _entry in sorted(
-                aliases.values(), key=lambda candidate: len(candidate[0]), reverse=True
-            )
+        (
+            rf"(?P<leading>,[\t ]*)?(?P<alias>{aliases_pattern})(?P<trailing>[\t ]*,)?"
+            if language == "en"
+            else rf"(?P<alias>{aliases_pattern})"
         ),
         re.I if language == "en" else 0,
     )
 
     def replace(match: re.Match[str]) -> str:
-        lookup = match.group(0).casefold() if language == "en" else match.group(0)
-        alias, entry = aliases[lookup]
+        matched_alias = match.group("alias")
+        lookup = matched_alias.casefold() if language == "en" else matched_alias
+        _alias, entry = aliases[lookup]
         replacement = honorific_display(entry, language)
         if language == "en" and entry["semanticClass"] == "divine-exaltation":
-            divine_name = re.match(r"^(Allah|God)\b", match.group(0), re.I)
+            divine_name = re.match(r"^(Allah|God)\b", matched_alias, re.I)
             if divine_name:
                 replacement = f"{divine_name.group(1)} {replacement}"
+        if language == "en" and match.group("leading"):
+            # The commas punctuate the expanded parenthetical phrase, not the
+            # compact glyph. Attach the glyph to its referent and consume a
+            # paired closing comma when one is present.
+            return f" {replacement}"
+        if language == "en":
+            return f"{replacement}{match.group('trailing') or ''}"
         return replacement
 
     return pattern.sub(replace, value)

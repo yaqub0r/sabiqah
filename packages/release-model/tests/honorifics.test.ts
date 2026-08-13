@@ -40,6 +40,24 @@ describe("honorific registry", () => {
     expect(compactHonorifics("Allah Most High", "en")).toBe("Allah ﷾");
   });
 
+  it("attaches compact honorifics without parenthetical commas", () => {
+    expect(
+      compactHonorifics(
+        "the Prophet, may God bless him and grant him peace.",
+        "en",
+      ),
+    ).toBe("the Prophet ﷺ.");
+    expect(
+      compactHonorifics(
+        "the Prophet, may God bless him and grant him peace, said",
+        "en",
+      ),
+    ).toBe("the Prophet ﷺ said");
+    expect(
+      compactHonorifics("May God bless him and grant him peace, he said", "en"),
+    ).toBe("ﷺ, he said");
+  });
+
   it("expands compact forms for each reading language", () => {
     expect(expandHonorifics("Abu Bakr ﵁", "en")).toBe(
       "Abu Bakr may Allah be pleased with him",

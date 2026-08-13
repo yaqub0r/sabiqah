@@ -37,6 +37,14 @@ HONORIFIC_CODEPOINT_RANGES = re.compile(
     r"[\uFBC3-\uFBD2\uFD40-\uFD4F\uFDC8-\uFDCF\uFDFD-\uFDFF\U00010ED1-\U00010ED8]"
 )
 HONORIFIC_ENTRY_BY_ID = {entry["id"]: entry for entry in HONORIFIC_ENTRIES}
+MISATTACHED_COMPACT_HONORIFIC = re.compile(
+    r",[\t ]*(?:"
+    + "|".join(
+        re.escape(character)
+        for character in sorted(HONORIFIC_BY_CHARACTER, key=len, reverse=True)
+    )
+    + r")"
+)
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -159,6 +167,10 @@ def validate(root: Path) -> list[str]:
             errors.append(f"detail: public working English is empty or generic for {item_id}")
         if remediation.get("englishExcluded") is not False or exclusion_reasons:
             errors.append(f"detail: public working English is marked excluded for {item_id}")
+        if MISATTACHED_COMPACT_HONORIFIC.search(displayed_english):
+            errors.append(
+                f"detail: compact honorific is separated from its referent by a comma for {item_id}"
+            )
         if detail.get("honorificPolicyVersion") != HONORIFIC_POLICY_VERSION:
             errors.append(f"detail: wrong honorific policy version for {item_id}")
         occurrences = detail.get("honorifics")

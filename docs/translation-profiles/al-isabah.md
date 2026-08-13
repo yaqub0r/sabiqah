@@ -153,7 +153,10 @@ reclassifies the 14 legacy contextual passages as excluded pending approved
 public-source alignment rather than implying that they are remediable book
 records. Its public exclusion report records stable identifiers, safe titles,
 dispositions, and reason codes without exposing restricted text or storage
-details. Every version is immutable and bound to its own generated manifest.
+details. Version 4 normalizes punctuation that belonged to expanded English
+honorific phrases so the compact character attaches to its referent, and its
+validator rejects regressions such as `the Prophet, ﷺ`. Every version is
+immutable and bound to its own generated manifest.
 
 The former FirstLight implementation and closed Al-Isabah development branches
 are historical evidence, not the governing location. Sabiqah owns future
