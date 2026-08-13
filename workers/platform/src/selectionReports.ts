@@ -1,3 +1,5 @@
+import { expandHonorifics } from "@sabiqah/release-model";
+
 import { CORPUS_ID, corpusObjectKey } from "./corpus";
 
 export const REPORT_CATEGORIES = [
@@ -168,7 +170,9 @@ export async function createSelectionReport(
   const sourceText = canonicalText(item, report);
   if (!sourceText)
     throw new SelectionReportError("Report target not found", 404);
-  const source = collapsed(sourceText);
+  const source = collapsed(
+    expandHonorifics(sourceText, report.language === "English" ? "en" : "ar"),
+  );
   const selected = collapsed(report.selectedText);
   const context = collapsed(report.context);
   if (

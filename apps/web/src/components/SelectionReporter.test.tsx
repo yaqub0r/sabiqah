@@ -61,13 +61,15 @@ describe("SelectionReporter", () => {
           data-report-field="segment"
           data-report-language="English"
         >
-          This is public translated text for testing.
+          Ibn Manda mentioned her, but he erred. Abu Nu'aym corrected him,
+          explaining that she is Umm al-Dahhak, as she will appear correctly
+          under the kunyahs.
         </p>
         <SelectionReporter corpusId="al-isabah-public-openiti-5835c18-v8" />
       </>,
     );
 
-    selectText(screen.getByText(/public translated/), 8, 30);
+    selectText(screen.getByText(/Ibn Manda mentioned her/), 0, 18);
     fireEvent.click(
       await screen.findByRole("button", { name: "Report selected text" }),
     );
@@ -93,6 +95,40 @@ describe("SelectionReporter", () => {
       language: "English",
       category: "translation",
     });
+  });
+
+  it("keeps the native context menu without losing the selection action", async () => {
+    render(
+      <>
+        <p
+          data-report-item-id="isabah-entry-00011452"
+          data-report-segment-id="isabah-entry-00011452-segment-1"
+          data-report-field="segment"
+          data-report-language="English"
+        >
+          This is public translated text for testing.
+        </p>
+        <SelectionReporter corpusId="al-isabah-public-openiti-5835c18-v8" />
+      </>,
+    );
+    const paragraph = screen.getByText(/public translated/);
+    selectText(paragraph, 8, 30);
+
+    expect(
+      await screen.findByRole("button", { name: "Report selected text" }),
+    ).toBeTruthy();
+    const event = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      clientX: 60,
+      clientY: 80,
+    });
+    paragraph.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(
+      screen.getByRole("button", { name: "Report selected text" }),
+    ).toBeTruthy();
   });
 
   it("does not report a selection spanning two stable targets", async () => {

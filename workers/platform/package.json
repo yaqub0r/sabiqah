@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@sabiqah/release-model": "workspace:*"
+  },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json"
   }
