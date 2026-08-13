@@ -231,7 +231,7 @@ describe("CorpusReader", () => {
 
     expect(
       await screen.findByRole("button", {
-        name: "Volume 8, 2 records, partial coverage",
+        name: "Volume 8: 2 of 2 source entries translated; 0 of 2 translations human reviewed; Complete working translation",
         pressed: true,
       }),
     ).toBeTruthy();
@@ -508,6 +508,11 @@ describe("CorpusReader", () => {
 
     expect(
       await screen.findByRole("heading", { name: "Pages 1–25" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Volume 8: 2 of 2 source entries translated; 1 of 2 translations human reviewed; Complete working translation",
+      }),
     ).toBeTruthy();
     expect(screen.getByText("The first short translated record.")).toBeTruthy();
     expect(

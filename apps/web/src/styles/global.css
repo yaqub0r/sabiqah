@@ -398,15 +398,15 @@ button {
 }
 .volume-shelf {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   margin-top: 2rem;
 }
 .volume-shelf button {
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto auto auto 1fr 1fr;
   min-width: 0;
-  min-height: 10rem;
+  min-height: 15rem;
   align-content: stretch;
   align-items: start;
   gap: 0.2rem;
@@ -417,7 +417,7 @@ button {
   color: var(--ink);
   text-align: left;
 }
-.volume-shelf button:hover,
+.volume-shelf button:not(:disabled):hover,
 .volume-shelf button.selected {
   border-color: var(--green);
   background: var(--green);
@@ -426,6 +426,8 @@ button {
 .volume-shelf button:disabled {
   cursor: default;
   opacity: 1;
+  background: #f4eee2;
+  color: var(--muted);
 }
 .volume-shelf strong {
   font:
@@ -443,15 +445,50 @@ button {
   opacity: 0.75;
   text-transform: uppercase;
 }
-.volume-shelf .volume-count {
-  font-size: 0.78rem;
+.volume-shelf .coverage-state {
+  min-height: 2.25rem;
+  font-size: 0.82rem;
   font-weight: 800;
+  line-height: 1.25;
 }
-.volume-shelf small {
-  margin-top: 0.15rem;
+.coverage-stat {
+  display: grid !important;
+  align-content: end;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+}
+.coverage-stat > span:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.coverage-stat small {
   color: inherit;
   font-size: 0.68rem;
   opacity: 0.75;
+}
+.coverage-meter {
+  display: block;
+  height: 0.38rem;
+  overflow: hidden;
+  background: rgb(16 77 62 / 14%);
+}
+.coverage-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+.coverage-meter.review > span {
+  background: var(--gold);
+}
+.volume-shelf button.selected .coverage-meter,
+.volume-shelf button:not(:disabled):hover .coverage-meter {
+  background: rgb(255 255 255 / 24%);
+}
+.volume-shelf button.selected .coverage-meter > span,
+.volume-shelf button:not(:disabled):hover .coverage-meter > span {
+  background: white;
 }
 .edition-status {
   margin: 1.5rem 0 0;
@@ -936,7 +973,7 @@ footer p {
 
 @media (min-width: 1200px) {
   .volume-shelf {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -947,7 +984,7 @@ footer p {
     grid-template-columns: 1fr;
   }
   .volume-shelf {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
   .book-reader {
     grid-template-columns: 1fr;

@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v9"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v10"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -1249,11 +1249,24 @@ def quarantine_record(
     return record
 
 
-def build_sections(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def build_sections(
+    items: list[dict[str, Any]], source_entries: dict[int, OpenITIEntry]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     sections: list[dict[str, Any]] = []
     volumes: list[dict[str, Any]] = []
-    for volume in sorted({item["volume"] for item in items}):
+    source_counts = Counter(
+        entry.pages[0][0] for entry in source_entries.values() if entry.pages
+    )
+    for volume in sorted(source_counts):
         volume_items = [item for item in items if item["volume"] == volume]
+        source_item_count = source_counts[volume]
+        availability = (
+            "complete_translation"
+            if len(volume_items) == source_item_count
+            else "selected_passages"
+            if volume_items
+            else "not_translated"
+        )
         grouped: dict[int, list[dict[str, Any]]] = {}
         for item in volume_items:
             page_start, _ = printed_page_bounds(item)
@@ -1267,12 +1280,19 @@ def build_sections(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], l
                 "id": f"volume-{volume:02d}",
                 "number": volume,
                 "label": f"Volume {volume}",
-                "availability": "selected_passages",
+                "availability": availability,
+                "sourceItemCount": source_item_count,
                 "itemCount": len(volume_items),
                 "sectionCount": total,
                 "firstPrintedPage": min(volume_pages) if volume_pages else None,
                 "lastPrintedPage": max(volume_pages) if volume_pages else None,
-                "description": "Publicly consumable working entries; this is partial coverage rather than a complete translated volume.",
+                "description": (
+                    "Every source entry has a publicly consumable working translation."
+                    if availability == "complete_translation"
+                    else "Publicly consumable working entries cover part of this source volume."
+                    if availability == "selected_passages"
+                    else "No publicly consumable working translations are available yet."
+                ),
             }
         )
         for position, (bucket, section_items) in enumerate(ordered_groups, start=1):
@@ -1287,7 +1307,7 @@ def build_sections(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], l
                     "id": section_id,
                     "volume": volume,
                     "label": f"Pages {start}–{end}",
-                    "availability": "selected_passages",
+                    "availability": availability,
                     "position": position,
                     "totalSections": total,
                     "printedPageStart": min(pages) if pages else None,
@@ -1385,7 +1405,7 @@ def rebuild(
         )
 
     eligible.sort(key=lambda item: (item["volume"], printed_page_bounds(item)[0] or 0, item["sourceEntryNumber"]))
-    sections, volumes = build_sections(eligible)
+    sections, volumes = build_sections(eligible, openiti)
     section_by_item = {
         item["id"]: section["id"]
         for section in sections

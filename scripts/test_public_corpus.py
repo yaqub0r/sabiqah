@@ -28,6 +28,49 @@ VALIDATE_SPEC.loader.exec_module(VALIDATE)
 
 
 class PublicCorpusTests(unittest.TestCase):
+    def test_volume_coverage_classifies_complete_partial_and_untranslated_sources(self):
+        def source(number: int, volume: int) -> object:
+            return REBUILD.OpenITIEntry(
+                number=number,
+                exact="",
+                clean="",
+                rendered="",
+                pages=((volume, 1),),
+            )
+
+        def public_item(item_id: str, volume: int) -> dict[str, object]:
+            return {
+                "id": item_id,
+                "volume": volume,
+                "segments": [{"pages": [{"printedPage": 1}]}],
+            }
+
+        source_entries = {
+            1: source(1, 1),
+            2: source(2, 2),
+            3: source(3, 2),
+            4: source(4, 3),
+        }
+        _, volumes = REBUILD.build_sections(
+            [
+                public_item("volume-1-complete", 1),
+                public_item("volume-2-partial", 2),
+            ],
+            source_entries,
+        )
+
+        self.assertEqual(
+            [
+                (volume["number"], volume["availability"], volume["itemCount"], volume["sourceItemCount"])
+                for volume in volumes
+            ],
+            [
+                (1, "complete_translation", 1, 1),
+                (2, "selected_passages", 1, 2),
+                (3, "not_translated", 0, 1),
+            ],
+        )
+
     def test_worker_and_exporter_pin_the_same_public_corpus(self):
         runtime = (ROOT / "workers" / "platform" / "src" / "corpus.ts").read_text(
             encoding="utf-8"
@@ -340,6 +383,23 @@ class PublicCorpusTests(unittest.TestCase):
             )
             self.assertEqual(summary["counts"]["entries"], 1)
             self.assertEqual(summary["counts"]["quarantined"], 1)
+            self.assertEqual(
+                summary["volumes"],
+                [
+                    {
+                        "id": "volume-07",
+                        "number": 7,
+                        "label": "Volume 7",
+                        "availability": "complete_translation",
+                        "sourceItemCount": 1,
+                        "itemCount": 1,
+                        "sectionCount": 1,
+                        "firstPrintedPage": 1,
+                        "lastPrintedPage": 1,
+                        "description": "Every source entry has a publicly consumable working translation.",
+                    }
+                ],
+            )
             self.assertEqual(
                 summary["exclusions"],
                 {

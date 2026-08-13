@@ -162,6 +162,20 @@ function sectionLinks(index: ReviewCorpusIndex, volume: number): SectionLink[] {
   });
 }
 
+function coveragePercent(completed: number, total: number) {
+  return total === 0 ? 0 : Math.round((completed / total) * 100);
+}
+
+function coverageStateLabel(
+  availability: ReviewCorpusSummary["volumes"][number]["availability"],
+) {
+  if (availability === "complete_translation")
+    return "Complete working translation";
+  if (availability === "selected_passages")
+    return "Partial working translation";
+  return "Not yet translated";
+}
+
 function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
   return (
     <details className="record-evidence">
@@ -555,6 +569,26 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     [hideReviewed, reviewSummary, section],
   );
 
+  const volumeCoverage = useMemo(
+    () =>
+      summary?.volumes.map((volume) => {
+        const sourceCount = volume.sourceItemCount ?? volume.itemCount;
+        const volumeItems =
+          index?.items.filter((item) => item.volume === volume.number) ?? [];
+        const reviewedCount = volumeItems.filter(
+          (item) => (reviewSummary?.items[item.id]?.approvalCount ?? 0) > 0,
+        ).length;
+        return {
+          ...volume,
+          sourceCount,
+          reviewedCount,
+          translationPercent: coveragePercent(volume.itemCount, sourceCount),
+          reviewPercent: coveragePercent(reviewedCount, volume.itemCount),
+        };
+      }) ?? [],
+    [index, reviewSummary, summary],
+  );
+
   function updateReviewState(itemId: string, state: TranslationReviewState) {
     setReviewSummary((current) => {
       const previousReviewed = (current?.items[itemId]?.approvalCount ?? 0) > 0;
@@ -587,23 +621,22 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           aria-labelledby="edition-map-title"
         >
           <div>
-            <p className="eyebrow">Available working edition</p>
-            <h2 id="edition-map-title">Read by the book’s own volumes</h2>
+            <p className="eyebrow">Live edition coverage</p>
+            <h2 id="edition-map-title">Coverage by source volume</h2>
             <p>
-              Read the records that have passed public-source and apparatus
-              checks. Honorific or source-wording questions remain visible as
-              review evidence, and every entry is labeled as working or
-              human-reviewed rather than presented as a finished canonical
-              edition.
+              Translation coverage follows the deployed, source-locked corpus.
+              Human-review progress updates from current approvals. Select any
+              available volume to begin reading.
             </p>
           </div>
-          <div className="volume-shelf" aria-label="Available volumes">
-            {summary.volumes.map((volume) => (
+          <div className="volume-shelf" aria-label="Live coverage by volume">
+            {volumeCoverage.map((volume) => (
               <button
                 type="button"
                 className={selectedVolume === volume.number ? "selected" : ""}
                 aria-pressed={selectedVolume === volume.number}
-                aria-label={`Volume ${volume.number}, ${volume.itemCount.toLocaleString()} records, partial coverage`}
+                aria-label={`Volume ${volume.number}: ${volume.itemCount.toLocaleString()} of ${volume.sourceCount.toLocaleString()} source entries translated; ${volume.reviewedCount.toLocaleString()} of ${volume.itemCount.toLocaleString()} translations human reviewed; ${coverageStateLabel(volume.availability)}`}
+                disabled={volume.itemCount === 0}
                 onClick={() => {
                   setSelectedVolume(volume.number);
                   setSelectedSectionId("");
@@ -612,10 +645,33 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
               >
                 <span className="volume-label">Volume</span>
                 <strong>{volume.number}</strong>
-                <span className="volume-count">
-                  {volume.itemCount.toLocaleString()} records
+                <span className="coverage-state">
+                  {coverageStateLabel(volume.availability)}
                 </span>
-                <small>Partial coverage</small>
+                <span className="coverage-stat">
+                  <span>
+                    <b>{volume.translationPercent}%</b> translated
+                  </span>
+                  <small>
+                    {volume.itemCount.toLocaleString()} of{" "}
+                    {volume.sourceCount.toLocaleString()} source entries
+                  </small>
+                  <span className="coverage-meter" aria-hidden="true">
+                    <span style={{ width: `${volume.translationPercent}%` }} />
+                  </span>
+                </span>
+                <span className="coverage-stat">
+                  <span>
+                    <b>{volume.reviewPercent}%</b> human reviewed
+                  </span>
+                  <small>
+                    {volume.reviewedCount.toLocaleString()} of{" "}
+                    {volume.itemCount.toLocaleString()} translations
+                  </small>
+                  <span className="coverage-meter review" aria-hidden="true">
+                    <span style={{ width: `${volume.reviewPercent}%` }} />
+                  </span>
+                </span>
               </button>
             ))}
           </div>

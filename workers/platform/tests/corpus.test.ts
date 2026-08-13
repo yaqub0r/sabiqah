@@ -16,7 +16,7 @@ describe("public working corpus", () => {
   });
 
   it("builds only pinned, sanitized object keys", () => {
-    expect(CORPUS_ID).toBe("al-isabah-public-openiti-5835c18-v9");
+    expect(CORPUS_ID).toBe("al-isabah-public-openiti-5835c18-v10");
     expect(corpusObjectKey("summary")).toContain(CORPUS_ID);
     expect(corpusObjectKey("exclusions")).toMatch(/\/exclusions\.json$/);
     expect(corpusObjectKey("item", "isabah-entry-00010759")).toMatch(
