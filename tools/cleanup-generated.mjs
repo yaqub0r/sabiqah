@@ -1,4 +1,11 @@
-import { lstat, readFile, readdir, realpath, rm } from "node:fs/promises";
+import {
+  lstat,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  unlink,
+} from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -67,12 +74,6 @@ async function validateGeneratedDirectory(repository, target) {
   if (!status) {
     return false;
   }
-  if (status.isSymbolicLink()) {
-    throw new Error(`Refusing symbolic-link cleanup root: ${target}`);
-  }
-  if (!status.isDirectory()) {
-    throw new Error(`Generated cleanup target is not a directory: ${target}`);
-  }
 
   const realParent = await realpath(path.dirname(target));
   if (!isWithin(repository.realRoot, realParent)) {
@@ -81,7 +82,13 @@ async function validateGeneratedDirectory(repository, target) {
     );
   }
 
-  return true;
+  if (status.isSymbolicLink()) {
+    return { operation: "unlink", target };
+  } else if (!status.isDirectory()) {
+    throw new Error(`Generated cleanup target is not a directory: ${target}`);
+  }
+
+  return { operation: "remove", target };
 }
 
 async function collectGeneratedDirectories(repository) {
@@ -109,12 +116,15 @@ async function collectGeneratedDirectories(repository) {
 
   const targets = [];
   for (const candidate of candidates) {
-    if (await validateGeneratedDirectory(repository, candidate)) {
-      targets.push(candidate);
+    const validated = await validateGeneratedDirectory(repository, candidate);
+    if (validated) {
+      targets.push(validated);
     }
   }
 
-  return targets.sort((left, right) => right.length - left.length);
+  return targets.sort(
+    (left, right) => right.target.length - left.target.length,
+  );
 }
 
 export async function cleanupGenerated({
@@ -130,25 +140,32 @@ export async function cleanupGenerated({
     return [];
   }
 
-  for (const target of targets) {
+  for (const { operation, target } of targets) {
     const relative = path.relative(repository.absoluteRoot, target);
-    log(`${apply ? "Removing" : "Would remove"}: ${relative}`);
+    const verb = operation === "unlink" ? "unlink" : "remove";
+    log(
+      `${apply ? `${verb[0].toUpperCase()}${verb.slice(1)}ing` : `Would ${verb}`}: ${relative}`,
+    );
   }
 
   if (!apply) {
     log("Dry run only. Re-run with --apply after reviewing every target.");
-    return targets;
+    return targets.map(({ target }) => target);
   }
 
-  for (const target of targets) {
-    await rm(target, { force: false, maxRetries: 0, recursive: true });
+  for (const { operation, target } of targets) {
+    if (operation === "unlink") {
+      await unlink(target);
+    } else {
+      await rm(target, { force: false, maxRetries: 0, recursive: true });
+    }
     if (await lstatIfPresent(target)) {
       throw new Error(`Generated directory remains after cleanup: ${target}`);
     }
   }
 
   log(`Removed ${targets.length} generated dependency directories.`);
-  return targets;
+  return targets.map(({ target }) => target);
 }
 
 async function runCli() {
