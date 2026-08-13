@@ -94,6 +94,47 @@ describe("selection reports", () => {
     expect(headers.authorization).toBe("Bearer server-secret");
   });
 
+  it("validates context against the accessible honorific rendering", async () => {
+    const honorificItem = {
+      ...item,
+      segments: [
+        {
+          ...item.segments[0]!,
+          english:
+            "The sister of Khadijah, the wife of the Prophet ﷺ.\n\nAl-Zubayr ibn Bakkar mentioned her.",
+        },
+      ],
+    };
+    const githubFetch = vi.fn(async () =>
+      Response.json(
+        {
+          number: 98,
+          html_url: "https://github.com/yaqub0r/sabiqah/issues/98",
+        },
+        { status: 201 },
+      ),
+    );
+
+    await expect(
+      createSelectionReport(
+        bucketFor(honorificItem),
+        "server-secret",
+        { github_login: "beta-reviewer" },
+        {
+          ...valid,
+          selectedText: "The sister of Khadijah, the wife of the Prophet",
+          context:
+            "The sister of Khadijah, the wife of the Prophet may Allah bless him and grant him peace. Al-Zubayr ibn Bakkar mentioned her.",
+        },
+        "https://dev.sabiqah.org/api/corpus/al-isabah/reports",
+        githubFetch,
+      ),
+    ).resolves.toEqual({
+      number: 98,
+      url: "https://github.com/yaqub0r/sabiqah/issues/98",
+    });
+  });
+
   it.each([
     [undefined, valid, 503],
     ["token", { ...valid, selectedText: "invented text" }, 409],

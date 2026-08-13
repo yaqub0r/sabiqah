@@ -415,6 +415,13 @@ describe("CorpusReader presentation quality", () => {
       name: "Report selected text",
     });
     await expect.element(action).toBeVisible();
+    const contextMenu = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+    });
+    paragraph!.dispatchEvent(contextMenu);
+    expect(contextMenu.defaultPrevented).toBe(false);
+    await expect.element(action).toBeVisible();
     await action.click();
     const dialog = document.querySelector<HTMLElement>(
       ".selection-report-dialog",

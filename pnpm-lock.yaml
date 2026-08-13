@@ -98,7 +98,11 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
-  workers/platform: {}
+  workers/platform:
+    dependencies:
+      "@sabiqah/release-model":
+        specifier: workspace:*
+        version: link:../../packages/release-model
 
 packages:
   "@asamuzakjp/css-color@6.0.7":

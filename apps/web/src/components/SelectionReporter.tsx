@@ -97,24 +97,9 @@ export function SelectionReporter({ corpusId }: { corpusId: string }) {
       if (open) return;
       setDraft(draftFromSelection(window.getSelection(), corpusId));
     };
-    const context = (event: MouseEvent) => {
-      const next = draftFromSelection(window.getSelection(), corpusId);
-      const clickedTarget = targetFor(event.target as Node);
-      if (!next || clickedTarget?.dataset.reportItemId !== next.itemId) return;
-      event.preventDefault();
-      setDraft({
-        ...next,
-        position: {
-          left: Math.min(event.clientX, window.innerWidth - 190),
-          top: Math.min(event.clientY, window.innerHeight - 54),
-        },
-      });
-    };
     document.addEventListener("selectionchange", update);
-    document.addEventListener("contextmenu", context);
     return () => {
       document.removeEventListener("selectionchange", update);
-      document.removeEventListener("contextmenu", context);
     };
   }, [corpusId, open]);
 
