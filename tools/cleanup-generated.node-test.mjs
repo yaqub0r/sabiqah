@@ -94,7 +94,7 @@ test("dry run is inert and apply removes only generated dependency roots", async
   }
 });
 
-test("cleanup rejects a generated root that is a symbolic link", async () => {
+test("cleanup unlinks a generated root without traversing its target", async () => {
   const parent = await mkdtemp(path.join(os.tmpdir(), "sabiqah-cleanup-"));
   try {
     const root = await createRepository(parent);
@@ -107,10 +107,18 @@ test("cleanup rejects a generated root that is a symbolic link", async () => {
       process.platform === "win32" ? "junction" : "dir",
     );
 
-    await assert.rejects(
-      cleanupGenerated({ root, apply: true, log: () => {} }),
-      /Refusing symbolic-link cleanup root/,
-    );
+    const messages = [];
+    const dryRunTargets = await cleanupGenerated({
+      root,
+      apply: false,
+      log: (message) => messages.push(message),
+    });
+    assert.deepEqual(dryRunTargets, [path.join(root, ".pnpm")]);
+    assert.match(messages.join("\n"), /Would unlink: \.pnpm/);
+    assert.equal(await exists(path.join(root, ".pnpm")), true);
+
+    await cleanupGenerated({ root, apply: true, log: () => {} });
+    assert.equal(await exists(path.join(root, ".pnpm")), false);
     assert.equal(
       await readFile(path.join(outside, "sentinel.txt"), "utf8"),
       "keep\n",

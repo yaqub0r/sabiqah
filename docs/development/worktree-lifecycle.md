@@ -52,9 +52,11 @@ The first command is a dry run. Review every listed path before using the apply
 mode. The command accepts no target path: it verifies the Sabiqah repository
 root and removes only `.pnpm`, root `node_modules`, and `node_modules`
 directories directly beneath workspace packages. It rejects symbolic-link
-cleanup roots and verifies that every target parent remains within the
-repository. Links inside those generated directories are unlinked without
-removing their external targets.
+workspace containers and verifies that every target parent remains within the
+repository. A generated-dependency root that is itself a symbolic link or
+Windows junction is unlinked without traversing its target. Links inside a
+generated directory are likewise unlinked without removing their external
+targets.
 
 ## Start work
 
@@ -146,3 +148,7 @@ registry inconsistent.
 Worktrees created before this policy are migration debt. Inventory and reconcile
 them in a dedicated cleanup issue. Do not mix their deletion into feature work,
 and do not treat an ignored directory as proof that its contents are disposable.
+
+The historical migration discovered in issue #73 is recorded in
+[the 2026-08-13 migration record](worktree-migration-2026-08-13.md). Its
+OneDrive blocker must be resolved before retrying the stopped removals.
