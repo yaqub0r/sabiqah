@@ -144,7 +144,14 @@ beforeEach(() => {
     "fetch",
     vi.fn((input: string | URL | Request) => {
       const path = typeof input === "string" ? input : input.toString();
-      if (path === "/api/session") return response({}, false);
+      if (path === "/api/session") {
+        return response({
+          identity: {
+            login: "visual-reviewer",
+            membershipStatus: "active",
+          },
+        });
+      }
       if (path === "/api/corpus/al-isabah/summary") {
         return response({
           schemaVersion: "2.0.0",
@@ -199,6 +206,14 @@ beforeEach(() => {
       }
       if (path === "/api/corpus/al-isabah/reviews") {
         return response({ corpusId, reviewedItems: 0, items: {} });
+      }
+      if (path === "/api/corpus/al-isabah/reports") {
+        return response({
+          issue: {
+            number: 91,
+            url: "https://github.com/yaqub0r/sabiqah/issues/91",
+          },
+        });
       }
       if (path === `/api/corpus/al-isabah/sections/${sectionId}`) {
         return response({
@@ -368,6 +383,49 @@ describe("CorpusReader presentation quality", () => {
     await page.screenshot({
       element: poetry!.closest<HTMLElement>(".reading-bilingual")!,
       path: `../../.runtime/visual-qa/poetry-${document.documentElement.clientWidth}.png`,
+    });
+  });
+
+  it("keeps the selected-text action and report dialog usable", async () => {
+    root.render(<CorpusReader />);
+    await waitForVolumeShelf();
+    const deadline = Date.now() + 5_000;
+    let paragraph: HTMLElement | null = null;
+    while (Date.now() < deadline) {
+      paragraph = document.querySelector<HTMLElement>(
+        '[data-report-language="English"] .corpus-text',
+      );
+      if (paragraph) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    expect(paragraph).not.toBeNull();
+    const text = document
+      .createTreeWalker(paragraph!, NodeFilter.SHOW_TEXT)
+      .nextNode();
+    expect(text).not.toBeNull();
+    const range = document.createRange();
+    range.setStart(text!, 0);
+    range.setEnd(text!, Math.min(18, text!.textContent!.length));
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+
+    const action = await page.getByRole("button", {
+      name: "Report selected text",
+    });
+    await expect.element(action).toBeVisible();
+    await action.click();
+    const dialog = document.querySelector<HTMLElement>(
+      ".selection-report-dialog",
+    );
+    expect(dialog).not.toBeNull();
+    expect(dialog!.scrollWidth).toBeLessThanOrEqual(dialog!.clientWidth);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    await page.screenshot({
+      path: `../../.runtime/visual-qa/selection-report-${document.documentElement.clientWidth}.png`,
     });
   });
 });

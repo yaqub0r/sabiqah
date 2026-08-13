@@ -12,6 +12,10 @@ import {
   parseTranslationReviewAction,
   recordTranslationReview,
 } from "./translationReviews";
+import {
+  createSelectionReport,
+  SelectionReportError,
+} from "./selectionReports";
 
 interface RateLimitBinding {
   limit(input: { key: string }): Promise<{ success: boolean }>;
@@ -22,8 +26,10 @@ interface Env {
   DB: D1Database;
   REVIEW_CORPUS: R2Bucket;
   ENROLLMENT_RATE_LIMITER: RateLimitBinding;
+  SELECTION_REPORT_RATE_LIMITER: RateLimitBinding;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  GITHUB_ISSUES_TOKEN?: string;
   INVITE_CODE_DIGEST: string;
   INVITE_CODE_PEPPER: string;
   SESSION_SECRET: string;
@@ -99,6 +105,44 @@ export default {
             canReviewCorpus(member) ? member!.id : null,
           ),
         );
+      }
+      if (
+        url.pathname === "/api/corpus/al-isabah/reports" &&
+        request.method === "POST"
+      ) {
+        const member = await authenticatedMember(request, env);
+        if (!canReviewCorpus(member))
+          return json(
+            { error: "Active reviewer access required" },
+            { status: 403 },
+          );
+        if (!isSameOrigin(request))
+          return json(
+            { error: "Same-origin request required" },
+            { status: 403 },
+          );
+        const rate = await env.SELECTION_REPORT_RATE_LIMITER.limit({
+          key: `selection-report:${member!.github_user_id}`,
+        });
+        if (!rate.success)
+          return json(
+            { error: "Too many reports. Please try again shortly." },
+            { status: 429 },
+          );
+        try {
+          const issue = await createSelectionReport(
+            env.REVIEW_CORPUS,
+            env.GITHUB_ISSUES_TOKEN,
+            member!,
+            await request.json().catch(() => null),
+            request.url,
+          );
+          return json({ issue }, { status: 201 });
+        } catch (error) {
+          if (error instanceof SelectionReportError)
+            return json({ error: error.message }, { status: error.status });
+          throw error;
+        }
       }
       const corpusReview = url.pathname.match(
         /^\/api\/corpus\/al-isabah\/reviews\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,

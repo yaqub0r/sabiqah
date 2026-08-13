@@ -153,5 +153,8 @@ jobs:
           expect_status 403 \
             "${DEVELOPMENT_BASE_URL}/api/corpus/al-isabah/reviews/isabah-entry-00010759" \
             POST
+          expect_status 403 \
+            "${DEVELOPMENT_BASE_URL}/api/corpus/al-isabah/reports" \
+            POST
           expect_status 200 \
             "${DEVELOPMENT_BASE_URL}/api/corpus/al-isabah/sections/volume-08-pages-0001-0025"

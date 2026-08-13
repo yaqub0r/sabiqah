@@ -729,6 +729,78 @@ button {
   grid-column: 1 / -1;
   color: var(--warning);
 }
+.selection-report-action {
+  position: fixed;
+  z-index: 30;
+  width: auto;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--green);
+  border-radius: 0.3rem;
+  box-shadow: 0 0.5rem 1.5rem rgb(23 49 39 / 20%);
+  background: var(--green);
+  color: white;
+  cursor: pointer;
+  font: 700 0.82rem/1.2 sans-serif;
+}
+.selection-report-backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(18 31 27 / 60%);
+}
+.selection-report-dialog {
+  position: relative;
+  width: min(36rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 30%);
+}
+.selection-report-dialog h2 {
+  margin-top: 0;
+}
+.selection-report-dialog form {
+  display: grid;
+  gap: 1rem;
+}
+.selection-report-dialog blockquote {
+  max-height: 8rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-inline-start: 0.25rem solid var(--gold);
+  background: #fffaf1;
+}
+.selection-report-close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1.75rem;
+}
+.selection-report-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.selection-report-buttons .button {
+  width: auto;
+}
+.selection-report-success {
+  padding: 1rem;
+  border-left: 0.25rem solid var(--green);
+  background: var(--green-light);
+}
 .empty-reading-state {
   margin: 2rem 0;
   padding: 1.5rem;

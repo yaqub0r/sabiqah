@@ -35,6 +35,28 @@ idempotent. Reviewers can see aggregate current approval counts and their own
 current decision, but not another reviewer's identity. Approval does not grant
 merge, publication, or moderation authority.
 
+## Selected-text reports
+
+An active reviewer may select Arabic or English text in the public reader and
+submit a categorized report. The browser sends the stable corpus, record,
+segment, field, language, selected text, surrounding context, reader URL, and
+reviewer comment to the same-origin Worker. The Worker derives the reporter
+from the signed session, verifies the selection against the pinned R2 corpus,
+rejects stale or cross-record input, rate-limits by durable GitHub user ID, and
+creates one issue in the Sabiqah repository.
+
+The GitHub credential is a server-only fine-grained token restricted to the
+Sabiqah repository with Issues write and Metadata read. It is stored as the
+`GITHUB_ISSUES_TOKEN` Worker secret and is never returned to the browser. A
+report is unadjudicated workflow evidence; approved canonical changes still
+move through the individual book repository's review and release process.
+
+To enable this feature in an environment, create the credential with the scope
+above, store it with `wrangler secret put GITHUB_ISSUES_TOKEN`, deploy through
+the protected environment, submit one known test report, verify its structured
+location and escaped content, and then close the test issue. Rotate by creating
+and verifying a replacement before revoking the old token.
+
 ## Limitations and response
 
 A global code can leak and cannot identify who shared it. If abuse appears,

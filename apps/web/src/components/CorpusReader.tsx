@@ -12,6 +12,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
 import { HonorificText } from "./HonorificText";
+import { SelectionReporter } from "./SelectionReporter";
 import {
   TranslationApproval,
   type TranslationReviewState,
@@ -318,10 +319,22 @@ function ReadingRecord({
             {pages.length > 0 && ` · p. ${pages.join("–")}`}
           </p>
           <div>
-            <h3>
+            <h3
+              data-report-item-id={item.id}
+              data-report-segment-id="title"
+              data-report-field="title"
+              data-report-language="English"
+            >
               <HonorificText text={item.title.en} language="en" />
             </h3>
-            <p lang="ar" dir="rtl">
+            <p
+              lang="ar"
+              dir="rtl"
+              data-report-item-id={item.id}
+              data-report-segment-id="title"
+              data-report-field="title"
+              data-report-language="Arabic"
+            >
               <HonorificText text={item.title.ar} language="ar" />
             </p>
           </div>
@@ -331,7 +344,14 @@ function ReadingRecord({
         )}
         {item.segments.map((segment) => (
           <section className="reading-bilingual" key={segment.id}>
-            <div lang="en" dir="ltr">
+            <div
+              lang="en"
+              dir="ltr"
+              data-report-item-id={item.id}
+              data-report-segment-id={segment.id}
+              data-report-field="segment"
+              data-report-language="English"
+            >
               {segment.english ? (
                 <EnglishReadingText text={segment.english} />
               ) : (
@@ -340,7 +360,14 @@ function ReadingRecord({
                 </p>
               )}
             </div>
-            <div lang="ar" dir="rtl">
+            <div
+              lang="ar"
+              dir="rtl"
+              data-report-item-id={item.id}
+              data-report-segment-id={segment.id}
+              data-report-field="segment"
+              data-report-language="Arabic"
+            >
               <ArabicReadingText text={segment.arabic} />
             </div>
           </section>
@@ -733,6 +760,9 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                     </p>
                   )}
                 </div>
+                {session === "active" && (
+                  <SelectionReporter corpusId={section.corpusId} />
+                )}
                 <nav
                   className="section-pagination"
                   aria-label="Reading sections"
