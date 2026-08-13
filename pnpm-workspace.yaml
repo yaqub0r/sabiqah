@@ -3,6 +3,10 @@ packages:
   - packages/*
   - workers/*
 
+# Keep pnpm's linked dependency tree shallow enough for Windows tooling.
+# This remains project-local and must not be shared between worktrees.
+virtualStoreDir: .pnpm
+
 overrides:
   # Decap 3.15 requests vulnerable legacy releases. Keep the audit green and
   # remove these only after the upstream dependency ranges are patched.
