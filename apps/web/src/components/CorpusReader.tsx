@@ -452,7 +452,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                 }}
                 key={volume.id}
               >
-                <strong>{volume.number}</strong>
+                <strong>Volume {volume.number}</strong>
                 <span>{volume.itemCount.toLocaleString()} records</span>
                 <small>partial working coverage</small>
               </button>
