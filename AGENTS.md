@@ -16,12 +16,15 @@ pull requests.
 - On Windows, keep the canonical clone at a short, non-synchronized path. The
   reference path for this workstation is `D:\Temp\Sabiqah`; cloud and Linux
   environments should use an equivalently short local path.
+- Before removing a worktree, run the repository's generated-dependency cleanup
+  in dry-run mode and then its explicit apply mode. Do not improvise an
+  equivalent deletion command.
 - Remove worktrees through Git only after verifying the exact path, clean state,
   and integration status. Retain the current Codex worktree for the app to
   manage.
-- If Git cleanup fails, stop and diagnose. Never use recursive filesystem
-  deletion, manual `.git/worktrees` deletion, link traversal, or ACL changes as
-  a fallback.
+- If the repository cleanup command or Git cleanup fails, stop and diagnose.
+  Never use improvised recursive deletion, manual `.git/worktrees` deletion,
+  link traversal, or ACL changes as a fallback.
 
 ## Infrastructure safety
 

@@ -37,6 +37,25 @@ pnpm install --frozen-lockfile
 
 Do not share one virtual store between separate projects or worktrees.
 
+### Remove generated dependencies
+
+Git for Windows may fail to remove pnpm's junction-heavy dependency tree even
+when paths are short. Before removing a completed, non-current worktree, run the
+repository-owned cleanup command from that worktree:
+
+```powershell
+pnpm cleanup:generated
+pnpm cleanup:generated -- --apply
+```
+
+The first command is a dry run. Review every listed path before using the apply
+mode. The command accepts no target path: it verifies the Sabiqah repository
+root and removes only `.pnpm`, root `node_modules`, and `node_modules`
+directories directly beneath workspace packages. It rejects symbolic-link
+cleanup roots and verifies that every target parent remains within the
+repository. Links inside those generated directories are unlinked without
+removing their external targets.
+
 ## Start work
 
 1. Confirm the GitHub issue exists and accurately scopes the change.
@@ -79,6 +98,16 @@ is disposable.
 
 ## Remove a completed worktree
 
+From the completed worktree, remove generated dependencies first:
+
+```powershell
+pnpm cleanup:generated
+pnpm cleanup:generated -- --apply
+```
+
+If either command fails or lists an unexpected path, stop. Do not continue to
+worktree removal.
+
 From the canonical clone, use Git's own lifecycle commands:
 
 ```powershell
@@ -95,8 +124,8 @@ Do not manually delete `.git/worktrees` entries. Git owns that metadata.
 
 ## Failure handling
 
-A nonzero cleanup exit is a stop condition, not permission to use a stronger
-deletion command.
+A nonzero generated-cleanup or Git-cleanup exit is a stop condition, not
+permission to use a stronger deletion command.
 
 1. Preserve the command and exact error.
 2. Re-run only read-only checks for worktree registration, status, ownership,
@@ -107,9 +136,10 @@ deletion command.
 5. Retry only through Git after the cause is corrected.
 
 Never respond to a failed worktree removal with `Remove-Item -Recurse`, `rm -rf`,
-manual junction traversal, ACL modification, or direct deletion of the common
-Git directory. Those approaches can cross link boundaries, discard untracked
-work, or leave Git's registry inconsistent.
+manual junction traversal, ACL modification, direct deletion of the common Git
+directory, or an improvised substitute for `pnpm cleanup:generated`. Those
+approaches can cross link boundaries, discard untracked work, or leave Git's
+registry inconsistent.
 
 ## Legacy worktrees
 
