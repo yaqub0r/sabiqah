@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v5"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v6"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -93,7 +93,12 @@ FOOTNOTE_CALLOUT_RE = re.compile(r"\[?\(\d+\)\]?|\[\d+\]|[¹²³⁴⁵⁶⁷⁸�
 FOOTNOTE_PARAGRAPH_RE = re.compile(
     r"^\s*(?:\[?\(\d+\)\]?|\[\d+\]|[¹²³⁴⁵⁶⁷⁸⁹⁰]+)\s*"
 )
-EDITORIAL_NOTE_RE = re.compile(r"\[Editorial note:.*?\]", re.I | re.S)
+EDITORIAL_NOTE_RE = re.compile(r"\[(?:Editorial|Textual) note:.*?\]", re.I | re.S)
+STRUCTURAL_HEADING_PARAGRAPH_RE = re.compile(
+    r"^(?:THE LETTER\b.*|SECTION\s+(?:ONE|TWO|THREE|FOUR)\s*)$", re.I
+)
+METER_LABEL_RE = re.compile(r"\[al-([A-Za-z-]+) meter\]", re.I)
+METER_PARAGRAPH_RE = re.compile(r"^\[al-([A-Za-z-]+) meter\]$", re.I)
 
 # These records precede the contiguous women-entry run. Their mappings were
 # independently checked against title and body text. The final three correct
@@ -141,13 +146,20 @@ SOURCE_FORMULAS = (
 
 FORBIDDEN_PUBLIC_PATTERNS = (
     re.compile(r"usul\.ai", re.I),
-    re.compile(r"\[Editorial note:", re.I),
+    re.compile(r"\[(?:Editorial|Textual) note:", re.I),
     re.compile(r"al-isabah:(?:entry|passage):", re.I),
     re.compile(r"f12585cea28d7c7b318728f74b1a95a0d8b2812cb25d6e70f1b9e7b0b9422a3f", re.I),
     re.compile(r"(?:omitted|reads|added) in manuscript", re.I),
     re.compile(r"in manuscripts? [A-Z](?:\b|-)", re.I),
     re.compile(r"canonical (?:Arabic|text) reads", re.I),
 )
+
+SOURCE_HEADINGS_BEFORE: dict[int, tuple[dict[str, str], ...]] = {
+    11441: (
+        {"level": "letter", "ar": "حرف الظاء المشالة", "en": "Letter Ẓāʾ (ظ)"},
+        {"level": "section", "ar": "الأول", "en": "Section One"},
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -269,7 +281,7 @@ def compact_registry_aliases(value: str, language: str) -> str:
     )
     pattern = re.compile(
         (
-            rf"(?P<leading>,[\t ]*)?(?P<alias>{aliases_pattern})(?P<trailing>[\t ]*,)?"
+            rf"(?P<leading>(?:,[\t ]*|—[\t ]*))?(?P<alias>{aliases_pattern})(?P<trailing>(?:[\t ]*,|[\t ]*—))?"
             if language == "en"
             else rf"(?P<alias>{aliases_pattern})"
         ),
@@ -286,10 +298,11 @@ def compact_registry_aliases(value: str, language: str) -> str:
             if divine_name:
                 replacement = f"{divine_name.group(1)} {replacement}"
         if language == "en" and match.group("leading"):
-            # The commas punctuate the expanded parenthetical phrase, not the
-            # compact glyph. Attach the glyph to its referent and consume a
-            # paired closing comma when one is present.
-            return f" {replacement}"
+            # Commas and dashes punctuate the expanded parenthetical phrase,
+            # not the compact glyph. Attach the glyph to its referent and
+            # consume the paired closing punctuation when it is present.
+            trailing = match.group("trailing") or ""
+            return f" {replacement}{' ' if trailing.strip() == '—' else ''}"
         if language == "en":
             return f"{replacement}{match.group('trailing') or ''}"
         return replacement
@@ -649,16 +662,39 @@ def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
         removed_editorial += len(editorial)
         value = EDITORIAL_NOTE_RE.sub("", value)
         paragraphs = re.split(r"\n\s*\n", value)
-        for paragraph in paragraphs:
+        poetry_indices: set[int] = set()
+        for index, paragraph in enumerate(paragraphs):
+            if not METER_PARAGRAPH_RE.fullmatch(paragraph.strip()):
+                continue
+            cursor = index - 1
+            while cursor >= 0:
+                candidate = paragraphs[cursor].strip()
+                if not candidate or candidate.endswith(":"):
+                    break
+                poetry_indices.add(cursor)
+                cursor -= 1
+        for index, paragraph in enumerate(paragraphs):
             paragraph = paragraph.strip()
             if not paragraph:
+                continue
+            if STRUCTURAL_HEADING_PARAGRAPH_RE.fullmatch(paragraph):
                 continue
             if FOOTNOTE_PARAGRAPH_RE.match(paragraph):
                 removed_notes += 1
                 continue
             paragraph = FOOTNOTE_CALLOUT_RE.sub("", paragraph)
-            paragraph = re.sub(r"^\s*\d+\s*[-—]\s*", "", paragraph)
-            paragraph = " ".join(paragraph.split())
+            paragraph = re.sub(r"^\s*\d+\s*[.\-—]\s*", "", paragraph)
+            meter = METER_PARAGRAPH_RE.fullmatch(paragraph)
+            if meter:
+                paragraph = f"Meter: al-{meter.group(1).replace('Tawil', 'Ṭawīl')}"
+            elif index in poetry_indices:
+                paragraph = "\n".join(
+                    " ".join(line.split())
+                    for line in paragraph.splitlines()
+                    if line.strip()
+                )
+            else:
+                paragraph = " ".join(paragraph.split())
             paragraph = render_english_formulas(paragraph)
             if not paragraph:
                 continue
@@ -668,6 +704,11 @@ def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
                     continue
             kept.append(paragraph)
     value = render_english_formulas("\n\n".join(kept)).strip()
+    value = METER_LABEL_RE.sub(
+        lambda match: f"Meter: al-{match.group(1).replace('Tawil', 'Ṭawīl')}",
+        value,
+    )
+    value = re.sub(r"—\n\n(?=[a-z])", " ", value)
     return value, {
         "removedApparatusParagraphs": removed_notes,
         "removedEditorialNotes": removed_editorial,
@@ -867,6 +908,7 @@ def public_item(
         "sourceEntryNumber": source.number,
         "volume": page[0],
         "title": {"en": title_en, "ar": title_ar},
+        "headingsBefore": list(SOURCE_HEADINGS_BEFORE.get(source.number, ())),
         "translationState": "translated",
         "machineAssessment": "needs_attention" if unresolved else "passed",
         "humanReview": "unreviewed",

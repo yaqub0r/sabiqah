@@ -74,6 +74,13 @@ const longRecord = record(
   "طفية",
   "A deliberately longer body. ".repeat(30),
 );
+const structuredRecord = {
+  ...longRecord,
+  headingsBefore: [
+    { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
+    { level: "section", en: "Section One", ar: "الأول" },
+  ],
+};
 
 let root: Root;
 
@@ -157,7 +164,7 @@ beforeEach(() => {
         return response({
           schemaVersion: "2.0.0",
           corpusId,
-          items: [shortRecord, longRecord].map((item) => ({
+          items: [shortRecord, structuredRecord].map((item) => ({
             id: item.id,
             kind: item.kind,
             sequence: item.sequence,
@@ -192,7 +199,7 @@ beforeEach(() => {
           printedPageEnd: 1,
           previousSectionId: null,
           nextSectionId: null,
-          items: [shortRecord, longRecord],
+          items: [shortRecord, structuredRecord],
         });
       }
       return response({}, false);
@@ -287,5 +294,36 @@ describe("CorpusReader presentation quality", () => {
         path: `../../.runtime/visual-qa/entry-title-${document.documentElement.clientWidth}-${index === 0 ? "short" : "long"}.png`,
       });
     }
+  });
+
+  it("keeps source-structure headings distinct and collision-free", async () => {
+    root.render(<CorpusReader />);
+    const deadline = Date.now() + 5_000;
+    let heading: HTMLElement | null = null;
+    while (Date.now() < deadline) {
+      heading = document.querySelector<HTMLElement>(
+        ".source-structure-heading",
+      );
+      if (heading) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(heading).not.toBeNull();
+    expect(heading?.textContent).toContain("Letter Ẓāʾ (ظ)");
+    expect(heading?.textContent).toContain("حرف الظاء المشالة");
+    expect(heading?.scrollWidth).toBeLessThanOrEqual(heading!.clientWidth);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    const blocks = [...heading!.children].map((child) =>
+      child.getBoundingClientRect(),
+    );
+    if (blocks.length > 1 && blocks[0]!.top === blocks[1]!.top) {
+      expect(rectanglesOverlap(blocks[0]!, blocks[1]!)).toBe(false);
+    }
+    await page.screenshot({
+      element: heading!,
+      path: `../../.runtime/visual-qa/source-structure-${document.documentElement.clientWidth}.png`,
+    });
   });
 });

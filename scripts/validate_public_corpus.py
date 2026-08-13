@@ -44,8 +44,19 @@ MISATTACHED_COMPACT_HONORIFIC = re.compile(
         re.escape(character)
         for character in sorted(HONORIFIC_BY_CHARACTER, key=len, reverse=True)
     )
-    + r")"
+    + r")|—[\t ]*(?:"
+    + "|".join(
+        re.escape(character)
+        for character in sorted(HONORIFIC_BY_CHARACTER, key=len, reverse=True)
+    )
+    + r")[\t ]*—"
 )
+EMBEDDED_ENTRY_HEADING = re.compile(r"(?m)^\s*\d+\s*[.\-—]\s*\S")
+DANGLING_DASH_BOUNDARY = re.compile(r"—\n\n(?=[a-z])")
+STRUCTURAL_HEADING_IN_PROSE = re.compile(
+    r"(?mi)^(?:THE LETTER\b.*|SECTION\s+(?:ONE|TWO|THREE|FOUR))\s*$"
+)
+RAW_METER_LABEL = re.compile(r"\[al-[A-Za-z-]+ meter\]", re.I)
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -196,8 +207,21 @@ def validate(root: Path) -> list[str]:
             errors.append(f"detail: public working English is marked excluded for {item_id}")
         if MISATTACHED_COMPACT_HONORIFIC.search(displayed_english):
             errors.append(
-                f"detail: compact honorific is separated from its referent by a comma for {item_id}"
+                f"detail: compact honorific retains parenthetical punctuation for {item_id}"
             )
+        if EMBEDDED_ENTRY_HEADING.search(displayed_english):
+            errors.append(f"detail: embedded legacy entry heading remains for {item_id}")
+        if DANGLING_DASH_BOUNDARY.search(displayed_english):
+            errors.append(f"detail: dangling dash crosses a paragraph boundary for {item_id}")
+        if STRUCTURAL_HEADING_IN_PROSE.search(displayed_english):
+            errors.append(f"detail: source structure is embedded in entry prose for {item_id}")
+        if RAW_METER_LABEL.search(displayed_english):
+            errors.append(f"detail: raw poetry meter label remains for {item_id}")
+        if source_entry_number == 11441 and detail.get("headingsBefore") != [
+            {"level": "letter", "ar": "حرف الظاء المشالة", "en": "Letter Ẓāʾ (ظ)"},
+            {"level": "section", "ar": "الأول", "en": "Section One"},
+        ]:
+            errors.append(f"detail: source headings before entry 11441 are missing for {item_id}")
         if detail.get("honorificPolicyVersion") != HONORIFIC_POLICY_VERSION:
             errors.append(f"detail: wrong honorific policy version for {item_id}")
         occurrences = detail.get("honorifics")
