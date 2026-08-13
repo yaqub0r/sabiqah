@@ -4,8 +4,9 @@
 - **Canonical clone:** `D:\Temp\Sabiqah`
 - **Legacy common Git directory:**
   `C:\Users\yaqub\OneDrive\Documents\ChatGPT\Sabiqa\.git`
-- **Status:** Blocked by OneDrive placeholder deletion; do not retry until the
-  account owner completes the intervention below.
+- **Status:** Blocked by active host-managed worktrees and OneDrive-managed
+  deletion permissions. Hydration did not correct the deletion failure. Do not
+  retry cleanup from this legacy repository.
 
 ## Evidence and decisions
 
@@ -52,6 +53,31 @@ Git administrative record and `.git` marker were already removed by Git, so
 the repository cleanup command correctly refuses it. Do not treat that
 fail-closed result as permission for recursive deletion.
 
+## Recovery archive
+
+Before retirement, the complete legacy Git state was preserved outside
+OneDrive:
+
+- **Bundle:** `D:\Temp\Sabiqah-legacy-archive-20260813.bundle`
+- **Size:** 434,765 bytes
+- **SHA-256:**
+  `83278DCC11A52934C5378807BE93AE3A9DC4602AEBBBADD9686C6700A171EAD1`
+- **Verification:** `git bundle verify` passed and reported a complete history
+  with 63 refs.
+
+The bundle includes `refs/stash` for paused issue #39, both unique
+`codex/v8-alignment` commits, issue #79, every local branch, remote-tracking
+refs, and the retained worktree HEADs. It is intentionally local because
+blindly publishing unfinished or compliance-sensitive content to the public
+repository would expand disclosure.
+
+Verify the archive before any later retirement step:
+
+```powershell
+Get-FileHash -Algorithm SHA256 "D:\Temp\Sabiqah-legacy-archive-20260813.bundle"
+git bundle verify "D:\Temp\Sabiqah-legacy-archive-20260813.bundle"
+```
+
 ## Stop condition
 
 `git worktree remove` removed the issue-66 worktree directory but returned:
@@ -66,15 +92,23 @@ the old common `.git/worktrees` entries contain OneDrive reparse placeholders.
 No force removal, manual metadata deletion, ACL change, or alternate deletion
 primitive was attempted.
 
-## Required owner intervention
+The account owner then hydrated `.git` with **Always keep on this device** and
+ran the same Git prune command from a normal PowerShell session. Git still
+failed repeatedly while deleting `.git/worktrees/issue-26/logs`. Inspection
+showed Microsoft directory reparse tags and inherited deny-delete ACL entries
+on both stale and active administrative directories. Hydration is therefore
+not a sufficient repair.
 
-In Windows Explorer, make the legacy repository's `.git` directory available
-locally by selecting **Always keep on this device**, and wait for OneDrive to
-finish hydration. Do not delete or move anything. Then verify the folder no
-longer contains online-only placeholders and resume with Git's verbose prune
-dry run. Only after prune succeeds may the remaining reviewed lifecycle steps
-resume.
+## Retirement condition
 
-If hydration cannot be completed, retain the legacy common Git directory until
-the host-managed worktrees are closed, archive any unique branches, and retire
-the entire synchronized checkout through a separately approved migration.
+The legacy common Git directory cannot be retired while host-managed worktrees
+depend on it. Issue #79 is also open and its clean branch is currently checked
+out in the OneDrive repository. Future work must start from the canonical
+`D:\Temp\Sabiqah` project, not the synchronized checkout.
+
+After issue #79 and the retained Codex sessions are closed, verify the bundle
+again, confirm no worktree or process depends on the legacy common directory,
+and retire the synchronized checkout as one recoverable unit. Do not attempt
+individual `.git/worktrees` deletion, ACL edits, or further prune retries. The
+unregistered `D:\Temp\sq71-smoke` remnant remains a separately documented
+fail-closed artifact until a tested recovery mechanism exists.
