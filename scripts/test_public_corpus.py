@@ -110,6 +110,13 @@ class PublicCorpusTests(unittest.TestCase):
             )
             self.assertEqual(summary["counts"]["entries"], 1)
             self.assertEqual(summary["counts"]["quarantined"], 1)
+            self.assertEqual(
+                summary["exclusions"],
+                {
+                    "contextualPassagesPendingPublicSourceAlignment": 1,
+                    "recordsPendingRemediation": 0,
+                },
+            )
             self.assertEqual(VALIDATE.validate(output), [])
         return output
 
@@ -147,6 +154,22 @@ class PublicCorpusTests(unittest.TestCase):
             self.assertEqual(
                 quarantine["records"][0]["reasonCodes"],
                 ["no-approved-entry-alignment"],
+            )
+            self.assertEqual(
+                quarantine["records"][0]["disposition"],
+                "excluded-pending-public-source-alignment",
+            )
+            exclusions = json.loads(
+                (output / "exclusions.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                exclusions["records"][0],
+                {
+                    "id": "isabah-passage-test-0001",
+                    "kind": "passage",
+                    "disposition": "excluded-pending-public-source-alignment",
+                    "reasonCodes": ["no-approved-entry-alignment"],
+                },
             )
 
     def test_rebuild_keeps_public_english_when_literal_honorific_counts_differ(self):

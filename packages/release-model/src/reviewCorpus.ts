@@ -78,6 +78,16 @@ export const reviewCorpusSummarySchema = z
         quarantined: z.number().int().nonnegative().optional(),
       })
       .strict(),
+    exclusions: z
+      .object({
+        contextualPassagesPendingPublicSourceAlignment: z
+          .number()
+          .int()
+          .nonnegative(),
+        recordsPendingRemediation: z.number().int().nonnegative(),
+      })
+      .strict()
+      .optional(),
     volumes: z.array(volumeSchema).min(1),
   })
   .strict();

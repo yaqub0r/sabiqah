@@ -61,10 +61,11 @@ The preservation workflow then rebuilds the reader corpus from that legacy
 inventory and the pinned OpenITI source authority in
 `evidence/source-authorities/al-isabah.v1.json`. It replaces displayed Arabic,
 removes restricted apparatus and locators, enforces the honorific inventory,
-records exact observed and rendered honorific forms separately, and emits a
-quarantine ledger. Validation fails unless every legacy record is
-accounted for exactly once as public or quarantined and every public record is
-bound to the approved source and license. A literal honorific difference is a
+records exact observed and rendered honorific forms separately, and emits an
+internal quarantine ledger plus a public, metadata-only exclusion report.
+Validation fails unless every legacy record is accounted for exactly once as
+public or excluded, each exclusion has an explicit disposition, and every public
+record is bound to the approved source and license. A literal honorific difference is a
 review diagnostic; only a semantic, referent, or agreement concern changes
 translation readiness, and working English remains readable.
 

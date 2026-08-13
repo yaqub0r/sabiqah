@@ -466,7 +466,15 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
             ).toLocaleString()}{" "}
             human reviewed
             {summary.counts.quarantined !== undefined &&
-              ` · ${summary.counts.quarantined.toLocaleString()} quarantined for remediation`}
+              !summary.exclusions &&
+              ` · ${summary.counts.quarantined.toLocaleString()} records excluded from this edition`}
+            {summary.exclusions &&
+              summary.exclusions
+                .contextualPassagesPendingPublicSourceAlignment > 0 &&
+              ` · ${summary.exclusions.contextualPassagesPendingPublicSourceAlignment.toLocaleString()} contextual passages excluded pending public-source alignment`}
+            {summary.exclusions &&
+              summary.exclusions.recordsPendingRemediation > 0 &&
+              ` · ${summary.exclusions.recordsPendingRemediation.toLocaleString()} records withheld for remediation`}
           </p>
         </section>
       )}

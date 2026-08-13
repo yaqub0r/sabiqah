@@ -86,6 +86,10 @@ describe("review reading contract", () => {
         unresolvedItems: 288,
         humanReviewed: 0,
       },
+      exclusions: {
+        contextualPassagesPendingPublicSourceAlignment: 14,
+        recordsPendingRemediation: 0,
+      },
       volumes: [
         {
           id: "volume-08",
@@ -101,6 +105,9 @@ describe("review reading contract", () => {
       ],
     });
     expect(summary.volumes[0]?.availability).toBe("complete_translation");
+    expect(
+      summary.exclusions?.contextualPassagesPendingPublicSourceAlignment,
+    ).toBe(14);
     expect(JSON.stringify(summary)).not.toContain("cohort");
   });
 

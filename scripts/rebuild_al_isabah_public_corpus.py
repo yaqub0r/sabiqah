@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v2"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v3"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -887,13 +887,27 @@ def list_item(item: dict[str, Any], section_id: str) -> dict[str, Any]:
 def quarantine_record(
     legacy: dict[str, Any], source_number: int | None, reasons: list[str]
 ) -> dict[str, Any]:
-    return {
+    reason_codes = sorted(set(reasons))
+    is_contextual_passage = (
+        legacy.get("kind") == "passage"
+        and reason_codes == ["no-approved-entry-alignment"]
+    )
+    record = {
         "id": legacy["id"],
         "kind": legacy.get("kind", "entry"),
         "legacyAllocationNumber": legacy.get("printedEntryNumber"),
         "candidateSourceEntryNumber": source_number,
-        "reasonCodes": sorted(set(reasons)),
+        "disposition": (
+            "excluded-pending-public-source-alignment"
+            if is_contextual_passage
+            else "remediation-required"
+        ),
+        "reasonCodes": reason_codes,
     }
+    title_en = legacy.get("title", {}).get("en")
+    if isinstance(title_en, str) and title_en.strip():
+        record["titleEn"] = title_en.strip()
+    return record
 
 
 def build_sections(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -1031,6 +1045,13 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
     list_items = [list_item(item, section_by_item[item["id"]]) for item in eligible]
     unresolved_count = sum(item["unresolvedCount"] for item in list_items)
     needs_attention = sum(item["machineAssessment"] == "needs_attention" for item in list_items)
+    disposition_counts = Counter(record["disposition"] for record in quarantined)
+    exclusion_summary = {
+        "contextualPassagesPendingPublicSourceAlignment": disposition_counts[
+            "excluded-pending-public-source-alignment"
+        ],
+        "recordsPendingRemediation": disposition_counts["remediation-required"],
+    }
     summary = {
         "schemaVersion": SCHEMA_VERSION,
         "work": {
@@ -1059,6 +1080,7 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
             "humanReviewed": 0,
             "quarantined": len(quarantined),
         },
+        "exclusions": exclusion_summary,
         "volumes": volumes,
     }
     index = {"schemaVersion": SCHEMA_VERSION, "corpusId": CORPUS_ID, "items": list_items}
@@ -1073,9 +1095,23 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
         ),
         "records": sorted(quarantined, key=lambda record: record["id"]),
     }
+    exclusions = {
+        "schemaVersion": "1.0.0",
+        "corpusId": CORPUS_ID,
+        "counts": exclusion_summary,
+        "records": [
+            {
+                key: record[key]
+                for key in ("id", "kind", "titleEn", "disposition", "reasonCodes")
+                if key in record
+            }
+            for record in sorted(quarantined, key=lambda record: record["id"])
+        ],
+    }
     write_json(output / "summary.json", summary)
     write_json(output / "index.json", index)
     write_json(output / "quarantine.json", quarantine)
+    write_json(output / "exclusions.json", exclusions)
     for item in eligible:
         write_json(output / "items" / f"{item['id']}.json", item)
     for section in sections:
