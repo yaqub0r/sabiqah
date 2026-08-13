@@ -6,6 +6,20 @@
 
 -
 
+## Visual QA
+
+- [ ] Not user-facing; explanation below
+- [ ] Automated visual smoke passed
+- [ ] Inspected at `390x844`, `1024x768`, and `1440x900`
+
+Commit and URL tested:
+
+-
+
+Screenshots, artifacts, or non-visual explanation:
+
+-
+
 ## Contracts consulted
 
 Read `docs/contracts/INDEX.md`, then list every governing contract ID selected

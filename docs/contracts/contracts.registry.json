@@ -78,6 +78,27 @@
         "migrations/*translation*.sql",
         "tools/contracts/**"
       ]
+    },
+    {
+      "id": "presentation-quality",
+      "title": "Presentation quality contract",
+      "status": "active",
+      "contractPath": "docs/contracts/presentation-quality.md",
+      "paths": [
+        "docs/contracts/**",
+        "AGENTS.md",
+        ".github/pull_request_template.md",
+        ".github/workflows/application-validate.yml",
+        "apps/web/src/**/*.astro",
+        "apps/web/src/components/**",
+        "apps/web/src/layouts/**",
+        "apps/web/src/pages/**",
+        "apps/web/src/styles/**",
+        "tests/visual/**",
+        "vitest.config.mts",
+        "vitest.browser.config.mts",
+        "tools/contracts/**"
+      ]
     }
   ]
 }
