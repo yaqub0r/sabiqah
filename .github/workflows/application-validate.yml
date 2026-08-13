@@ -12,6 +12,7 @@ on:
       - "scripts/rebuild_al_isabah_public_corpus.py"
       - "scripts/validate_public_corpus.py"
       - "scripts/test_*corpus.py"
+      - "scripts/acquisition/**"
       - "docs/attribution/**"
       - "docs/translation-profiles/al-isabah.md"
       - "evidence/source-authorities/**"
@@ -37,6 +38,7 @@ on:
       - "scripts/rebuild_al_isabah_public_corpus.py"
       - "scripts/validate_public_corpus.py"
       - "scripts/test_*corpus.py"
+      - "scripts/acquisition/**"
       - "docs/attribution/**"
       - "docs/translation-profiles/al-isabah.md"
       - "evidence/source-authorities/**"
@@ -85,6 +87,9 @@ jobs:
 
       - name: Test corpus exporters and validators
         run: python3 -m unittest discover -s scripts -p "test_*corpus.py"
+
+      - name: Test private evidence ingestion
+        run: python3 -m unittest discover -s scripts/acquisition -p "test_*.py"
 
       - name: Audit production dependencies
         run: pnpm audit:prod

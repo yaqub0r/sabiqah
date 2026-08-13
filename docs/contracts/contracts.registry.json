@@ -20,6 +20,22 @@
       ]
     },
     {
+      "id": "private-evidence-ingestion",
+      "title": "Private evidence ingestion contract",
+      "status": "active",
+      "contractPath": "docs/contracts/private-evidence-ingestion.md",
+      "paths": [
+        "docs/contracts/**",
+        "docs/operations/private-evidence-ingestion.md",
+        "docs/security/access-model.md",
+        "docs/security/credential-register.md",
+        "ops/credential-expirations.json",
+        "scripts/acquisition/**",
+        ".github/workflows/application-validate.yml",
+        "tools/contracts/**"
+      ]
+    },
+    {
       "id": "canonical-book-promotion",
       "title": "Canonical book promotion contract",
       "status": "active",
