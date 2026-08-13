@@ -30,15 +30,25 @@ SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
 SOURCE_REPOSITORY = "https://github.com/OpenITI/0875AH"
-SOURCE_URL = (
-    "https://github.com/OpenITI/0875AH/blob/"
-    + SOURCE_COMMIT
-    + "/data/0852IbnHajarCasqalani/"
+SOURCE_PATH = (
+    "data/0852IbnHajarCasqalani/"
     "0852IbnHajarCasqalani.IsabaFiTamyiz/"
     "0852IbnHajarCasqalani.IsabaFiTamyiz.JK000533-ara1.mARkdown"
 )
+SOURCE_URL = (
+    "https://github.com/OpenITI/0875AH/blob/"
+    + SOURCE_COMMIT
+    + "/"
+    + SOURCE_PATH
+)
 LICENSE_SPDX = "CC-BY-NC-SA-4.0"
 LICENSE_URL = "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+DEFAULT_SOURCE_AUTHORITY = (
+    Path(__file__).resolve().parents[1]
+    / "evidence"
+    / "source-authorities"
+    / "al-isabah.v1.json"
+)
 
 ENTRY_RE = re.compile(r"^### \$+\s+(\d+)\s+(.*)$")
 PAGE_RE = re.compile(r"\bPageV(\d{2})P(\d{3})\b")
@@ -166,6 +176,51 @@ def reset_output(output: Path) -> None:
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
+
+
+def validate_source_authority_record(path: Path) -> None:
+    record = json.loads(path.read_text(encoding="utf-8"))
+    machine = record.get("machineText", {})
+    binding = record.get("sourceBinding", {})
+    expected = {
+        "authorityId": (record.get("authorityId"), SOURCE_AUTHORITY_ID),
+        "assessment.status": (
+            record.get("assessment", {}).get("status"),
+            "approved-for-publication",
+        ),
+        "sourceBinding.mode": (
+            binding.get("mode"),
+            "licensed-machine-text-with-independent-facsimile-witness",
+        ),
+        "sourceBinding.humanViewableAuthority": (
+            binding.get("humanViewableAuthority"),
+            "machineText",
+        ),
+        "sourceBinding.sameEditionFacsimileApproved": (
+            binding.get("sameEditionFacsimileApproved"),
+            False,
+        ),
+        "machineText.repository": (machine.get("repository"), SOURCE_REPOSITORY),
+        "machineText.commit": (machine.get("commit"), SOURCE_COMMIT),
+        "machineText.path": (machine.get("path"), SOURCE_PATH),
+        "machineText.sha256": (machine.get("sha256"), SOURCE_SHA256),
+        "machineText.license.spdx": (
+            machine.get("license", {}).get("spdx"),
+            LICENSE_SPDX,
+        ),
+        "machineText.license.url": (
+            machine.get("license", {}).get("url"),
+            LICENSE_URL,
+        ),
+    }
+    mismatches = [
+        name for name, (actual, required) in expected.items() if actual != required
+    ]
+    if mismatches:
+        raise ValueError(
+            "Source-authority record does not match the public corpus contract: "
+            + ", ".join(mismatches)
+        )
 
 
 def normalize_arabic(value: str) -> str:
@@ -746,10 +801,14 @@ def main() -> int:
     parser.add_argument("--openiti", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
+        "--source-authority", type=Path, default=DEFAULT_SOURCE_AUTHORITY
+    )
+    parser.add_argument(
         "--generated-at",
         default=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     )
     args = parser.parse_args()
+    validate_source_authority_record(args.source_authority.resolve())
     summary = rebuild(
         args.legacy_corpus.resolve(),
         args.openiti.resolve(),

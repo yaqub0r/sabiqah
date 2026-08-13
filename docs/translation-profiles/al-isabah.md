@@ -38,6 +38,14 @@ the attribution and license recorded in
 Collections Online 1905-1907 facsimile is a public-domain visual witness, not a
 claim that its pagination matches the OpenITI edition.
 
+This source bundle uses the contract's licensed-transcription pathway: the
+human-viewable and machine-readable publication authority are the same pinned
+OpenITI artifact. No reusable same-edition facsimile has been approved, so the
+working edition reports OpenITI entry and page markers as source metadata but
+does not describe them as scan-verified. The ACO facsimile can corroborate the
+underlying medieval text only at an independently established passage; it never
+supplies OpenITI pagination or public wording.
+
 The 1995 Dar al-Kutub al-Ilmiyyah edition currently represented by the legacy
 Usul-aligned research corpus is `private-reference`, not the public Arabic
 authority. It may be consulted privately as an alternative-edition witness,

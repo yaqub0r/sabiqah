@@ -28,7 +28,8 @@ al-Sa'adah (1323-1325/1905-1907) through the
 ACO states that it believes the materials displayed by the project are in the
 public domain. Sabiqah uses these scans as an independent visual witness; it
 does not claim that their pagination is identical to the OpenITI source
-edition.
+edition. No reusable facsimile of OpenITI's 1992 source edition is approved, so
+OpenITI page markers are source metadata rather than scan-verified citations.
 
 The exact item identifiers, permanent links, hashes, and operational rights
 assessment are recorded in

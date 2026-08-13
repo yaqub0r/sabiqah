@@ -27,6 +27,20 @@ VALIDATE_SPEC.loader.exec_module(VALIDATE)
 
 
 class PublicCorpusTests(unittest.TestCase):
+    def test_source_authority_record_matches_the_pinned_contract(self):
+        REBUILD.validate_source_authority_record(REBUILD.DEFAULT_SOURCE_AUTHORITY)
+
+    def test_source_authority_record_rejects_a_false_facsimile_claim(self):
+        with tempfile.TemporaryDirectory() as temp:
+            record = json.loads(
+                REBUILD.DEFAULT_SOURCE_AUTHORITY.read_text(encoding="utf-8")
+            )
+            record["sourceBinding"]["sameEditionFacsimileApproved"] = True
+            path = Path(temp) / "authority.json"
+            path.write_text(json.dumps(record), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "sameEditionFacsimileApproved"):
+                REBUILD.validate_source_authority_record(path)
+
     def legacy_entry(self) -> dict:
         return {
             "schemaVersion": "2.0.0",

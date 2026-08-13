@@ -13,6 +13,12 @@
     "scope": "The pinned OpenITI Arabic transcription, after removal of OpenITI markup and application of the recorded honorific typography map.",
     "operationalNotice": "This is an operational compliance determination, not legal advice. It does not approve expression from comparison witnesses."
   },
+  "sourceBinding": {
+    "mode": "licensed-machine-text-with-independent-facsimile-witness",
+    "humanViewableAuthority": "machineText",
+    "sameEditionFacsimileApproved": false,
+    "limitation": "No reusable facsimile of the OpenITI transcription's 1992 source edition is approved. OpenITI page markers are retained as source metadata but are not represented as scan-verified; the ACO witness is a different edition."
+  },
   "machineText": {
     "role": "publication-base",
     "repository": "https://github.com/OpenITI/0875AH",
