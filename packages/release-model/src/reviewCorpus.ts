@@ -21,6 +21,7 @@ export const reviewStateSchema = z.enum([
 const availabilitySchema = z.enum([
   "complete_translation",
   "selected_passages",
+  "not_translated",
 ]);
 
 const volumeSchema = z
@@ -29,8 +30,9 @@ const volumeSchema = z
     number: z.number().int().positive(),
     label: z.string().min(1),
     availability: availabilitySchema,
+    sourceItemCount: z.number().int().nonnegative().optional(),
     itemCount: z.number().int().nonnegative(),
-    sectionCount: z.number().int().positive(),
+    sectionCount: z.number().int().nonnegative(),
     firstPrintedPage: z.number().int().nonnegative().nullable(),
     lastPrintedPage: z.number().int().nonnegative().nullable(),
     description: z.string().min(1),

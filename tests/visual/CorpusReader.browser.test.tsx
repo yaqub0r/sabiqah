@@ -109,7 +109,7 @@ async function waitForVolumeShelf() {
     const buttons = document.querySelectorAll<HTMLButtonElement>(
       ".volume-shelf button",
     );
-    if (buttons.length === 7) return [...buttons];
+    if (buttons.length === 8) return [...buttons];
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   throw new Error("The deterministic volume fixture did not render.");
@@ -128,17 +128,37 @@ beforeEach(() => {
   document.body.innerHTML = '<main class="shell" id="visual-root"></main>';
   window.history.replaceState(null, "", "/works/al-isabah/");
 
-  const volumes = [2, 3, 4, 5, 6, 7, 8].map((number) => ({
-    id: `volume-${String(number).padStart(2, "0")}`,
-    number,
-    label: `Volume ${number}`,
-    availability: "complete_translation",
-    itemCount: number === 7 ? 672 : number === 8 ? 879 : number,
-    sectionCount: 1,
-    firstPrintedPage: 1,
-    lastPrintedPage: 25,
-    description: "Partial working coverage.",
-  }));
+  const sourceCounts: Record<number, number> = {
+    1: 1536,
+    2: 1497,
+    3: 1491,
+    4: 1633,
+    5: 1602,
+    6: 1722,
+    7: 1938,
+    8: 879,
+  };
+  const volumes = [1, 2, 3, 4, 5, 6, 7, 8].map((number) => {
+    const itemCount =
+      number === 1 ? 0 : number === 7 ? 672 : number === 8 ? 879 : number;
+    return {
+      id: `volume-${String(number).padStart(2, "0")}`,
+      number,
+      label: `Volume ${number}`,
+      availability:
+        itemCount === sourceCounts[number]
+          ? "complete_translation"
+          : itemCount === 0
+            ? "not_translated"
+            : "selected_passages",
+      sourceItemCount: sourceCounts[number],
+      itemCount,
+      sectionCount: itemCount === 0 ? 0 : 1,
+      firstPrintedPage: itemCount === 0 ? null : 1,
+      lastPrintedPage: itemCount === 0 ? null : 25,
+      description: "Deterministic coverage fixture.",
+    };
+  });
 
   vi.stubGlobal(
     "fetch",
@@ -205,7 +225,17 @@ beforeEach(() => {
         });
       }
       if (path === "/api/corpus/al-isabah/reviews") {
-        return response({ corpusId, reviewedItems: 0, items: {} });
+        return response({
+          corpusId,
+          reviewedItems: 1,
+          items: {
+            [shortRecord.id]: {
+              approvalCount: 1,
+              currentUserApproved: true,
+              latestApprovalAt: 1,
+            },
+          },
+        });
       }
       if (path === "/api/corpus/al-isabah/reports") {
         return response({
@@ -250,7 +280,7 @@ describe("CorpusReader presentation quality", () => {
     root.render(<CorpusReader />);
     const buttons = await waitForVolumeShelf();
     const width = document.documentElement.clientWidth;
-    const expectedColumns = width >= 1_200 ? 8 : width <= 720 ? 2 : 4;
+    const expectedColumns = width >= 1_200 ? 4 : width <= 720 ? 1 : 2;
     const shelf = document.querySelector<HTMLElement>(".volume-shelf")!;
     const actualColumns =
       getComputedStyle(shelf).gridTemplateColumns.split(" ");
@@ -263,11 +293,11 @@ describe("CorpusReader presentation quality", () => {
     for (const [index, button] of buttons.entries()) {
       expect(
         button.scrollWidth,
-        `volume button ${index + 2} width`,
+        `volume button ${index + 1} width`,
       ).toBeLessThanOrEqual(button.clientWidth);
       expect(
         button.scrollHeight,
-        `volume button ${index + 2} height`,
+        `volume button ${index + 1} height`,
       ).toBeLessThanOrEqual(button.clientHeight);
 
       const buttonRect = button.getBoundingClientRect();
@@ -288,10 +318,18 @@ describe("CorpusReader presentation quality", () => {
       '.volume-shelf button[aria-pressed="true"]',
     );
     expect(selected?.getAttribute("aria-label")).toBe(
-      "Volume 8, 879 records, partial coverage",
+      "Volume 8: 879 of 879 source entries translated; 1 of 879 translations human reviewed; Complete working translation",
     );
     expect(selected?.textContent).toContain("Volume");
     expect(selected?.textContent).toContain("8");
+    expect(selected?.textContent).toContain("100% translated");
+    expect(selected?.textContent).toContain("1 of 879 translations");
+    expect(buttons[0]?.disabled).toBe(true);
+    expect(buttons[0]?.textContent).toContain("Not yet translated");
+    await page.screenshot({
+      element: shelf,
+      path: `../../.runtime/visual-qa/coverage-dashboard-${width}.png`,
+    });
   });
 
   it("keeps entry-title typography independent of body length", async () => {

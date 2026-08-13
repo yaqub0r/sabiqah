@@ -92,10 +92,23 @@ describe("review reading contract", () => {
       },
       volumes: [
         {
+          id: "volume-01",
+          number: 1,
+          label: "Volume 1",
+          availability: "not_translated",
+          sourceItemCount: 1536,
+          itemCount: 0,
+          sectionCount: 0,
+          firstPrintedPage: null,
+          lastPrintedPage: null,
+          description: "No working translation yet.",
+        },
+        {
           id: "volume-08",
           number: 8,
           label: "Volume 8",
           availability: "complete_translation",
+          sourceItemCount: 1550,
           itemCount: 1550,
           sectionCount: 20,
           firstPrintedPage: 3,
@@ -104,7 +117,9 @@ describe("review reading contract", () => {
         },
       ],
     });
-    expect(summary.volumes[0]?.availability).toBe("complete_translation");
+    expect(summary.volumes[0]?.availability).toBe("not_translated");
+    expect(summary.volumes[1]?.availability).toBe("complete_translation");
+    expect(summary.volumes[1]?.sourceItemCount).toBe(1550);
     expect(
       summary.exclusions?.contextualPassagesPendingPublicSourceAlignment,
     ).toBe(14);

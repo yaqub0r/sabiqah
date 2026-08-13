@@ -413,6 +413,17 @@ def validate(root: Path) -> list[str]:
             errors.append(f"summary: section count differs for volume {volume.get('number')}")
         if sum(item.get("volume") == volume.get("number") for item in items) != volume.get("itemCount"):
             errors.append(f"summary: item count differs for volume {volume.get('number')}")
+        source_item_count = volume.get("sourceItemCount")
+        item_count = volume.get("itemCount")
+        availability = volume.get("availability")
+        if not isinstance(source_item_count, int) or source_item_count < item_count:
+            errors.append(f"summary: invalid source inventory for volume {volume.get('number')}")
+        elif availability == "complete_translation" and item_count != source_item_count:
+            errors.append(f"summary: complete coverage is false for volume {volume.get('number')}")
+        elif availability == "selected_passages" and not (0 < item_count < source_item_count):
+            errors.append(f"summary: partial coverage is false for volume {volume.get('number')}")
+        elif availability == "not_translated" and item_count != 0:
+            errors.append(f"summary: untranslated coverage is false for volume {volume.get('number')}")
         section_ids.update(value for value in matching if isinstance(value, str))
     for section_id in sorted(section_ids):
         path = root / "sections" / f"{section_id}.json"
