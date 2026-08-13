@@ -1,0 +1,110 @@
+name: Publish public al-Isabah corpus
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sabiqah-al-isabah-public-corpus
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, upload, and verify the public corpus
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: development
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      AL_ISABAH_PUBLIC_CORPUS_URI: ${{ vars.AL_ISABAH_PUBLIC_CORPUS_URI }}
+
+    steps:
+      - name: Check out Sabiqah
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check out pinned public translation source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: yaqub0r/al-isabah
+          ref: a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178
+          path: .runtime/al-isabah-review-source
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check out pinned public Arabic source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: OpenITI/0875AH
+          ref: 5835c183b8bbf4ea454d5c1be2b168b669403771
+          path: .runtime/openiti-0875ah
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify public-storage configuration
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_ACCOUNT_ID}"
+          test -n "${AL_ISABAH_PUBLIC_CORPUS_URI}"
+          test -n "${R2_ACCESS_KEY_ID}"
+          test -n "${R2_SECRET_ACCESS_KEY}"
+          public_corpus_id="$(python3 -c 'from scripts.rebuild_al_isabah_public_corpus import CORPUS_ID; print(CORPUS_ID)')"
+          expected_suffix="/${public_corpus_id}/"
+          if [[ "${AL_ISABAH_PUBLIC_CORPUS_URI}" != *"${expected_suffix}" ]]; then
+            echo "::error::AL_ISABAH_PUBLIC_CORPUS_URI must end with ${expected_suffix}"
+            exit 1
+          fi
+
+      - name: Build and validate the publicly consumable corpus
+        run: |
+          set -euo pipefail
+          python3 scripts/export_al_isabah_review_corpus.py \
+            --git-dir .runtime/al-isabah-review-source/.git \
+            --output .runtime/al-isabah-review-corpus \
+            --generated-at 2026-08-12T00:00:00Z
+          python3 scripts/validate_review_corpus.py .runtime/al-isabah-review-corpus
+          python3 scripts/rebuild_al_isabah_public_corpus.py \
+            --legacy-corpus .runtime/al-isabah-review-corpus \
+            --openiti .runtime/openiti-0875ah/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.IsabaFiTamyiz/0852IbnHajarCasqalani.IsabaFiTamyiz.JK000533-ara1.mARkdown \
+            --output .runtime/al-isabah-public-corpus \
+            --generated-at 2026-08-12T00:00:00Z
+          python3 scripts/validate_public_corpus.py .runtime/al-isabah-public-corpus
+
+      - name: Upload only the public corpus to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp \
+            .runtime/al-isabah-public-corpus \
+            "${AL_ISABAH_PUBLIC_CORPUS_URI}" \
+            --recursive \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager --no-progress --only-show-errors
+
+      - name: Download and verify the stored public corpus
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp \
+            "${AL_ISABAH_PUBLIC_CORPUS_URI}" \
+            .runtime/verified-al-isabah-public-corpus \
+            --recursive \
+            --endpoint-url "${endpoint}" \
+            --no-cli-pager --no-progress --only-show-errors
+          python3 scripts/validate_public_corpus.py .runtime/verified-al-isabah-public-corpus
+          diff --recursive --brief \
+            .runtime/al-isabah-public-corpus \
+            .runtime/verified-al-isabah-public-corpus
