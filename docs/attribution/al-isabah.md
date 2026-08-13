@@ -39,8 +39,10 @@ assessment are recorded in
 
 The English is Sabiqah-authored work reconstructed against the approved Arabic
 base. Modern footnotes, introductions, critical apparatus, private object
-locations, and restricted comparison expression are excluded. Entries that
-cannot pass the reproducible alignment and output checks are listed by stable
+locations, and restricted comparison expression are excluded. When a legacy
+translation cannot pass the public-output checks, its aligned book entry remains
+readable in approved Arabic and the English is withheld with a visible
+translation gap. Non-book contextual passages remain listed by stable
 identifier in the public quarantine report instead of being silently exposed.
 
 Each visible record reports its machine and human-review state. Corrections and

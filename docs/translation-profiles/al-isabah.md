@@ -135,14 +135,15 @@ record is reproducibly rebuilt or audited against the approved public source
 bundle. Restricted workflow evidence remains private after migration.
 
 The deterministic remediation produces
-`al-isabah-public-openiti-5835c18-v1`. Of the 1,579 legacy posted records, 1,506
-are rebuilt as public-source-bound entries and 73 are quarantined rather than
-served. Eleven eligible entries are honestly Arabic-only after restricted
-apparatus is removed; the remaining 1,495 retain Sabiqah-authored English.
-`quarantine.json` records every omission and reason, and the generated manifest
-binds every public object to the pinned authority. These counts describe this
-immutable corpus version; a later repair creates a new version rather than
-overwriting it.
+`al-isabah-public-openiti-5835c18-v1`. All 1,565 legacy book entries are rebuilt
+as public-source-bound records. The 1,496 translations that pass the
+public-output checks retain Sabiqah-authored English; 69 entries remain
+publicly readable in Arabic while their legacy English is withheld for
+replacement or correction. The 14 FirstLight contextual passages are not book
+entries and remain excluded with explicit quarantine reasons. `quarantine.json`
+records every exclusion, and the generated manifest binds every public object
+to the pinned authority. These counts describe the first deployed corpus
+version; a later repair creates a new version rather than overwriting it.
 
 The former FirstLight implementation and closed Al-Isabah development branches
 are historical evidence, not the governing location. Sabiqah owns future
