@@ -103,15 +103,20 @@ function replaceAliases(
         candidates[0],
     );
   }
+  const aliasesPattern = [...replacements.values()]
+    .sort((left, right) => right.alias.length - left.alias.length)
+    .map(({ alias }) => escapeRegExp(alias))
+    .join("|");
   const pattern = new RegExp(
-    [...replacements.values()]
-      .sort((left, right) => right.alias.length - left.alias.length)
-      .map(({ alias }) => escapeRegExp(alias))
-      .join("|"),
+    language === "en"
+      ? `(,[\\t ]*)?(${aliasesPattern})([\\t ]*,)?`
+      : `(${aliasesPattern})`,
     language === "en" ? "giu" : "gu",
   );
-  return value.replace(pattern, (matched) => {
-    const lookup = language === "en" ? matched.toLocaleLowerCase() : matched;
+  return value.replace(pattern, (_matched, first, second, third) => {
+    const matchedAlias = language === "en" ? second : first;
+    const lookup =
+      language === "en" ? matchedAlias.toLocaleLowerCase() : matchedAlias;
     const { entry } = replacements.get(lookup)!;
     const fallback =
       language === "en" ? entry.accessibleEnglish : entry.expandedArabic;
@@ -119,9 +124,16 @@ function replaceAliases(
       entry.fontSupport === "supported" ? entry.compactCharacter : fallback;
     const divineName =
       language === "en" && entry.semanticClass === "divine-exaltation"
-        ? /^(Allah|God)\b/i.exec(matched)?.[1]
+        ? /^(Allah|God)\b/i.exec(matchedAlias)?.[1]
         : undefined;
     if (divineName) replacement = `${divineName} ${replacement}`;
+    if (language === "en" && first) {
+      // Expanded English honorifics are often parenthetical. Once compacted,
+      // the glyph attaches directly to its referent, so the opening comma and
+      // its paired closing comma no longer belong in the sentence.
+      return ` ${replacement}`;
+    }
+    if (language === "en") return `${replacement}${third ?? ""}`;
     return replacement;
   });
 }

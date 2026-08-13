@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Issue:** [#55](https://github.com/yaqub0r/sabiqah/issues/55)
+- **Punctuation follow-up:** [#69](https://github.com/yaqub0r/sabiqah/issues/69)
 - **Decision date:** 2026-08-12
 
 ## Decision
@@ -48,6 +49,14 @@ The reader:
 The compact character is presentation, not the search key or only semantic
 record. Unicode normalization is applied only after registry expansion for
 search or comparison. It never mutates the stored authority text.
+
+An expanded English honorific may be punctuated as a parenthetical phrase. If
+it is replaced by a compact character, the renderer removes the comma before
+the phrase and its paired closing comma so the character attaches to its
+referent: `the Prophet, may God bless him and grant him peace, said` becomes
+`the Prophet ﷺ said`. Punctuation belonging to the surrounding sentence is
+preserved. Public-corpus validation rejects a comma between a referent and a
+compact honorific.
 
 ## Validation boundary
 

@@ -27,6 +27,20 @@ VALIDATE_SPEC.loader.exec_module(VALIDATE)
 
 
 class PublicCorpusTests(unittest.TestCase):
+    def test_compaction_removes_parenthetical_honorific_commas(self):
+        self.assertEqual(
+            REBUILD.compact_registry_aliases(
+                "the Prophet, may God bless him and grant him peace.", "en"
+            ),
+            "the Prophet ﷺ.",
+        )
+        self.assertEqual(
+            REBUILD.compact_registry_aliases(
+                "the Prophet, may God bless him and grant him peace, said", "en"
+            ),
+            "the Prophet ﷺ said",
+        )
+
     def test_source_authority_record_matches_the_pinned_contract(self):
         REBUILD.validate_source_authority_record(REBUILD.DEFAULT_SOURCE_AUTHORITY)
 
@@ -246,6 +260,23 @@ class PublicCorpusTests(unittest.TestCase):
             item_path.write_text(json.dumps(item), encoding="utf-8")
             errors = VALIDATE.validate(output)
             self.assertTrue(any("private or unapproved" in error for error in errors))
+
+    def test_validator_rejects_a_comma_before_a_compact_honorific(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["segments"][0]["english"] = "The Prophet, ﷺ spoke."
+            item_path.write_text(json.dumps(item, ensure_ascii=False), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(
+                any(
+                    "compact honorific is separated from its referent by a comma"
+                    in error
+                    for error in errors
+                )
+            )
 
     def test_validator_rejects_honorific_agreement_that_differs_from_registry(self):
         with tempfile.TemporaryDirectory() as temp:
