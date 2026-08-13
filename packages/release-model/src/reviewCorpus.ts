@@ -329,6 +329,7 @@ export const reviewCorpusItemSchema = z
         englishExclusionReasonCodes: z.array(z.string().min(1)).optional(),
         removedApparatusParagraphs: z.number().int().nonnegative(),
         removedEditorialNotes: z.number().int().nonnegative(),
+        sourcePresentationRepairs: z.number().int().nonnegative().optional(),
       })
       .strict()
       .optional(),

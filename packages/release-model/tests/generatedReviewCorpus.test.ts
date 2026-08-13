@@ -46,6 +46,9 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
       expect(item.remediation?.sourceArabicReplaced).toBe(true);
       expect(item.remediation?.privateLocatorsRemoved).toBe(true);
       expect(item.remediation?.englishExcluded).toBe(false);
+      expect(item.remediation?.sourcePresentationRepairs).toBeGreaterThanOrEqual(
+        0,
+      );
       expect(item.honorificPolicyVersion).toBe("1.0.0");
       expect(item.honorifics).toBeDefined();
       expect(JSON.stringify(item).toLocaleLowerCase()).not.toContain("usul.ai");
@@ -64,5 +67,19 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     expect(JSON.stringify(summary).toLocaleLowerCase()).not.toContain(
       "khadijah",
     );
+  });
+
+  it("rejects a negative source presentation repair count", () => {
+    const index = parseReviewCorpusIndex(
+      JSON.parse(readFileSync(resolve(corpusRoot!, "index.json"), "utf8")),
+    );
+    const first = JSON.parse(
+      readFileSync(
+        resolve(corpusRoot!, `items/${index.items[0]!.id}.json`),
+        "utf8",
+      ),
+    );
+    first.remediation.sourcePresentationRepairs = -1;
+    expect(() => parseReviewCorpusItem(first)).toThrow();
   });
 });
