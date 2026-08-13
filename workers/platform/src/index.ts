@@ -84,6 +84,11 @@ export default {
       )
         return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("index"));
       if (
+        url.pathname === "/api/corpus/al-isabah/exclusions" &&
+        request.method === "GET"
+      )
+        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("exclusions"));
+      if (
         url.pathname === "/api/corpus/al-isabah/reviews" &&
         request.method === "GET"
       ) {

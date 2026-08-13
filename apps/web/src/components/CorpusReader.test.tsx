@@ -115,6 +115,12 @@ describe("CorpusReader", () => {
             needsAttention: 0,
             unresolvedItems: 0,
             humanReviewed: 0,
+            sourceInventory: 16,
+            quarantined: 14,
+          },
+          exclusions: {
+            contextualPassagesPendingPublicSourceAlignment: 14,
+            recordsPendingRemediation: 0,
           },
           volumes: [
             {
@@ -201,6 +207,12 @@ describe("CorpusReader", () => {
     expect(
       await screen.findByText("The first short translated record."),
     ).toBeTruthy();
+    expect(
+      await screen.findByText(
+        /14 contextual passages excluded pending public-source alignment/,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/quarantined for remediation/)).toBeNull();
     expect(
       await screen.findByText(
         "Have an invitation to review or correct the text?",

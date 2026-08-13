@@ -42,8 +42,18 @@ base. Modern footnotes, introductions, critical apparatus, private object
 locations, and restricted comparison expression are excluded. When a legacy
 translation cannot pass the public-output checks, its aligned book entry remains
 readable in approved Arabic and the English is withheld with a visible
-translation gap. Non-book contextual passages remain listed by stable
-identifier in the public quarantine report instead of being silently exposed.
+translation gap. Legacy contextual passages that do not yet have an approved
+public-source alignment remain excluded and are listed by stable identifier in
+the [public exclusion report](https://dev.sabiqah.org/api/corpus/al-isabah/exclusions)
+instead of being silently exposed or mislabeled as failed book records.
+
+The earlier reader's `isabah-passage-945134c508e2`, titled **Abu Bakr**, is one
+such contextual passage. It was preserved from an edition-specific research
+result, but it has no approved OpenITI entry identity and includes apparatus
+that cannot be carried into the public working edition. The underlying research
+work remains preserved under Sabiqah's private-evidence rules. It may return to
+public reading only after its medieval text is aligned to an approved public
+source and the English is rebuilt under the public-output contract.
 
 Each visible record reports its machine and human-review state. Corrections and
 approvals are append-only review evidence; they do not alter the applicable

@@ -148,9 +148,12 @@ publicly consumable working English as
 `al-isabah-public-openiti-5835c18-v2`, repairs five source-fidelity
 interventions, preserves twelve valid title-only translations, and records
 honorific semantic differences as translation-readiness findings rather than
-public-output failures. The 14 FirstLight contextual passages are not book
-entries and remain excluded with explicit quarantine reasons. Every version is
-immutable and bound to its own generated manifest.
+public-output failures. Version 3 leaves the 1,565 public entries unchanged and
+reclassifies the 14 legacy contextual passages as excluded pending approved
+public-source alignment rather than implying that they are remediable book
+records. Its public exclusion report records stable identifiers, safe titles,
+dispositions, and reason codes without exposing restricted text or storage
+details. Every version is immutable and bound to its own generated manifest.
 
 The former FirstLight implementation and closed Al-Isabah development branches
 are historical evidence, not the governing location. Sabiqah owns future

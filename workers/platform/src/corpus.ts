@@ -1,6 +1,6 @@
 import { json } from "./http";
 
-export const CORPUS_ID = "al-isabah-public-openiti-5835c18-v2";
+export const CORPUS_ID = "al-isabah-public-openiti-5835c18-v3";
 const CORPUS_PREFIX = `public-corpora/al-isabah/${CORPUS_ID}`;
 const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$/;
 
@@ -8,11 +8,13 @@ export interface CorpusMember {
   status: "active" | "limited" | "suspended";
 }
 
-export function corpusObjectKey(path: "summary" | "index"): string;
+export function corpusObjectKey(
+  path: "summary" | "index" | "exclusions",
+): string;
 export function corpusObjectKey(path: "item", id: string): string;
 export function corpusObjectKey(path: "section", id: string): string;
 export function corpusObjectKey(
-  path: "summary" | "index" | "item" | "section",
+  path: "summary" | "index" | "exclusions" | "item" | "section",
   id?: string,
 ): string {
   if (path === "item") {

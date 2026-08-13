@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,7 @@ def validate(root: Path) -> list[str]:
     summary = load(root / "summary.json")
     index = load(root / "index.json")
     quarantine = load(root / "quarantine.json")
+    exclusions = load(root / "exclusions.json")
     manifest = load(root / "manifest.json")
     corpus = summary.get("corpus", {})
     corpus_id = corpus.get("id")
@@ -73,7 +75,10 @@ def validate(root: Path) -> list[str]:
         errors.append("summary: source license is missing or incorrect")
     if corpus.get("license", {}).get("url") != LICENSE_URL:
         errors.append("summary: source license URL is missing or incorrect")
-    if any(value.get("corpusId") != corpus_id for value in (index, quarantine, manifest)):
+    if any(
+        value.get("corpusId") != corpus_id
+        for value in (index, quarantine, exclusions, manifest)
+    ):
         errors.append("corpus ID differs across public artifacts")
 
     items = index.get("items")
@@ -242,6 +247,15 @@ def validate(root: Path) -> list[str]:
         errors.append("quarantine: a record is both public and quarantined")
     if any(not record.get("reasonCodes") for record in quarantined_records):
         errors.append("quarantine: every record requires a reason")
+    allowed_dispositions = {
+        "excluded-pending-public-source-alignment",
+        "remediation-required",
+    }
+    if any(
+        record.get("disposition") not in allowed_dispositions
+        for record in quarantined_records
+    ):
+        errors.append("quarantine: every record requires a recognized disposition")
     source_inventory = quarantine.get("sourceInventoryCount")
     if source_inventory != len(ids) + len(quarantined_ids):
         errors.append("quarantine: public and quarantined records do not account for the source inventory")
@@ -249,6 +263,38 @@ def validate(root: Path) -> list[str]:
         errors.append("quarantine: public item count differs from index")
     if quarantine.get("quarantinedCount") != len(quarantined_ids):
         errors.append("quarantine: count differs from records")
+
+    public_exclusions = exclusions.get("records")
+    if not isinstance(public_exclusions, list):
+        errors.append("exclusions: records must be a list")
+        public_exclusions = []
+    public_exclusion_ids = {
+        record.get("id")
+        for record in public_exclusions
+        if isinstance(record, dict) and isinstance(record.get("id"), str)
+    }
+    if public_exclusion_ids != quarantined_ids:
+        errors.append("exclusions: public records differ from quarantine accounting")
+    if any(
+        set(record) - {"id", "kind", "titleEn", "disposition", "reasonCodes"}
+        for record in public_exclusions
+        if isinstance(record, dict)
+    ):
+        errors.append("exclusions: a public record exposes an unexpected field")
+
+    disposition_counts = Counter(
+        record.get("disposition")
+        for record in quarantined_records
+        if isinstance(record, dict)
+    )
+    expected_exclusions = {
+        "contextualPassagesPendingPublicSourceAlignment": disposition_counts[
+            "excluded-pending-public-source-alignment"
+        ],
+        "recordsPendingRemediation": disposition_counts["remediation-required"],
+    }
+    if exclusions.get("counts") != expected_exclusions:
+        errors.append("exclusions: disposition counts differ")
 
     counts = summary.get("counts", {})
     expected_counts = {
@@ -264,6 +310,8 @@ def validate(root: Path) -> list[str]:
     for key, expected in expected_counts.items():
         if counts.get(key) != expected:
             errors.append(f"summary: {key} count differs")
+    if summary.get("exclusions") != expected_exclusions:
+        errors.append("summary: exclusion disposition counts differ")
 
     section_ids: set[str] = set()
     section_item_ids: list[str] = []
