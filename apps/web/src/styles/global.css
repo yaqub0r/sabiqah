@@ -398,15 +398,19 @@ button {
 }
 .volume-shelf {
   display: grid;
-  grid-template-columns: repeat(8, minmax(5.5rem, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
   margin-top: 2rem;
 }
 .volume-shelf button {
   display: grid;
-  min-height: 9rem;
-  align-content: space-between;
-  padding: 1rem 0.7rem;
+  grid-template-rows: auto 1fr auto auto;
+  min-width: 0;
+  min-height: 10rem;
+  align-content: stretch;
+  align-items: start;
+  gap: 0.2rem;
+  padding: 1rem;
   border: 1px solid var(--line);
   border-radius: 0;
   background: var(--paper-deep);
@@ -425,19 +429,26 @@ button {
 }
 .volume-shelf strong {
   font:
-    2.5rem/1 Georgia,
+    3rem/1 Georgia,
     serif;
 }
 .volume-shelf span,
 .volume-shelf small {
   display: block;
 }
-.volume-shelf span {
+.volume-shelf .volume-label {
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+  text-transform: uppercase;
+}
+.volume-shelf .volume-count {
   font-size: 0.78rem;
   font-weight: 800;
 }
 .volume-shelf small {
-  margin-top: 0.35rem;
+  margin-top: 0.15rem;
   color: inherit;
   font-size: 0.68rem;
   opacity: 0.75;
@@ -773,6 +784,12 @@ footer {
 }
 footer p {
   margin: 0;
+}
+
+@media (min-width: 1200px) {
+  .volume-shelf {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {

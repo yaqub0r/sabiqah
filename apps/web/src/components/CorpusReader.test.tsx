@@ -202,7 +202,10 @@ describe("CorpusReader", () => {
     render(<CorpusReader />);
 
     expect(
-      await screen.findByRole("button", { name: /Volume 8/ }),
+      await screen.findByRole("button", {
+        name: "Volume 8, 2 records, partial coverage",
+        pressed: true,
+      }),
     ).toBeTruthy();
     expect(
       await screen.findByText("The first short translated record."),

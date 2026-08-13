@@ -446,15 +446,20 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
               <button
                 type="button"
                 className={selectedVolume === volume.number ? "selected" : ""}
+                aria-pressed={selectedVolume === volume.number}
+                aria-label={`Volume ${volume.number}, ${volume.itemCount.toLocaleString()} records, partial coverage`}
                 onClick={() => {
                   setSelectedVolume(volume.number);
                   setSelectedSectionId("");
                 }}
                 key={volume.id}
               >
-                <strong>Volume {volume.number}</strong>
-                <span>{volume.itemCount.toLocaleString()} records</span>
-                <small>partial working coverage</small>
+                <span className="volume-label">Volume</span>
+                <strong>{volume.number}</strong>
+                <span className="volume-count">
+                  {volume.itemCount.toLocaleString()} records
+                </span>
+                <small>Partial coverage</small>
               </button>
             ))}
           </div>
