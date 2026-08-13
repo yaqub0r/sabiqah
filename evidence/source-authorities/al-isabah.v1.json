@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0.0",
+  "authorityId": "al-isabah-openiti-5835c18-aco-v1",
+  "work": {
+    "slug": "al-isabah",
+    "titleAr": "الإصابة في تمييز الصحابة",
+    "titleEn": "Al-Isabah fi Tamyiz al-Sahabah",
+    "author": "Ibn Hajar al-Asqalani"
+  },
+  "assessment": {
+    "status": "approved-for-publication",
+    "assessedAt": "2026-08-12",
+    "scope": "The pinned OpenITI Arabic transcription, after removal of OpenITI markup and application of the recorded honorific typography map.",
+    "operationalNotice": "This is an operational compliance determination, not legal advice. It does not approve expression from comparison witnesses."
+  },
+  "sourceBinding": {
+    "mode": "licensed-machine-text-with-independent-facsimile-witness",
+    "humanViewableAuthority": "machineText",
+    "sameEditionFacsimileApproved": false,
+    "limitation": "No reusable facsimile of the OpenITI transcription's 1992 source edition is approved. OpenITI page markers are retained as source metadata but are not represented as scan-verified; the ACO witness is a different edition."
+  },
+  "machineText": {
+    "role": "publication-base",
+    "repository": "https://github.com/OpenITI/0875AH",
+    "commit": "5835c183b8bbf4ea454d5c1be2b168b669403771",
+    "path": "data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.IsabaFiTamyiz/0852IbnHajarCasqalani.IsabaFiTamyiz.JK000533-ara1.mARkdown",
+    "sourceUrl": "https://github.com/OpenITI/0875AH/blob/5835c183b8bbf4ea454d5c1be2b168b669403771/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.IsabaFiTamyiz/0852IbnHajarCasqalani.IsabaFiTamyiz.JK000533-ara1.mARkdown",
+    "bytes": 9762988,
+    "sha256": "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea",
+    "license": {
+      "spdx": "CC-BY-NC-SA-4.0",
+      "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "rightsBasis": "OpenITI distributes its text releases under Creative Commons Attribution-NonCommercial-ShareAlike 4.0."
+    },
+    "bibliography": {
+      "editor": "Ali Muhammad al-Bijawi",
+      "publisher": "Dar al-Jil",
+      "place": "Beirut",
+      "date": "1412/1992"
+    },
+    "limitations": [
+      "The OpenITI review record reports numerous typographical errors.",
+      "OpenITI removed introductions, footnotes, indices, and other paratext in its 2023 cleanup.",
+      "Machine alignment is evidence for migration and does not replace human scholarly review."
+    ]
+  },
+  "facsimileAuthority": {
+    "role": "independent-public-domain-visual-witness",
+    "collection": "Arabic Collections Online",
+    "publisher": "Matba'at al-Sa'adah",
+    "place": "Cairo",
+    "date": "1323-1325 [1905-1907]",
+    "rightsUrl": "https://aco.dlib.nyu.edu/about",
+    "rightsBasis": "Arabic Collections Online states that it believes the displayed materials are in the public domain.",
+    "editionRelationship": "This four-volume facsimile is an independent public-domain witness. It is not represented as page-identical to the OpenITI transcription's eight-volume source edition.",
+    "volumes": [
+      {
+        "itemId": "uaena_aco000081",
+        "permanentUrl": "https://hdl.handle.net/2333.1/95x6b13x",
+        "viewerUrl": "https://sites.dlib.nyu.edu/viewer/books/uaena_aco000081/1",
+        "iiifManifest": "https://sites.dlib.nyu.edu/viewer/api/presentation/books/uaena_aco000081/manifest.json",
+        "pages": 584,
+        "lowResolutionPdfBytes": 79536150,
+        "lowResolutionPdfSha256": "8cdde053b703d7a6ecf26ffd6faa2242fb1c03747bc90d7b7d86e73cf6ee17c7",
+        "iiifManifestSha256": "eefbdce60146d6ffe2aae0ac9654c4cfa6f40e907f01513913cf600a71678d0b"
+      },
+      {
+        "itemId": "uaena_aco000082",
+        "permanentUrl": "https://hdl.handle.net/2333.1/5dv420mt",
+        "viewerUrl": "https://sites.dlib.nyu.edu/viewer/books/uaena_aco000082/1",
+        "iiifManifest": "https://sites.dlib.nyu.edu/viewer/api/presentation/books/uaena_aco000082/manifest.json",
+        "pages": 626,
+        "lowResolutionPdfBytes": 83822200,
+        "lowResolutionPdfSha256": "99c6d4609be31cdfebafc5dcf34aa960e922d34c54e79012b7c02b68fe53bd37",
+        "iiifManifestSha256": "355e87178a0ca3daa87fd3b88c638e394f28ef52843abc433b0c05a4b690e61d"
+      },
+      {
+        "itemId": "uaena_aco000083",
+        "permanentUrl": "https://hdl.handle.net/2333.1/1ns1s03j",
+        "viewerUrl": "https://sites.dlib.nyu.edu/viewer/books/uaena_aco000083/1",
+        "iiifManifest": "https://sites.dlib.nyu.edu/viewer/api/presentation/books/uaena_aco000083/manifest.json",
+        "pages": 714,
+        "lowResolutionPdfBytes": 96013635,
+        "lowResolutionPdfSha256": "22d6428a2b4a85a31f63d1e824eea5708762b5babf4b099757f6338f5ee1c55d",
+        "iiifManifestSha256": "9a2a6224a672103d18f1ae524266fd7950dd96894417e295decc02713de734bf"
+      },
+      {
+        "itemId": "uaena_aco000084",
+        "permanentUrl": "https://hdl.handle.net/2333.1/wwpzgzsc",
+        "viewerUrl": "https://sites.dlib.nyu.edu/viewer/books/uaena_aco000084/1",
+        "iiifManifest": "https://sites.dlib.nyu.edu/viewer/api/presentation/books/uaena_aco000084/manifest.json",
+        "pages": 526,
+        "lowResolutionPdfBytes": 70106120,
+        "lowResolutionPdfSha256": "662af0f9c2b7697b4ebea6202da6298627db56171ab59acdb51750fb81692423",
+        "iiifManifestSha256": "e0c1f6ef39c31d8ed2c216daacfa58eb50b56db7d55360479b4cb0ab2e25d95d"
+      }
+    ]
+  },
+  "transformations": [
+    "Remove OpenITI structural markup while retaining entry and PageVxxPxxx location markers as metadata.",
+    "Join source line wraps without changing word order.",
+    "Render exact devotional formulas with the reversible typography map in docs/translation-profiles/al-isabah.md.",
+    "Bind each emitted Arabic record to the SHA-256 of its rendered public-source text."
+  ],
+  "restrictedWitnessRule": "The former Usul-aligned corpus may be used only as private comparison evidence. Its Arabic, notes, locators, and modern editorial expression may not be emitted into the public corpus."
+}

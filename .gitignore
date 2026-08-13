@@ -25,6 +25,7 @@ credentials*
 # Other infrastructure and runtime output
 cdk.out/
 .runtime/
+tmp/
 node_modules/
 dist/
 coverage/

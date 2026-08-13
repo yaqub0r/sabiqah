@@ -15,13 +15,29 @@ const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
           الإصابة في تمييز الصحابة
         </p>
       </div>
-      <span class="badge warning">Public promotion blocked</span>
+      <span class="badge warning">Canonical promotion blocked</span>
     </div>
     <p class="issue-banner">
-      This page surfaces the work as it actually stands: translated,
-      machine-checked, unresolved, and awaiting human review. It is not an
-      approved scholarly release. The public inventory is safe to share;
-      restricted text and intermediate evidence require reviewer access.
+      This public working edition replaces restricted Arabic with a pinned,
+      licensed source and excludes unapproved modern apparatus. Its English is
+      machine-checked and still awaiting human scholarly review. Records that
+      cannot yet pass the public-output checks remain explicitly quarantined;
+      restricted comparison evidence is never shown here.
+    </p>
+    <p>
+      Arabic source: <a
+        href="https://github.com/OpenITI/0875AH/blob/5835c183b8bbf4ea454d5c1be2b168b669403771/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.IsabaFiTamyiz/0852IbnHajarCasqalani.IsabaFiTamyiz.JK000533-ara1.mARkdown"
+        >OpenITI JK000533</a
+      >, used under <a
+        href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+        >CC BY-NC-SA 4.0</a
+      >. Sabiqah removes structural markup and modern paratext, applies the
+      documented honorific typography, and pairs the result with its working
+      English translation. The independent <a
+        href="https://sites.dlib.nyu.edu/viewer/books/uaena_aco000081/1"
+        >Arabic Collections Online facsimile</a
+      > is a different public-domain edition; OpenITI page markers are not
+      represented as scan-verified citations.
     </p>
     <CorpusReader client:load siteKey={siteKey} />
   </section>

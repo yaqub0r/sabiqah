@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+"""Validate a public Al-Isabah working corpus and its quarantine accounting."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+from rebuild_al_isabah_public_corpus import (
+    CORPUS_ID,
+    FORBIDDEN_PUBLIC_PATTERNS,
+    LICENSE_SPDX,
+    LICENSE_URL,
+    SCHEMA_VERSION,
+    SOURCE_AUTHORITY_ID,
+    SOURCE_COMMIT,
+    SOURCE_REPOSITORY,
+    SOURCE_SHA256,
+    SOURCE_URL,
+    formula_counts,
+)
+
+
+ITEM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
+SHA256 = re.compile(r"^[a-f0-9]{64}$")
+TRANSLATED_HONORIFIC = re.compile(
+    r"may (?:Allah|God) bless him and (?:his family and )?grant (?:him|them) peace|"
+    r"may (?:Allah|God) be pleased with (?:him|her|them)|"
+    r"may (?:Allah|God) have mercy on (?:him|them)|"
+    r"peace (?:and blessings )?be upon (?:him|her|them)|"
+    r"(?:Allah|God) Most High",
+    re.I,
+)
+
+
+def load(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"{path}: top level must be an object")
+    return value
+
+
+def validate(root: Path) -> list[str]:
+    errors: list[str] = []
+    summary = load(root / "summary.json")
+    index = load(root / "index.json")
+    quarantine = load(root / "quarantine.json")
+    manifest = load(root / "manifest.json")
+    corpus = summary.get("corpus", {})
+    corpus_id = corpus.get("id")
+    if summary.get("schemaVersion") != SCHEMA_VERSION:
+        errors.append("summary: unsupported schema version")
+    if corpus_id != CORPUS_ID:
+        errors.append("summary: corpus ID is not the pinned public corpus")
+    if corpus.get("publicationStatus") != "public-working":
+        errors.append("summary: corpus must be explicitly public-working")
+    if corpus.get("promotionStatus") != "blocked":
+        errors.append("summary: canonical promotion must remain blocked")
+    if corpus.get("sourceAuthorityId") != SOURCE_AUTHORITY_ID:
+        errors.append("summary: wrong source authority")
+    if corpus.get("sourceRepository") != SOURCE_REPOSITORY:
+        errors.append("summary: wrong source repository")
+    if corpus.get("sourceCommit") != SOURCE_COMMIT:
+        errors.append("summary: wrong source commit")
+    if corpus.get("sourceArtifactSha256") != SOURCE_SHA256:
+        errors.append("summary: wrong source artifact hash")
+    if corpus.get("license", {}).get("spdx") != LICENSE_SPDX:
+        errors.append("summary: source license is missing or incorrect")
+    if corpus.get("license", {}).get("url") != LICENSE_URL:
+        errors.append("summary: source license URL is missing or incorrect")
+    if any(value.get("corpusId") != corpus_id for value in (index, quarantine, manifest)):
+        errors.append("corpus ID differs across public artifacts")
+
+    items = index.get("items")
+    if not isinstance(items, list):
+        errors.append("index: items must be a list")
+        items = []
+    ids: set[str] = set()
+    unresolved = 0
+    needs_attention = 0
+    translated = 0
+    for position, item in enumerate(items):
+        item_id = item.get("id") if isinstance(item, dict) else None
+        if not isinstance(item_id, str) or not ITEM_ID.fullmatch(item_id):
+            errors.append(f"index.items[{position}]: invalid item ID")
+            continue
+        if item_id in ids:
+            errors.append(f"index: duplicate item ID {item_id}")
+        ids.add(item_id)
+        if item.get("publicEligibility") != "eligible":
+            errors.append(f"index: {item_id} is not public-eligible")
+        detail_path = root / "items" / f"{item_id}.json"
+        if not detail_path.is_file():
+            errors.append(f"index: missing detail {item_id}")
+            continue
+        detail = load(detail_path)
+        if detail.get("id") != item_id or detail.get("corpusId") != corpus_id:
+            errors.append(f"detail: inconsistent identity for {item_id}")
+        if detail.get("schemaVersion") != SCHEMA_VERSION:
+            errors.append(f"detail: wrong schema version for {item_id}")
+        if detail.get("kind") != "entry" or detail.get("publicEligibility") != "eligible":
+            errors.append(f"detail: {item_id} is not an eligible entry")
+        source = detail.get("source", {})
+        provenance = detail.get("provenance", {})
+        if source.get("authorityId") != SOURCE_AUTHORITY_ID:
+            errors.append(f"detail: wrong source authority for {item_id}")
+        if source.get("sourceUrl") != SOURCE_URL:
+            errors.append(f"detail: wrong source URL for {item_id}")
+        if source.get("license", {}).get("spdx") != LICENSE_SPDX:
+            errors.append(f"detail: wrong source license for {item_id}")
+        if source.get("license", {}).get("url") != LICENSE_URL:
+            errors.append(f"detail: wrong source license URL for {item_id}")
+        if provenance.get("sourceArtifactSha256") != SOURCE_SHA256:
+            errors.append(f"detail: wrong source artifact hash for {item_id}")
+        remediation = detail.get("remediation", {})
+        if remediation.get("sourceArabicReplaced") is not True:
+            errors.append(f"detail: source Arabic was not replaced for {item_id}")
+        if remediation.get("privateLocatorsRemoved") is not True:
+            errors.append(f"detail: private locators were not removed for {item_id}")
+        segments = detail.get("segments", [])
+        displayed_arabic = " ".join(
+            [str(detail.get("title", {}).get("ar", ""))]
+            + [str(segment.get("arabic", "")) for segment in segments]
+        ).strip()
+        displayed_arabic = " ".join(displayed_arabic.split())
+        source_text_sha = hashlib.sha256(displayed_arabic.encode("utf-8")).hexdigest()
+        if source.get("sourceTextSha256") != source_text_sha:
+            errors.append(f"detail: source text hash mismatch for {item_id}")
+        if provenance.get("sourceTextSha256") != source_text_sha:
+            errors.append(f"detail: provenance text hash mismatch for {item_id}")
+        displayed_english = "\n".join(
+            [str(detail.get("title", {}).get("en", ""))]
+            + [str(segment.get("english", "")) for segment in segments]
+        )
+        if formula_counts(displayed_arabic) != formula_counts(displayed_english):
+            errors.append(f"detail: honorific inventory mismatch for {item_id}")
+        if TRANSLATED_HONORIFIC.search(displayed_english):
+            errors.append(f"detail: translated honorific remains for {item_id}")
+        serialized = json.dumps(detail, ensure_ascii=False)
+        if any(pattern.search(serialized) for pattern in FORBIDDEN_PUBLIC_PATTERNS):
+            errors.append(f"detail: private or unapproved expression remains for {item_id}")
+        if len(detail.get("unresolved", [])) != item.get("unresolvedCount"):
+            errors.append(f"detail: unresolved count differs for {item_id}")
+        unresolved += int(item.get("unresolvedCount", 0))
+        needs_attention += item.get("machineAssessment") == "needs_attention"
+        translated += item.get("translationState") == "translated"
+
+    quarantined_records = quarantine.get("records")
+    if not isinstance(quarantined_records, list):
+        errors.append("quarantine: records must be a list")
+        quarantined_records = []
+    quarantined_ids = {
+        record.get("id") for record in quarantined_records if isinstance(record.get("id"), str)
+    }
+    if len(quarantined_ids) != len(quarantined_records):
+        errors.append("quarantine: duplicate or invalid record IDs")
+    if ids & quarantined_ids:
+        errors.append("quarantine: a record is both public and quarantined")
+    if any(not record.get("reasonCodes") for record in quarantined_records):
+        errors.append("quarantine: every record requires a reason")
+    source_inventory = quarantine.get("sourceInventoryCount")
+    if source_inventory != len(ids) + len(quarantined_ids):
+        errors.append("quarantine: public and quarantined records do not account for the source inventory")
+    if quarantine.get("publicItemCount") != len(ids):
+        errors.append("quarantine: public item count differs from index")
+    if quarantine.get("quarantinedCount") != len(quarantined_ids):
+        errors.append("quarantine: count differs from records")
+
+    counts = summary.get("counts", {})
+    expected_counts = {
+        "sourceInventory": source_inventory,
+        "entries": len(ids),
+        "passages": 0,
+        "translated": translated,
+        "needsAttention": needs_attention,
+        "unresolvedItems": unresolved,
+        "humanReviewed": 0,
+        "quarantined": len(quarantined_ids),
+    }
+    for key, expected in expected_counts.items():
+        if counts.get(key) != expected:
+            errors.append(f"summary: {key} count differs")
+
+    section_ids: set[str] = set()
+    section_item_ids: list[str] = []
+    detail_by_id = {
+        item_id: load(root / "items" / f"{item_id}.json")
+        for item_id in ids
+        if (root / "items" / f"{item_id}.json").is_file()
+    }
+    for volume in summary.get("volumes", []):
+        matching = {
+            item.get("sectionId") for item in items if item.get("volume") == volume.get("number")
+        }
+        if len(matching) != volume.get("sectionCount"):
+            errors.append(f"summary: section count differs for volume {volume.get('number')}")
+        if sum(item.get("volume") == volume.get("number") for item in items) != volume.get("itemCount"):
+            errors.append(f"summary: item count differs for volume {volume.get('number')}")
+        section_ids.update(value for value in matching if isinstance(value, str))
+    for section_id in sorted(section_ids):
+        path = root / "sections" / f"{section_id}.json"
+        if not path.is_file():
+            errors.append(f"index: missing section {section_id}")
+            continue
+        section = load(path)
+        if section.get("id") != section_id or section.get("corpusId") != corpus_id:
+            errors.append(f"section: inconsistent identity for {section_id}")
+        for section_item in section.get("items", []):
+            if not isinstance(section_item, dict) or not isinstance(
+                section_item.get("id"), str
+            ):
+                errors.append(f"section: invalid embedded item in {section_id}")
+                continue
+            section_item_id = section_item["id"]
+            section_item_ids.append(section_item_id)
+            if detail_by_id.get(section_item_id) != section_item:
+                errors.append(
+                    f"section: embedded item differs from detail {section_item_id}"
+                )
+    if sorted(section_item_ids) != sorted(ids):
+        errors.append("sections: public items are not accounted for exactly once")
+    if "khadijah" in json.dumps(summary, ensure_ascii=False).lower():
+        errors.append("summary: research cohort must not be reader-facing taxonomy")
+
+    manifest_paths: set[str] = set()
+    for record in manifest.get("files", []):
+        relative = record.get("path")
+        digest = record.get("sha256")
+        if not isinstance(relative, str) or relative.startswith(("/", "..")):
+            errors.append("manifest: unsafe relative path")
+            continue
+        if relative in manifest_paths:
+            errors.append(f"manifest: duplicate path {relative}")
+        manifest_paths.add(relative)
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"manifest: missing file {relative}")
+            continue
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if not isinstance(digest, str) or not SHA256.fullmatch(digest) or digest != actual:
+            errors.append(f"manifest: hash mismatch {relative}")
+        if record.get("bytes") != path.stat().st_size:
+            errors.append(f"manifest: byte count mismatch {relative}")
+    expected_paths = {
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*.json")
+        if path.name != "manifest.json"
+    }
+    if manifest_paths != expected_paths:
+        errors.append("manifest: file set differs from public corpus")
+    if manifest.get("objectCount") != len(manifest_paths):
+        errors.append("manifest: object count differs from file set")
+    return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("root", type=Path)
+    args = parser.parse_args()
+    errors = validate(args.root.resolve())
+    if errors:
+        for error in errors:
+            print(error)
+        return 1
+    print("Public corpus eligibility, quarantine accounting, and integrity are valid.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

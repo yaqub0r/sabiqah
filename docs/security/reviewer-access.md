@@ -20,16 +20,16 @@ Cloudflare, R2, D1, or repository-administration access. Open Authoring creates
 a user-owned fork and pull request. Book maintainers decide what becomes
 canonical.
 
-Active membership also grants read access to the private intermediate corpus
-through Sabiqah's Worker. The Worker validates the signed session on every
-index and item request and reads the pinned corpus from private R2. Limited and
-suspended memberships receive no corpus text. The public work page receives
-only the non-sensitive summary and coverage counts; neither browser code nor
-reviewers receive R2 credentials or direct object URLs.
+Reading the validated public-working corpus requires no account or invitation.
+The Worker reads it from a private R2 origin and serves its summary, index,
+sections, items, and aggregate approval counts anonymously. Neither browser code
+nor readers receive R2 credentials or direct object URLs. Membership status is
+irrelevant to read access; the invitation authorizes review and correction
+actions only.
 
 An active reviewer may record or withdraw approval of an English translation
 through a same-origin Worker endpoint. The Worker first verifies the item in
-the pinned private R2 corpus, then appends a D1 event containing its immutable
+the pinned public-working corpus, then appends a D1 event containing its immutable
 corpus ID, stable item ID, and object digest. Repeated identical decisions are
 idempotent. Reviewers can see aggregate current approval counts and their own
 current decision, but not another reviewer's identity. Approval does not grant

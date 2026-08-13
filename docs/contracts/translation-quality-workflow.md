@@ -78,9 +78,12 @@ promotion state.
 
 Every in-scope work must identify these roles, including pending roles:
 
-1. a complete human-viewable facsimile approved as the public source authority;
-2. machine-readable source text aligned to that facsimile and independently
-   approved for publication;
+1. a complete human-viewable source authority approved for public use. This is
+   normally a facsimile, but may be an integrity-pinned, licensed transcription
+   when no reusable same-edition facsimile is available;
+2. machine-readable source text approved for publication and bound to that
+   human-viewable authority. When the authority is the transcription itself,
+   record that limitation explicitly and do not claim facsimile verification;
 3. explicitly classified alternative editions, translation witnesses,
    collateral works, and lexical references used to resolve uncertainty;
 4. page- or entry-addressable, publicly consumable structured Arabic and
@@ -129,17 +132,25 @@ translation corpus before establishing source and output eligibility, then
 expect a later classification or presentation change to cure it.
 
 Prefer a provider that pairs a complete facsimile and machine-readable text for
-the same edition. Keep an independent facsimile when it materially improves
-recovery or verification. Source and witness acquisition must follow
+the same edition. If a compatible license affirmatively permits publishing an
+exact machine-readable artifact but no reusable same-edition scan is available,
+the artifact may be the public authority only when its edition, license,
+revision, complete hash, and transformation boundary are recorded. Keep an
+independent public-domain facsimile when it materially improves recovery or
+verification, label it as a different edition, and never infer page identity or
+silently borrow its readings. Source and witness acquisition must follow
 `content-source-compliance`.
 
 ### 2. Source-text alignment
 
-Map machine text to stable facsimile locations and meaningful units such as
-pages, entries, headings, isnads, notes, or poetry. Measure missing, duplicated,
-reordered, truncated, and corrupt units. OCR or text repairs require an
-append-only ledger containing the original reading, replacement, evidence,
-reason, exact location, and hashes.
+Map machine text to the most precise stable locations supplied by its approved
+authority and to meaningful units such as pages, entries, headings, isnads,
+notes, or poetry. When a same-edition facsimile is approved, verify those
+locations against it. Otherwise record the lack of facsimile verification as a
+visible source limitation and do not substitute locations from another edition.
+Measure missing, duplicated, reordered, truncated, and corrupt units. OCR or
+text repairs require an append-only ledger containing the original reading,
+replacement, evidence, reason, exact location, and hashes.
 
 ### 3. Translation-scope lock
 

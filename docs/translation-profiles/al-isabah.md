@@ -28,6 +28,24 @@ machine-readable Arabic remain hash-bound throughout the workflow. Modern
 editorial introductions, footnotes, manuscript apparatus, indexes, and similar
 paratext are outside the translation scope unless separately approved.
 
+The current approved machine-readable authority is the OpenITI `0875AH`
+repository at commit `5835c183b8bbf4ea454d5c1be2b168b669403771`, file
+`0852IbnHajarCasqalani.IsabaFiTamyiz.JK000533-ara1.mARkdown`, SHA-256
+`bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea`.
+Its published license is `CC-BY-NC-SA-4.0`; every public presentation must carry
+the attribution and license recorded in
+`evidence/source-authorities/al-isabah.v1.json`. The independent Arabic
+Collections Online 1905-1907 facsimile is a public-domain visual witness, not a
+claim that its pagination matches the OpenITI edition.
+
+This source bundle uses the contract's licensed-transcription pathway: the
+human-viewable and machine-readable publication authority are the same pinned
+OpenITI artifact. No reusable same-edition facsimile has been approved, so the
+working edition reports OpenITI entry and page markers as source metadata but
+does not describe them as scan-verified. The ACO facsimile can corroborate the
+underlying medieval text only at an independently established passage; it never
+supplies OpenITI pagination or public wording.
+
 The 1995 Dar al-Kutub al-Ilmiyyah edition currently represented by the legacy
 Usul-aligned research corpus is `private-reference`, not the public Arabic
 authority. It may be consulted privately as an alternative-edition witness,
@@ -47,6 +65,26 @@ A witness may reveal damage or clarify ambiguity. It never silently becomes
 the translation base or supplies public wording. Clear Arabic from the
 publication-approved authority remains decisive; a corrected reading requires
 a cited, independently written, reviewable emendation.
+
+### Honorific typography map
+
+The public renderer may replace an exact source formula with the corresponding
+Unicode ligature below. This is reversible typography, not translation or
+editorial substitution:
+
+- `صلى الله عليه وسلم` → `ﷺ`
+- `صلى الله عليه وعلى آله وسلم` → `﵌`
+- `رحمه الله` → `﵀`; `رحمهم الله` → `﵏`
+- `رضي الله عنه` → `﵁`; `رضي الله عنها` → `﵂`
+- `رضي الله عنهم` → `﵃`; `رضي الله عنهما` → `﵄`; `رضي الله عنهن` → `﵅`
+- `عليه السلام` → `﵇`; `عليهم السلام` → `﵈`; `عليهما السلام` → `﵉`
+- `عليه الصلاة والسلام` → `﵊`
+- `تبارك وتعالى` → `﵎`; `عز وجل` → `﷿`
+
+The English record must contain the same formula inventory as its displayed
+Arabic source, at the corresponding occurrences. Ordinary dialogue or a
+narrator's quoted supplication is translated normally unless it is one of the
+source formulas above.
 
 ## Stable units
 
@@ -95,6 +133,16 @@ anonymous or relabeled public. Its stable identities and Sabiqah-authored
 English may be migrated only after each displayed Arabic unit and resulting
 record is reproducibly rebuilt or audited against the approved public source
 bundle. Restricted workflow evidence remains private after migration.
+
+The deterministic remediation produces
+`al-isabah-public-openiti-5835c18-v1`. Of the 1,579 legacy posted records, 1,506
+are rebuilt as public-source-bound entries and 73 are quarantined rather than
+served. Eleven eligible entries are honestly Arabic-only after restricted
+apparatus is removed; the remaining 1,495 retain Sabiqah-authored English.
+`quarantine.json` records every omission and reason, and the generated manifest
+binds every public object to the pinned authority. These counts describe this
+immutable corpus version; a later repair creates a new version rather than
+overwriting it.
 
 The former FirstLight implementation and closed Al-Isabah development branches
 are historical evidence, not the governing location. Sabiqah owns future

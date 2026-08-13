@@ -1,0 +1,163 @@
+import hashlib
+import importlib.util
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REBUILD_SPEC = importlib.util.spec_from_file_location(
+    "rebuild_al_isabah_public_corpus",
+    ROOT / "scripts" / "rebuild_al_isabah_public_corpus.py",
+)
+REBUILD = importlib.util.module_from_spec(REBUILD_SPEC)
+sys.modules["rebuild_al_isabah_public_corpus"] = REBUILD
+assert REBUILD_SPEC.loader is not None
+REBUILD_SPEC.loader.exec_module(REBUILD)
+
+VALIDATE_SPEC = importlib.util.spec_from_file_location(
+    "validate_public_corpus", ROOT / "scripts" / "validate_public_corpus.py"
+)
+VALIDATE = importlib.util.module_from_spec(VALIDATE_SPEC)
+assert VALIDATE_SPEC.loader is not None
+VALIDATE_SPEC.loader.exec_module(VALIDATE)
+
+
+class PublicCorpusTests(unittest.TestCase):
+    def test_source_authority_record_matches_the_pinned_contract(self):
+        REBUILD.validate_source_authority_record(REBUILD.DEFAULT_SOURCE_AUTHORITY)
+
+    def test_source_authority_record_rejects_a_false_facsimile_claim(self):
+        with tempfile.TemporaryDirectory() as temp:
+            record = json.loads(
+                REBUILD.DEFAULT_SOURCE_AUTHORITY.read_text(encoding="utf-8")
+            )
+            record["sourceBinding"]["sameEditionFacsimileApproved"] = True
+            path = Path(temp) / "authority.json"
+            path.write_text(json.dumps(record), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "sameEditionFacsimileApproved"):
+                REBUILD.validate_source_authority_record(path)
+
+    def legacy_entry(self) -> dict:
+        return {
+            "schemaVersion": "2.0.0",
+            "corpusId": "private-test",
+            "id": "isabah-entry-00010759",
+            "kind": "entry",
+            "sequence": 10759,
+            "printedEntryNumber": 10759,
+            "volume": 8,
+            "title": {
+                "en": "Asiya, sister of the Prophet—may Allah bless him and grant him peace",
+                "ar": "آسية أخت النبي ﷺ",
+            },
+            "translationState": "translated",
+            "machineAssessment": "passed",
+            "humanReview": "unreviewed",
+            "segments": [
+                {
+                    "id": "legacy-segment",
+                    "arabic": "١٠٧٥٩- آسية أخت النبي ﷺ كانت من الصحابيات.",
+                    "english": "10759—Asiya, sister of the Prophet—may Allah bless him and grant him peace\n\nShe was one of the Companions.",
+                    "pages": [],
+                    "machineState": "private",
+                }
+            ],
+            "names": [],
+            "unresolved": [],
+            "workflowStages": [],
+            "provenance": {
+                "sourceArtifactId": "private:test",
+                "sourceArtifactSha256": "0" * 64,
+            },
+        }
+
+    def make_inputs(self, root: Path) -> tuple[Path, Path, str]:
+        legacy = root / "legacy"
+        items = legacy / "items"
+        items.mkdir(parents=True)
+        (items / "isabah-entry-00010759.json").write_text(
+            json.dumps(self.legacy_entry(), ensure_ascii=False), encoding="utf-8"
+        )
+        passage = {
+            "id": "isabah-passage-test-0001",
+            "kind": "passage",
+            "printedEntryNumber": None,
+        }
+        (items / "isabah-passage-test-0001.json").write_text(
+            json.dumps(passage), encoding="utf-8"
+        )
+        openiti = root / "openiti.txt"
+        openiti.write_text(
+            "######OpenITI#\n\nPageV07P001\n"
+            "### $$ 10753 آسية أخت النبي صلى الله عليه وسلم كانت من الصحابيات\n",
+            encoding="utf-8",
+        )
+        digest = hashlib.sha256(openiti.read_bytes()).hexdigest()
+        return legacy, openiti, digest
+
+    def build(self, root: Path) -> Path:
+        legacy, openiti, digest = self.make_inputs(root)
+        output = root / "public"
+        with patch.object(REBUILD, "SOURCE_SHA256", digest), patch.object(
+            VALIDATE, "SOURCE_SHA256", digest
+        ):
+            summary = REBUILD.rebuild(
+                legacy, openiti, output, "2026-08-12T00:00:00Z"
+            )
+            self.assertEqual(summary["counts"]["entries"], 1)
+            self.assertEqual(summary["counts"]["quarantined"], 1)
+            self.assertEqual(VALIDATE.validate(output), [])
+        return output
+
+    def test_rebuild_replaces_private_arabic_and_accounts_for_quarantine(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item = json.loads(
+                (output / "items" / "isabah-entry-00010759.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            displayed = item["title"]["ar"] + " " + item["segments"][0]["arabic"]
+            self.assertIn("ﷺ", displayed)
+            self.assertNotIn("صلى الله عليه وسلم", displayed)
+            self.assertNotIn("may Allah bless", json.dumps(item))
+            quarantine = json.loads(
+                (output / "quarantine.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                quarantine["records"][0]["reasonCodes"],
+                ["no-approved-entry-alignment"],
+            )
+
+    def test_validator_rejects_a_private_locator(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["segments"][0]["english"] += " https://usul.ai/private"
+            item_path.write_text(json.dumps(item), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(any("private or unapproved" in error for error in errors))
+
+    def test_validator_rejects_section_content_that_differs_from_item(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            section_path = next((output / "sections").glob("*.json"))
+            section = json.loads(section_path.read_text(encoding="utf-8"))
+            section["items"][0]["segments"][0]["arabic"] = "ØºÙŠØ± Ù…Ø·Ø§Ø¨Ù‚"
+            section_path.write_text(json.dumps(section), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(
+                any("embedded item differs from detail" in error for error in errors)
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

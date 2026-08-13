@@ -37,7 +37,7 @@ describe("translation reviews", () => {
     ).toBe(false);
   });
 
-  it("records approval against the exact private corpus object", async () => {
+  it("records approval against the exact public corpus object", async () => {
     let inserted: unknown[] | undefined;
     const prepare = vi.fn((sql: string) => ({
       bind: (...values: unknown[]) => ({
