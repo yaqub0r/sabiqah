@@ -44,6 +44,7 @@ jobs:
         env:
           GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
           GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
+          GITHUB_ISSUES_TOKEN: ${{ secrets.GITHUB_ISSUES_TOKEN }}
           INVITE_CODE_DIGEST: ${{ secrets.INVITE_CODE_DIGEST }}
           INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
@@ -58,6 +59,7 @@ jobs:
           test -n "${AL_ISABAH_PUBLIC_CORPUS_URI}"
           test -n "${GITHUB_CLIENT_ID}"
           test -n "${GITHUB_CLIENT_SECRET}"
+          test -n "${GITHUB_ISSUES_TOKEN}"
           test -n "${INVITE_CODE_DIGEST}"
           test -n "${INVITE_CODE_PEPPER}"
           test -n "${SESSION_SECRET}"
@@ -100,6 +102,7 @@ jobs:
         env:
           GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
           GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
+          GITHUB_ISSUES_TOKEN: ${{ secrets.GITHUB_ISSUES_TOKEN }}
           INVITE_CODE_DIGEST: ${{ secrets.INVITE_CODE_DIGEST }}
           INVITE_CODE_PEPPER: ${{ secrets.INVITE_CODE_PEPPER }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
@@ -109,6 +112,7 @@ jobs:
           set -euo pipefail
           printf '%s' "${GITHUB_CLIENT_ID}" | pnpm exec wrangler secret put GITHUB_CLIENT_ID
           printf '%s' "${GITHUB_CLIENT_SECRET}" | pnpm exec wrangler secret put GITHUB_CLIENT_SECRET
+          printf '%s' "${GITHUB_ISSUES_TOKEN}" | pnpm exec wrangler secret put GITHUB_ISSUES_TOKEN
           printf '%s' "${INVITE_CODE_DIGEST}" | pnpm exec wrangler secret put INVITE_CODE_DIGEST
           printf '%s' "${INVITE_CODE_PEPPER}" | pnpm exec wrangler secret put INVITE_CODE_PEPPER
           printf '%s' "${SESSION_SECRET}" | pnpm exec wrangler secret put SESSION_SECRET

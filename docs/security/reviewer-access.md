@@ -52,10 +52,11 @@ report is unadjudicated workflow evidence; approved canonical changes still
 move through the individual book repository's review and release process.
 
 To enable this feature in an environment, create the credential with the scope
-above, store it with `wrangler secret put GITHUB_ISSUES_TOKEN`, deploy through
-the protected environment, submit one known test report, verify its structured
-location and escaped content, and then close the test issue. Rotate by creating
-and verifying a replacement before revoking the old token.
+above, store it as `GITHUB_ISSUES_TOKEN` in the protected GitHub environment,
+and run the reviewed deployment workflow that installs it as a Worker secret.
+Submit one known test report, verify its structured location and escaped
+content, and then close the test issue. Rotate by creating and verifying a
+replacement before revoking the old token.
 
 ## Limitations and response
 
