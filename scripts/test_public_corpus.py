@@ -27,6 +27,56 @@ VALIDATE_SPEC.loader.exec_module(VALIDATE)
 
 
 class PublicCorpusTests(unittest.TestCase):
+    def test_entry_title_profile_is_pinned_and_covers_the_reported_entries(self):
+        decisions = REBUILD.load_entry_title_profile()
+        self.assertEqual(set(decisions), {11426, 11427, 11430, 11439, 11441})
+
+    def test_entry_title_decision_moves_relationship_prose_into_the_body(self):
+        source = REBUILD.OpenITIEntry(
+            number=11441,
+            exact="",
+            clean="",
+            rendered=(
+                "ظبية بنت البراء بن معرور امرأة أبي قتادة الأنصاري "
+                "روى حديثها عبد الله بن رافع"
+            ),
+            pages=(),
+        )
+        decision = REBUILD.load_entry_title_profile()[11441]
+        title_ar, title_en, arabic, english = REBUILD.apply_entry_title_decision(
+            source,
+            "Zabya bint al-Bara' ibn Ma'rur, the wife of Abu Qatada al-Ansari",
+            "Her hadith was related by Abd Allah ibn Rafi'.",
+            decision,
+        )
+        self.assertEqual(title_ar, "ظبية بنت البراء")
+        self.assertEqual(title_en, "Zabya bint al-Bara'")
+        self.assertTrue(
+            arabic.startswith("بن معرور امرأة أبي قتادة الأنصاري\n\nروى حديثها")
+        )
+        self.assertTrue(
+            english.startswith(
+                "ibn Ma'rur, the wife of Abu Qatada al-Ansari\n\nHer hadith"
+            )
+        )
+
+    def test_entry_title_decision_rejects_missing_body_opening(self):
+        source = REBUILD.OpenITIEntry(
+            number=11430,
+            exact="",
+            clean="",
+            rendered="الضيزنة بنت أبي قيس نص مختلف",
+            pages=(),
+        )
+        decision = REBUILD.load_entry_title_profile()[11430]
+        with self.assertRaisesRegex(ValueError, "lose or reorder"):
+            REBUILD.apply_entry_title_decision(
+                source,
+                "al-Dayzana bint Abi Qays",
+                "She embraced Islam and emigrated.",
+                decision,
+            )
+
     def test_compaction_removes_parenthetical_honorific_commas(self):
         self.assertEqual(
             REBUILD.compact_registry_aliases(
@@ -248,6 +298,21 @@ class PublicCorpusTests(unittest.TestCase):
             errors = VALIDATE.validate(output)
             self.assertTrue(
                 any("must expose public working English" in error for error in errors)
+            )
+
+    def test_validator_rejects_drift_from_a_contracted_entry_title(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["sourceEntryNumber"] = 11441
+            item["title"] = {"ar": "ظبية بنت البراء", "en": "Wrong title"}
+            item_path.write_text(json.dumps(item, ensure_ascii=False), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(
+                any("title differs from Al-Isabah entry 11441" in error for error in errors),
+                errors,
             )
 
     def test_validator_rejects_a_private_locator(self):

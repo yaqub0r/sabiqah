@@ -27,6 +27,7 @@ from rebuild_al_isabah_public_corpus import (
     SOURCE_URL,
     honorific_display,
     honorific_semantic_key,
+    load_entry_title_profile,
     normalize_search_text,
 )
 
@@ -56,6 +57,7 @@ def load(path: Path) -> dict[str, Any]:
 
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
+    title_decisions = load_entry_title_profile()
     summary = load(root / "summary.json")
     index = load(root / "index.json")
     quarantine = load(root / "quarantine.json")
@@ -143,6 +145,31 @@ def validate(root: Path) -> list[str]:
         if remediation.get("privateLocatorsRemoved") is not True:
             errors.append(f"detail: private locators were not removed for {item_id}")
         segments = detail.get("segments", [])
+        source_entry_number = detail.get("sourceEntryNumber")
+        title_decision = title_decisions.get(source_entry_number)
+        if title_decision is not None:
+            if detail.get("title") != title_decision["title"]:
+                errors.append(
+                    f"detail: {item_id} title differs from Al-Isabah entry {source_entry_number} contract"
+                )
+            if not segments:
+                errors.append(f"detail: {item_id} has no contracted body opening")
+            else:
+                kind = title_decision["bodyOpeningKind"]
+                for language, field in (("ar", "arabic"), ("en", "english")):
+                    opening = title_decision["bodyOpening"][language]
+                    body = str(segments[0].get(field, ""))
+                    remainder = body[len(opening) :] if body.startswith(opening) else ""
+                    if not body.startswith(opening):
+                        errors.append(
+                            f"detail: {item_id} loses the contracted {language} body opening"
+                        )
+                    elif kind == "lineage" and not re.match(
+                        r"^[.,;:،؛]*\n\n", remainder
+                    ):
+                        errors.append(
+                            f"detail: {item_id} lineage must be a separate opening paragraph in {language}"
+                        )
         displayed_arabic = " ".join(
             [str(detail.get("title", {}).get("ar", ""))]
             + [str(segment.get("arabic", "")) for segment in segments]

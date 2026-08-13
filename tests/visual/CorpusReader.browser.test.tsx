@@ -1,4 +1,5 @@
 import { createRoot, type Root } from "react-dom/client";
+import { page } from "vitest/browser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CorpusReader } from "../../apps/web/src/components/CorpusReader";
@@ -6,6 +7,73 @@ import "../../apps/web/src/styles/global.css";
 
 const corpusId = "al-isabah-visual-fixture";
 const sourceCommit = "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178";
+const sectionId = "volume-08-pages-0001-0025";
+
+function record(
+  id: string,
+  number: number,
+  titleEn: string,
+  titleAr: string,
+  english: string,
+) {
+  return {
+    schemaVersion: "2.0.0",
+    corpusId,
+    id,
+    kind: "entry",
+    sequence: number,
+    printedEntryNumber: number,
+    volume: 8,
+    title: { en: titleEn, ar: titleAr },
+    translationState: "translated",
+    machineAssessment: "passed",
+    humanReview: "unreviewed",
+    segments: [
+      {
+        id: `${id}-segment-0001`,
+        arabic: "نص عربي للقراءة واختبار بنية المدخل.",
+        english,
+        pages: [
+          {
+            volume: 8,
+            printedPage: 1,
+            readerPage: null,
+            providerPage: "https://github.com/OpenITI/0875AH",
+          },
+        ],
+        machineState: "machine_validated_unreviewed",
+      },
+    ],
+    names: [],
+    unresolved: [],
+    workflowStages: [
+      {
+        stage: "machine_validation",
+        state: "complete",
+        summary: "Deterministic visual fixture.",
+      },
+    ],
+    provenance: {
+      sourceArtifactId: `visual:${number}`,
+      sourceArtifactSha256: "a".repeat(64),
+    },
+  };
+}
+
+const shortRecord = record(
+  "isabah-entry-00011430",
+  11426,
+  "Duba'a bint Amir",
+  "ضباعة بنت عامر",
+  "A short body.",
+);
+const longRecord = record(
+  "isabah-entry-00011443",
+  11439,
+  "Tufya",
+  "طفية",
+  "A deliberately longer body. ".repeat(30),
+);
 
 let root: Root;
 
@@ -86,10 +154,46 @@ beforeEach(() => {
         });
       }
       if (path === "/api/corpus/al-isabah/index") {
-        return response({ schemaVersion: "2.0.0", corpusId, items: [] });
+        return response({
+          schemaVersion: "2.0.0",
+          corpusId,
+          items: [shortRecord, longRecord].map((item) => ({
+            id: item.id,
+            kind: item.kind,
+            sequence: item.sequence,
+            printedEntryNumber: item.printedEntryNumber,
+            volume: item.volume,
+            printedPageStart: 1,
+            printedPageEnd: 1,
+            sectionId,
+            titleEn: item.title.en,
+            titleAr: item.title.ar,
+            translationState: item.translationState,
+            machineAssessment: item.machineAssessment,
+            humanReview: item.humanReview,
+            unresolvedCount: 0,
+          })),
+        });
       }
       if (path === "/api/corpus/al-isabah/reviews") {
         return response({ corpusId, reviewedItems: 0, items: {} });
+      }
+      if (path === `/api/corpus/al-isabah/sections/${sectionId}`) {
+        return response({
+          schemaVersion: "2.0.0",
+          corpusId,
+          id: sectionId,
+          volume: 8,
+          label: "Pages 1–25",
+          availability: "complete_translation",
+          position: 1,
+          totalSections: 1,
+          printedPageStart: 1,
+          printedPageEnd: 1,
+          previousSectionId: null,
+          nextSectionId: null,
+          items: [shortRecord, longRecord],
+        });
       }
       return response({}, false);
     }),
@@ -151,5 +255,37 @@ describe("CorpusReader presentation quality", () => {
     );
     expect(selected?.textContent).toContain("Volume");
     expect(selected?.textContent).toContain("8");
+  });
+
+  it("keeps entry-title typography independent of body length", async () => {
+    root.render(<CorpusReader />);
+    const deadline = Date.now() + 5_000;
+    let headings: HTMLElement[] = [];
+    while (Date.now() < deadline) {
+      headings = [
+        ...document.querySelectorAll<HTMLElement>(".reading-record h3"),
+      ];
+      if (headings.length === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(headings).toHaveLength(2);
+    expect(
+      headings.map((heading) => getComputedStyle(heading).fontSize),
+    ).toEqual([
+      getComputedStyle(headings[0]!).fontSize,
+      getComputedStyle(headings[0]!).fontSize,
+    ]);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    for (const [index, heading] of headings.entries()) {
+      const header = heading.closest<HTMLElement>("header");
+      expect(header).not.toBeNull();
+      await page.screenshot({
+        element: header!,
+        path: `../../.runtime/visual-qa/entry-title-${document.documentElement.clientWidth}-${index === 0 ? "short" : "long"}.png`,
+      });
+    }
   });
 });

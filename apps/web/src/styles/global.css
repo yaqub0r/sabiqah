@@ -559,9 +559,6 @@ button {
 .reading-record.short-record {
   padding: clamp(1.35rem, 2.5vw, 2.1rem) 0;
 }
-.reading-record.short-record h3 {
-  font-size: clamp(1.2rem, 2.2vw, 1.65rem);
-}
 .reading-record.short-record > header {
   margin-bottom: 0.65rem;
 }
