@@ -30,6 +30,12 @@ pull requests.
   or redistribute an artifact.
 - Keep restricted research witnesses and private comparison evidence out of
   public repositories and deployment artifacts.
+- Before storing workstation-only restricted evidence, read
+  `docs/contracts/private-evidence-ingestion.md` and
+  `docs/operations/private-evidence-ingestion.md`, then use the supported
+  `pnpm evidence:preserve` command with the local `sabiqah-r2-dev` AWS profile.
+  Never substitute a GitHub Actions or production credential, expose its
+  values, or delete the source automatically.
 - Promote content into a canonical book repository only through an explicit,
   reviewable manifest; never silently overwrite canonical book content.
 

@@ -26,6 +26,7 @@ production remains protected and undeployed.
 - Cloud architecture: [`docs/architecture/cloud-foundation.md`](docs/architecture/cloud-foundation.md)
 - Access model: [`docs/security/access-model.md`](docs/security/access-model.md)
 - Credential rotation: [`docs/operations/credential-rotation.md`](docs/operations/credential-rotation.md)
+- Private evidence ingestion: [`docs/operations/private-evidence-ingestion.md`](docs/operations/private-evidence-ingestion.md)
 - Secret-handling policy: [`SECURITY.md`](SECURITY.md)
 - Application architecture: [`docs/architecture/application-platform.md`](docs/architecture/application-platform.md)
 - Content-governance model: [`docs/architecture/content-governance.md`](docs/architecture/content-governance.md)
@@ -45,6 +46,21 @@ production remains protected and undeployed.
 - Restricted research witnesses belong in governed private storage, never in a
   public Git repository or deployment artifact. Approved public facsimiles and
   page images belong in versioned object storage rather than Git.
+
+## Private evidence storage
+
+For workstation-only restricted evidence, read the
+[private-evidence ingestion contract](docs/contracts/private-evidence-ingestion.md)
+and follow the
+[private-evidence ingestion runbook](docs/operations/private-evidence-ingestion.md).
+The supported command is `pnpm evidence:preserve`; it validates the evidence
+manifest, builds a deterministic archive, stores it in private development R2,
+and verifies a downloaded copy by SHA-256.
+
+The command uses the local AWS shared-credentials profile `sabiqah-r2-dev`.
+That name and its permission boundary are public metadata; its credential values
+must remain outside Git, issues, logs, and chat. Do not substitute a GitHub
+Actions or production credential.
 
 ## Local development
 
