@@ -654,6 +654,52 @@ button {
   line-height: 2;
   text-align: right;
 }
+.reading-bilingual > div > .corpus-text + .corpus-text {
+  margin-top: 1.15rem;
+}
+.poetry-block {
+  margin: 1.35rem 0;
+}
+.poetry-block blockquote {
+  margin: 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 0.18rem solid var(--gold);
+  font:
+    italic 1.13rem/1.85 Georgia,
+    serif;
+}
+.poetry-block blockquote p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.poetry-block blockquote p + p {
+  margin-top: 0.8rem;
+}
+.poetry-block figcaption {
+  margin: 0.45rem 0 0 1.43rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.poetry-block > p {
+  margin: 0.65rem 0 0;
+  font:
+    1.16rem/1.85 Georgia,
+    serif;
+}
+.arabic-poetry {
+  margin: 1.35rem 0;
+  padding: 0.25rem 1.25rem 0.25rem 0;
+  border-right: 0.18rem solid var(--gold);
+}
+.reading-bilingual .arabic-poetry p {
+  margin: 0;
+}
+.reading-bilingual .arabic-poetry p + p {
+  margin-top: 0.55rem;
+}
 .continuation-note {
   color: var(--muted);
   font-style: italic;

@@ -72,10 +72,19 @@ const longRecord = record(
   11439,
   "Tufya",
   "طفية",
-  "A deliberately longer body. ".repeat(30),
+  "A deliberately longer body. ".repeat(12) +
+    "It introduces the following verse:\n\n" +
+    "The first translated line of poetry,\nthe second translated line of poetry.\n\n" +
+    "Another measured pair of lines,\nset apart for deliberate reading.\n\n" +
+    "Meter: al-Tawil\n\n" +
+    "The prose account then continues.",
 );
 const structuredRecord = {
   ...longRecord,
+  segments: longRecord.segments.map((segment) => ({
+    ...segment,
+    arabic: "نثر تمهيدي للقراءة:\nبيت أول من الشعر\nبيت ثان من الشعر",
+  })),
   headingsBefore: [
     { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
     { level: "section", en: "Section One", ar: "الأول" },
@@ -324,6 +333,32 @@ describe("CorpusReader presentation quality", () => {
     await page.screenshot({
       element: heading!,
       path: `../../.runtime/visual-qa/source-structure-${document.documentElement.clientWidth}.png`,
+    });
+  });
+
+  it("distinguishes bilingual poetry without clipping or overflow", async () => {
+    root.render(<CorpusReader />);
+    const deadline = Date.now() + 5_000;
+    let poetry: HTMLElement | null = null;
+    while (Date.now() < deadline) {
+      poetry = document.querySelector<HTMLElement>(".poetry-block");
+      if (poetry) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(poetry).not.toBeNull();
+    expect(poetry?.textContent).toContain("Meter: al-Tawil");
+    expect(
+      getComputedStyle(poetry!.querySelector("blockquote")!).fontStyle,
+    ).toBe("italic");
+    expect(document.querySelectorAll(".arabic-poetry p")).toHaveLength(2);
+    expect(poetry?.scrollWidth).toBeLessThanOrEqual(poetry!.clientWidth);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    await page.screenshot({
+      element: poetry!.closest<HTMLElement>(".reading-bilingual")!,
+      path: `../../.runtime/visual-qa/poetry-${document.documentElement.clientWidth}.png`,
     });
   });
 });
