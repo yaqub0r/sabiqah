@@ -6,6 +6,26 @@ Every repository change must be associated with a GitHub issue before work
 begins. Keep work within the issue scope and reference the issue in commits and
 pull requests.
 
+## Worktree and filesystem safety
+
+- Read `docs/development/worktree-lifecycle.md` before creating or removing a
+  worktree.
+- Use one Codex-managed worktree for one active issue. Start a separate Codex
+  worktree or thread for parallel work; never create a worktree inside an
+  existing checkout, including under `.runtime`.
+- On Windows, keep the canonical clone at a short, non-synchronized path. The
+  reference path for this workstation is `D:\Temp\Sabiqah`; cloud and Linux
+  environments should use an equivalently short local path.
+- Before removing a worktree, run the repository's generated-dependency cleanup
+  in dry-run mode and then its explicit apply mode. Do not improvise an
+  equivalent deletion command.
+- Remove worktrees through Git only after verifying the exact path, clean state,
+  and integration status. Retain the current Codex worktree for the app to
+  manage.
+- If the repository cleanup command or Git cleanup fails, stop and diagnose.
+  Never use improvised recursive deletion, manual `.git/worktrees` deletion,
+  link traversal, or ACL changes as a fallback.
+
 ## Infrastructure safety
 
 - Treat architecture records as proposals until their status is Accepted.
