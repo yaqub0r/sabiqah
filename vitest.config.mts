@@ -13,4 +13,11 @@ export default defineConfig({
       ),
     },
   },
+  test: {
+    include: [
+      "apps/**/*.test.{ts,tsx}",
+      "packages/**/*.test.{ts,tsx}",
+      "workers/**/*.test.{ts,tsx}",
+    ],
+  },
 });

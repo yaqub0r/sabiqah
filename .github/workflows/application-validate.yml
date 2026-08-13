@@ -85,6 +85,21 @@ jobs:
       - name: Validate application and Worker bundle
         run: pnpm check
 
+      - name: Install Chromium for presentation tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test responsive presentation
+        run: pnpm test:visual
+
+      - name: Upload presentation diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: presentation-diagnostics
+          path: .runtime/visual-qa
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Test corpus exporters and validators
         run: python3 -m unittest discover -s scripts -p "test_*corpus.py"
 

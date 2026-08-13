@@ -19,6 +19,7 @@ responsibilities.
 | `private-evidence-ingestion`   | Local validation, deterministic packaging, least-privilege transfer, and verification of private research evidence                  | [`private-evidence-ingestion.md`](private-evidence-ingestion.md)     |
 | `translation-quality-workflow` | Public-output eligibility, source lock, translation quality, witness use, machine readiness, presentation, and human-review handoff | [`translation-quality-workflow.md`](translation-quality-workflow.md) |
 | `canonical-book-promotion`     | Promotion of approved scholarly content into canonical book repositories and consumption of pinned releases                         | [`canonical-book-promotion.md`](canonical-book-promotion.md)         |
+| `presentation-quality`         | Responsive rendering, interaction-state legibility, visual evidence, and post-deployment presentation verification                  | [`presentation-quality.md`](presentation-quality.md)                 |
 
 ## Book profiles
 

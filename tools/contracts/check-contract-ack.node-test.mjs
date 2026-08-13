@@ -57,6 +57,18 @@ test("translation implementation paths require the quality contract", () => {
   assert.deepEqual([...required], ["translation-quality-workflow"]);
 });
 
+test("user-facing paths require the presentation contract", () => {
+  const { required } = requiredContracts(
+    [
+      "apps/web/src/components/CorpusReader.tsx",
+      "apps/web/src/styles/global.css",
+      "tests/visual/CorpusReader.browser.test.tsx",
+    ],
+    registry,
+  );
+  assert.equal(required.has("presentation-quality"), true);
+});
+
 test("acknowledgements are read only from the contract section", () => {
   const parsed = parseAcknowledgements(
     `## Contracts consulted
@@ -86,6 +98,7 @@ test("all required acknowledgements pass", () => {
 - \`private-evidence-ingestion\`
 - \`canonical-book-promotion\`
 - \`translation-quality-workflow\`
+- \`presentation-quality\`
 `,
     registry,
   );
@@ -107,6 +120,7 @@ test("a missing required contract fails", () => {
       "private-evidence-ingestion",
       "canonical-book-promotion",
       "translation-quality-workflow",
+      "presentation-quality",
     ],
   );
   assert.match(result.errors.join("\n"), /Missing contract ids/);
