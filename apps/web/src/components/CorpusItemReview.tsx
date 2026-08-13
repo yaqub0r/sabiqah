@@ -163,11 +163,18 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
           </div>
         </section>
       ))}
-      <TranslationApproval
-        itemId={item.id}
-        state={reviewState}
-        onChange={setReviewState}
-      />
+      {item.translationState === "translated" ? (
+        <TranslationApproval
+          itemId={item.id}
+          state={reviewState}
+          onChange={setReviewState}
+        />
+      ) : (
+        <p className="issue-banner">
+          This Arabic-only record has no translation to approve. Add or correct
+          the translation before submitting an approval.
+        </p>
+      )}
       {item.unresolved.length > 0 && (
         <section className="review-notes">
           <h2>Unresolved work</h2>

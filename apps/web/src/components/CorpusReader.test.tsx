@@ -72,6 +72,15 @@ const secondItem = item(
   "Second short entry",
   "The following short record continues in the same reading section.",
 );
+const untranslatedItem = {
+  ...secondItem,
+  title: { ...secondItem.title, en: "Entry 10760" },
+  translationState: "untranslated" as const,
+  segments: secondItem.segments.map((segment) => ({
+    ...segment,
+    english: "",
+  })),
+};
 
 afterEach(() => {
   cleanup();
@@ -216,7 +225,7 @@ describe("CorpusReader", () => {
           counts: {
             entries: 2,
             passages: 0,
-            translated: 2,
+            translated: 1,
             needsAttention: 0,
             unresolvedItems: 0,
             humanReviewed: 0,
@@ -250,7 +259,7 @@ describe("CorpusReader", () => {
         {
           schemaVersion: "2.0.0",
           corpusId,
-          items: [firstItem, secondItem].map((record) => ({
+          items: [firstItem, untranslatedItem].map((record) => ({
             id: record.id,
             kind: record.kind,
             sequence: record.sequence,
@@ -297,7 +306,7 @@ describe("CorpusReader", () => {
           printedPageEnd: 3,
           previousSectionId: null,
           nextSectionId: null,
-          items: [firstItem, secondItem],
+          items: [firstItem, untranslatedItem],
         },
       ],
     ]);
@@ -317,11 +326,15 @@ describe("CorpusReader", () => {
       await screen.findByRole("heading", { name: "Pages 1–25" }),
     ).toBeTruthy();
     expect(screen.getByText("The first short translated record.")).toBeTruthy();
+    expect(screen.getByText("Translation not yet available.")).toBeTruthy();
     expect(
       screen.getByText(
-        "The following short record continues in the same reading section.",
+        "This Arabic-only record has no translation to approve. Add or correct the translation through the review workspace first.",
       ),
     ).toBeTruthy();
+    expect(
+      screen.getAllByRole("button", { name: "Approve this translation" }),
+    ).toHaveLength(1);
     expect(screen.getAllByText("Review record")).toHaveLength(2);
     expect(
       screen.getByText("Human reviewed · 1 current approval"),
@@ -332,11 +345,7 @@ describe("CorpusReader", () => {
       }),
     );
     expect(screen.queryByText("The first short translated record.")).toBeNull();
-    expect(
-      screen.getByText(
-        "The following short record continues in the same reading section.",
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText("Translation not yet available.")).toBeTruthy();
     expect(
       screen.getByText("Showing 1 of 2 records in this section"),
     ).toBeTruthy();

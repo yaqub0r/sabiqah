@@ -205,13 +205,19 @@ function ReadingRecord({
           </div>
         </section>
       ))}
-      {canReview && (
+      {canReview && item.translationState === "translated" && (
         <TranslationApproval
           itemId={item.id}
           state={reviewState}
           onChange={onReviewStateChange}
           ready={reviewStateLoaded}
         />
+      )}
+      {canReview && item.translationState === "untranslated" && (
+        <p className="issue-banner">
+          This Arabic-only record has no translation to approve. Add or correct
+          the translation through the review workspace first.
+        </p>
       )}
       <ReviewEvidence item={item} />
     </article>
