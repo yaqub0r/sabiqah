@@ -189,6 +189,17 @@ export const reviewCorpusItemSchema = z
     sourceEntryNumber: z.number().int().positive().optional(),
     volume: z.number().int().positive(),
     title: z.object({ en: z.string().min(1), ar: z.string() }).strict(),
+    headingsBefore: z
+      .array(
+        z
+          .object({
+            level: z.enum(["letter", "section", "subsection"]),
+            en: z.string().min(1),
+            ar: z.string().min(1),
+          })
+          .strict(),
+      )
+      .optional(),
     relationship: z.string().optional(),
     rationale: z.string().optional(),
     translationState: reviewStateSchema,

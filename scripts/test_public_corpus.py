@@ -100,6 +100,61 @@ class PublicCorpusTests(unittest.TestCase):
             "the Prophet ﷺ said",
         )
 
+    def test_compaction_removes_parenthetical_honorific_dashes(self):
+        self.assertEqual(
+            REBUILD.compact_registry_aliases(
+                "the Prophet—may Allah bless him and grant him peace—said", "en"
+            ),
+            "the Prophet ﷺ said",
+        )
+
+    def test_sanitizer_separates_structure_and_repairs_record_artifacts(self):
+        tufya = {
+            "title": {"en": "Tufya"},
+            "segments": [
+                {"english": "11443 — Tufya:\n\nShe was mentioned by—"},
+                {"english": "al-Tabarani, who said this."},
+            ],
+        }
+        english, _ = REBUILD.sanitize_english(tufya)
+        self.assertEqual(english, "She was mentioned by al-Tabarani, who said this.")
+
+        transition = {
+            "title": {"en": "Tu'ayma bint Jarr"},
+            "segments": [
+                {
+                    "english": (
+                        "11444—Tu'ayma bint Jarr\n\nBiography.\n\n"
+                        "THE LETTER ZA WITH THE UPRIGHT STROKE\n\nSECTION ONE"
+                    )
+                }
+            ],
+        }
+        english, _ = REBUILD.sanitize_english(transition)
+        self.assertEqual(english, "Biography.")
+
+        atika = {
+            "title": {"en": "Atika bint Zayd"},
+            "segments": [
+                {
+                    "english": (
+                        "11452. Atika bint Zayd\n\nHer father ordered him to divorce her, and he said:\n\n"
+                        "First half of the verse,\nsecond half of the verse.\n\n"
+                        "[al-Tawil meter]\n\n"
+                        "[Textual note: comparison material] The account continues "
+                        "after [al-Basit meter]."
+                    )
+                }
+            ],
+        }
+        english, removals = REBUILD.sanitize_english(atika)
+        self.assertNotIn("11452", english)
+        self.assertNotIn("Textual note", english)
+        self.assertIn("First half of the verse,\nsecond half of the verse.", english)
+        self.assertIn("Meter: al-Ṭawīl", english)
+        self.assertIn("Meter: al-Basit", english)
+        self.assertEqual(removals["removedEditorialNotes"], 1)
+
     def test_source_authority_record_matches_the_pinned_contract(self):
         REBUILD.validate_source_authority_record(REBUILD.DEFAULT_SOURCE_AUTHORITY)
 
@@ -346,11 +401,28 @@ class PublicCorpusTests(unittest.TestCase):
             errors = VALIDATE.validate(output)
             self.assertTrue(
                 any(
-                    "compact honorific is separated from its referent by a comma"
+                    "compact honorific retains parenthetical punctuation"
                     in error
                     for error in errors
                 )
             )
+
+    def test_validator_rejects_dangling_dashes_embedded_headings_and_raw_meter_labels(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["segments"][0]["english"] = (
+                "10759. Embedded title\n\nShe was mentioned by—\n\nal-Tabarani.\n\n"
+                "SECTION ONE\n\n[al-Tawil meter]"
+            )
+            item_path.write_text(json.dumps(item), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(any("embedded legacy entry heading" in error for error in errors))
+            self.assertTrue(any("dangling dash" in error for error in errors))
+            self.assertTrue(any("source structure" in error for error in errors))
+            self.assertTrue(any("raw poetry meter" in error for error in errors))
 
     def test_validator_rejects_honorific_agreement_that_differs_from_registry(self):
         with tempfile.TemporaryDirectory() as temp:

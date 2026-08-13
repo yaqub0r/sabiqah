@@ -8,7 +8,7 @@ import {
   type ReviewCorpusSection,
   type ReviewCorpusSummary,
 } from "@sabiqah/release-model";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
 import { HonorificText } from "./HonorificText";
@@ -174,65 +174,80 @@ function ReadingRecord({
   );
   const isShort = item.segments.length === 1 && englishLength < 280;
   return (
-    <article
-      className={`reading-record${isShort ? " short-record" : ""}`}
-      id={item.id}
-    >
-      <header>
-        <p className="record-number">
-          {item.printedEntryNumber
-            ? `Entry ${item.printedEntryNumber}`
-            : "Translated passage"}
-          {pages.length > 0 && ` · p. ${pages.join("–")}`}
-        </p>
-        <div>
-          <h3>
-            <HonorificText text={item.title.en} language="en" />
-          </h3>
-          <p lang="ar" dir="rtl">
-            <HonorificText text={item.title.ar} language="ar" />
+    <Fragment>
+      {item.headingsBefore && item.headingsBefore.length > 0 && (
+        <header className="source-structure-heading">
+          {item.headingsBefore.map((heading) => (
+            <div key={`${heading.level}-${heading.ar}`}>
+              <p className="eyebrow">{heading.level}</p>
+              <h2>{heading.en}</h2>
+              <p lang="ar" dir="rtl">
+                {heading.ar}
+              </p>
+            </div>
+          ))}
+        </header>
+      )}
+      <article
+        className={`reading-record${isShort ? " short-record" : ""}`}
+        id={item.id}
+      >
+        <header>
+          <p className="record-number">
+            {item.printedEntryNumber
+              ? `Entry ${item.printedEntryNumber}`
+              : "Translated passage"}
+            {pages.length > 0 && ` · p. ${pages.join("–")}`}
           </p>
-        </div>
-      </header>
-      {item.relationship && (
-        <p className="passage-context">{item.relationship}</p>
-      )}
-      {item.segments.map((segment) => (
-        <section className="reading-bilingual" key={segment.id}>
-          <div lang="en" dir="ltr">
-            <p className="corpus-text">
-              {segment.english ? (
-                <HonorificText text={segment.english} language="en" />
-              ) : (
-                <span className="continuation-note">
-                  English text is contained in the entry heading.
-                </span>
-              )}
+          <div>
+            <h3>
+              <HonorificText text={item.title.en} language="en" />
+            </h3>
+            <p lang="ar" dir="rtl">
+              <HonorificText text={item.title.ar} language="ar" />
             </p>
           </div>
-          <div lang="ar" dir="rtl">
-            <p className="arabic corpus-text">
-              <HonorificText text={segment.arabic} language="ar" />
-            </p>
-          </div>
-        </section>
-      ))}
-      {canReview && item.translationState === "translated" && (
-        <TranslationApproval
-          itemId={item.id}
-          state={reviewState}
-          onChange={onReviewStateChange}
-          ready={reviewStateLoaded}
-        />
-      )}
-      {canReview && item.translationState === "untranslated" && (
-        <p className="issue-banner">
-          This Arabic-only record has no translation to approve. Add or correct
-          the translation through the review workspace first.
-        </p>
-      )}
-      <ReviewEvidence item={item} />
-    </article>
+        </header>
+        {item.relationship && (
+          <p className="passage-context">{item.relationship}</p>
+        )}
+        {item.segments.map((segment) => (
+          <section className="reading-bilingual" key={segment.id}>
+            <div lang="en" dir="ltr">
+              <p className="corpus-text">
+                {segment.english ? (
+                  <HonorificText text={segment.english} language="en" />
+                ) : (
+                  <span className="continuation-note">
+                    English text is contained in the entry heading.
+                  </span>
+                )}
+              </p>
+            </div>
+            <div lang="ar" dir="rtl">
+              <p className="arabic corpus-text">
+                <HonorificText text={segment.arabic} language="ar" />
+              </p>
+            </div>
+          </section>
+        ))}
+        {canReview && item.translationState === "translated" && (
+          <TranslationApproval
+            itemId={item.id}
+            state={reviewState}
+            onChange={onReviewStateChange}
+            ready={reviewStateLoaded}
+          />
+        )}
+        {canReview && item.translationState === "untranslated" && (
+          <p className="issue-banner">
+            This Arabic-only record has no translation to approve. Add or
+            correct the translation through the review workspace first.
+          </p>
+        )}
+        <ReviewEvidence item={item} />
+      </article>
+    </Fragment>
   );
 }
 

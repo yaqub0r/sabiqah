@@ -233,6 +233,122 @@ describe("CorpusReader", () => {
     ).toBeTruthy();
   });
 
+  it("renders source headings between records instead of inside biography prose", async () => {
+    const headedItem = {
+      ...firstItem,
+      headingsBefore: [
+        { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
+        { level: "section", en: "Section One", ar: "الأول" },
+      ],
+    };
+    const responses = new Map<string, unknown>([
+      [
+        "/api/corpus/al-isabah/summary",
+        {
+          schemaVersion: "2.0.0",
+          work: { slug: "al-isabah", titleAr: "الإصابة", titleEn: "Al-Isabah" },
+          corpus: {
+            id: corpusId,
+            sourceRepository: "https://github.com/yaqub0r/al-isabah",
+            sourceCommit: "a3b76bfc72cc9d5d8f6d7d26f249f2f32b0ef178",
+            generatedAt: "2026-08-12T00:00:00.000Z",
+            promotionStatus: "blocked",
+          },
+          counts: {
+            entries: 1,
+            passages: 0,
+            translated: 1,
+            needsAttention: 0,
+            unresolvedItems: 0,
+            humanReviewed: 0,
+          },
+          volumes: [
+            {
+              id: "volume-08",
+              number: 8,
+              label: "Volume 8",
+              availability: "selected_passages",
+              itemCount: 1,
+              sectionCount: 1,
+              firstPrintedPage: 3,
+              lastPrintedPage: 3,
+              description: "Working translation.",
+            },
+          ],
+        },
+      ],
+      [
+        "/api/corpus/al-isabah/index",
+        {
+          schemaVersion: "2.0.0",
+          corpusId,
+          items: [
+            {
+              id: firstItem.id,
+              kind: firstItem.kind,
+              sequence: firstItem.sequence,
+              printedEntryNumber: firstItem.printedEntryNumber,
+              volume: 8,
+              printedPageStart: 3,
+              printedPageEnd: 3,
+              sectionId,
+              titleEn: firstItem.title.en,
+              titleAr: firstItem.title.ar,
+              translationState: "translated",
+              machineAssessment: "passed",
+              humanReview: "unreviewed",
+              unresolvedCount: 0,
+            },
+          ],
+        },
+      ],
+      [
+        "/api/corpus/al-isabah/reviews",
+        { corpusId, reviewedItems: 0, items: {} },
+      ],
+      [
+        `/api/corpus/al-isabah/sections/${sectionId}`,
+        {
+          schemaVersion: "2.0.0",
+          corpusId,
+          id: sectionId,
+          volume: 8,
+          label: "Pages 1–25",
+          availability: "selected_passages",
+          position: 1,
+          totalSections: 1,
+          printedPageStart: 3,
+          printedPageEnd: 3,
+          previousSectionId: null,
+          nextSectionId: null,
+          items: [headedItem],
+        },
+      ],
+    ]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "/api/session") return Promise.resolve({ ok: false });
+        const body = responses.get(url);
+        return Promise.resolve({
+          ok: body !== undefined,
+          json: async () => body,
+        });
+      }),
+    );
+
+    render(<CorpusReader />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Letter Ẓāʾ (ظ)" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Section One" })).toBeTruthy();
+    expect(
+      document.querySelector(".source-structure-heading + .reading-record"),
+    ).toBeTruthy();
+  });
+
   it("presents consecutive short records inside a volume reading section", async () => {
     const responses = new Map<string, unknown>([
       [

@@ -549,6 +549,33 @@ button {
 .reading-flow {
   counter-reset: records;
 }
+
+.source-structure-heading {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: clamp(1rem, 4vw, 3rem);
+  margin: 2.5rem 0 0;
+  padding: 1.5rem 0;
+  border-block: 1px solid var(--line);
+}
+
+.source-structure-heading h2,
+.source-structure-heading p {
+  margin: 0;
+}
+
+.source-structure-heading > div {
+  min-width: 0;
+  padding-inline: 0.75rem;
+}
+
+.source-structure-heading [lang="ar"] {
+  font:
+    1.65rem/1.7 "Noto Naskh Arabic Variable",
+    "Traditional Arabic",
+    serif;
+  text-align: right;
+}
 .reading-record {
   padding: clamp(2rem, 4vw, 3.5rem) 0;
   scroll-margin-top: 1.5rem;
