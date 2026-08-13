@@ -45,7 +45,7 @@ repository-owned cleanup command from that worktree:
 
 ```powershell
 pnpm cleanup:generated
-pnpm cleanup:generated -- --apply
+pnpm cleanup:generated --apply
 ```
 
 The first command is a dry run. Review every listed path before using the apply
@@ -102,7 +102,7 @@ From the completed worktree, remove generated dependencies first:
 
 ```powershell
 pnpm cleanup:generated
-pnpm cleanup:generated -- --apply
+pnpm cleanup:generated --apply
 ```
 
 If either command fails or lists an unexpected path, stop. Do not continue to
