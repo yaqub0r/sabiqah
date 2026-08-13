@@ -104,3 +104,52 @@ describe("CorpusItemReview", () => {
     ).toBeTruthy();
   });
 });
+
+describe("CorpusItemReview Arabic-only records", () => {
+  it("does not offer approval when no translation exists", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/review/?id=${itemId}`,
+    );
+    const untranslatedItem = {
+      ...reviewItem,
+      title: { ...reviewItem.title, en: "Entry 10759" },
+      translationState: "untranslated",
+      segments: reviewItem.segments.map((segment) => ({
+        ...segment,
+        english: "",
+      })),
+    };
+    const responses = new Map<string, unknown>([
+      [
+        "/api/session",
+        { identity: { login: "reader", membershipStatus: "active" } },
+      ],
+      [`/api/corpus/al-isabah/items/${itemId}`, untranslatedItem],
+      [
+        "/api/corpus/al-isabah/reviews",
+        { corpusId, reviewedItems: 0, items: {} },
+      ],
+    ]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const path = typeof input === "string" ? input : input.toString();
+        const body = responses.get(path);
+        return { ok: body !== undefined, json: async () => body };
+      }),
+    );
+
+    render(<CorpusItemReview />);
+
+    expect(
+      await screen.findByText(
+        "This Arabic-only record has no translation to approve. Add or correct the translation before submitting an approval.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Approve this translation" }),
+    ).toBeNull();
+  });
+});

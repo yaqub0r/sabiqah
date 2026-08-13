@@ -134,4 +134,28 @@ describe("translation reviews", () => {
     );
     expect(state).toBeNull();
   });
+
+  it("refuses to approve an Arabic-only item", async () => {
+    const bucket = {
+      get: async () => ({
+        text: async () =>
+          JSON.stringify({
+            corpusId: CORPUS_ID,
+            id: itemId,
+            translationState: "untranslated",
+            segments: [{ english: "" }],
+          }),
+      }),
+    } as unknown as R2Bucket;
+
+    await expect(
+      recordTranslationReview(
+        { prepare: vi.fn() } as unknown as D1Database,
+        bucket,
+        7,
+        itemId,
+        "approve",
+      ),
+    ).rejects.toThrow("Corpus review item is inconsistent");
+  });
 });
