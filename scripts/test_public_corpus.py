@@ -134,6 +134,70 @@ class PublicCorpusTests(unittest.TestCase):
                 ["no-approved-entry-alignment"],
             )
 
+    def test_rebuild_keeps_aligned_arabic_when_legacy_english_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            legacy, openiti, digest = self.make_inputs(root)
+            item_path = legacy / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["title"]["en"] = "Asiya, sister of the Prophet"
+            item["segments"][0]["english"] = "She was one of the Companions."
+            item_path.write_text(json.dumps(item, ensure_ascii=False), encoding="utf-8")
+            output = root / "public"
+            with patch.object(REBUILD, "SOURCE_SHA256", digest), patch.object(
+                VALIDATE, "SOURCE_SHA256", digest
+            ):
+                summary = REBUILD.rebuild(
+                    legacy, openiti, output, "2026-08-12T00:00:00Z"
+                )
+                self.assertEqual(summary["counts"]["entries"], 1)
+                self.assertEqual(summary["counts"]["translated"], 0)
+                self.assertEqual(summary["counts"]["quarantined"], 1)
+                self.assertEqual(VALIDATE.validate(output), [])
+            public = json.loads(
+                (output / "items" / "isabah-entry-00010759.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(public["translationState"], "untranslated")
+            self.assertEqual(public["title"]["en"], "Entry 10753")
+            self.assertEqual(public["segments"][0]["english"], "")
+            self.assertEqual(
+                public["remediation"]["englishExclusionReasonCodes"],
+                ["honorific-inventory-mismatch"],
+            )
+
+    def test_exact_title_and_substantial_body_overlap_survive_edition_apparatus(self):
+        legacy_length = 1000
+        source_length = 1000
+        title_score = 1.0
+        body_score = 0.60
+        short_exact_title = title_score >= 0.95 and min(
+            legacy_length, source_length
+        ) <= 150
+        exact_title_with_substantial_body_overlap = (
+            title_score >= 0.995 and body_score >= 0.60
+        )
+        self.assertFalse(short_exact_title)
+        self.assertTrue(exact_title_with_substantial_body_overlap)
+
+    def test_validator_rejects_english_in_an_untranslated_record(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["translationState"] = "untranslated"
+            item["remediation"]["englishExcluded"] = True
+            item["remediation"]["englishExclusionReasonCodes"] = [
+                "honorific-inventory-mismatch"
+            ]
+            item_path.write_text(json.dumps(item), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(
+                any("untranslated record contains English" in error for error in errors)
+            )
+
     def test_validator_rejects_a_private_locator(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -136,8 +136,22 @@ def validate(root: Path) -> list[str]:
             [str(detail.get("title", {}).get("en", ""))]
             + [str(segment.get("english", "")) for segment in segments]
         )
-        if formula_counts(displayed_arabic) != formula_counts(displayed_english):
-            errors.append(f"detail: honorific inventory mismatch for {item_id}")
+        translation_state = detail.get("translationState")
+        exclusion_reasons = remediation.get("englishExclusionReasonCodes", [])
+        if translation_state == "translated":
+            if formula_counts(displayed_arabic) != formula_counts(displayed_english):
+                errors.append(f"detail: honorific inventory mismatch for {item_id}")
+            if remediation.get("englishExcluded") is not False or exclusion_reasons:
+                errors.append(f"detail: translated record claims English exclusion for {item_id}")
+        elif translation_state == "untranslated":
+            if any(str(segment.get("english", "")).strip() for segment in segments):
+                errors.append(f"detail: untranslated record contains English text for {item_id}")
+            if detail.get("title", {}).get("en") != f"Entry {source.get('entryNumber')}":
+                errors.append(f"detail: untranslated record contains an English title for {item_id}")
+            if remediation.get("englishExcluded") is not True or not exclusion_reasons:
+                errors.append(f"detail: untranslated record lacks an exclusion reason for {item_id}")
+        else:
+            errors.append(f"detail: invalid translation state for {item_id}")
         if TRANSLATED_HONORIFIC.search(displayed_english):
             errors.append(f"detail: translated honorific remains for {item_id}")
         serialized = json.dumps(detail, ensure_ascii=False)

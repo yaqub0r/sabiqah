@@ -2,10 +2,11 @@
 """Rebuild the posted Al-Isabah corpus as publicly consumable work products.
 
 The legacy corpus is a private comparison input. No legacy Arabic, source URL,
-workflow trace, or modern apparatus is copied to the output. Eligible records
-receive Arabic from the pinned OpenITI publication base and a sanitized version
-of Sabiqah's English. Anything that cannot pass every gate is accounted for in
-quarantine.json instead of being emitted as readable text.
+workflow trace, or modern apparatus is copied to the output. Source-aligned
+records receive Arabic from the pinned OpenITI publication base. Sabiqah's
+English is retained only when it passes every public-output gate; otherwise the
+record remains publicly readable in Arabic with an explicit translation gap.
+Records without a reliable source identity are accounted for in quarantine.json.
 """
 
 from __future__ import annotations
@@ -448,6 +449,7 @@ def public_item(
     body_score: float,
     removals: dict[str, int],
     formula_type_corrections: int,
+    english_exclusion_reasons: list[str],
 ) -> dict[str, Any]:
     legacy_number = int(legacy["printedEntryNumber"])
     title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
@@ -459,6 +461,14 @@ def public_item(
             {
                 "category": "legacy-review-finding",
                 "explanation": "The earlier workflow recorded one or more unresolved findings. Restricted evidence remains available in the private reviewer package.",
+                "priority": "review",
+            }
+        )
+    if english_exclusion_reasons:
+        unresolved.append(
+            {
+                "category": "translation-withheld",
+                "explanation": "The legacy English did not pass the public-output gates and is not displayed. The approved Arabic remains available for a new or corrected translation.",
                 "priority": "review",
             }
         )
@@ -509,7 +519,11 @@ def public_item(
             {
                 "stage": "adjudication",
                 "state": "complete",
-                "summary": "Sabiqah-authored English was retained only after modern apparatus and private workflow expression were removed.",
+                "summary": (
+                    "The legacy English did not pass every public-output gate and was withheld; only the approved Arabic is displayed."
+                    if english_exclusion_reasons
+                    else "Sabiqah-authored English was retained only after modern apparatus and private workflow expression were removed."
+                ),
             },
             {
                 "stage": "machine_validation",
@@ -546,6 +560,8 @@ def public_item(
             "privateLocatorsRemoved": True,
             "honorificInventory": formula_counts(source.rendered),
             "honorificTypeCorrections": formula_type_corrections,
+            "englishExcluded": bool(english_exclusion_reasons),
+            "englishExclusionReasonCodes": sorted(set(english_exclusion_reasons)),
             **removals,
         },
         "provenance": {
@@ -675,6 +691,7 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
         mapped_number = source_entry_number(int(legacy["printedEntryNumber"]))
         source = openiti.get(mapped_number) if mapped_number is not None else None
         reasons: list[str] = []
+        english_exclusion_reasons: list[str] = []
         if source is None:
             reasons.append("no-approved-entry-alignment")
             title_score = body_score = 0.0
@@ -683,7 +700,14 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
             legacy_length = len(normalize_arabic(legacy_arabic_core(legacy)))
             source_length = len(normalize_arabic(source.clean))
             short_exact_title = title_score >= 0.95 and min(legacy_length, source_length) <= 150
-            if body_score < 0.70 and not short_exact_title:
+            exact_title_with_substantial_body_overlap = (
+                title_score >= 0.995 and body_score >= 0.60
+            )
+            if (
+                body_score < 0.70
+                and not short_exact_title
+                and not exact_title_with_substantial_body_overlap
+            ):
                 reasons.append("source-alignment-below-threshold")
         english, removals = sanitize_english(legacy)
         title_en = clean_english_title(str(legacy.get("title", {}).get("en", "")))
@@ -695,14 +719,19 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
         if source is not None and formula_counts(source.rendered) != formula_counts(
             f"{title_en}\n{english}"
         ):
-            reasons.append("honorific-inventory-mismatch")
+            english_exclusion_reasons.append("honorific-inventory-mismatch")
         if removals["removedEditorialNotes"]:
-            reasons.append("unsupported-editorial-intervention")
+            english_exclusion_reasons.append("unsupported-editorial-intervention")
         if any(pattern.search(english) for pattern in FORBIDDEN_PUBLIC_PATTERNS):
-            reasons.append("unapproved-apparatus-remains")
+            english_exclusion_reasons.append("unapproved-apparatus-remains")
         if reasons or source is None:
             quarantined.append(quarantine_record(legacy, mapped_number, reasons))
             continue
+        if not english:
+            english_exclusion_reasons.append("no-retainable-translation")
+        if english_exclusion_reasons:
+            title_en = f"Entry {source.number}"
+            english = ""
         eligible.append(
             public_item(
                 legacy,
@@ -713,6 +742,7 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
                 body_score,
                 removals,
                 formula_type_corrections,
+                english_exclusion_reasons,
             )
         )
 

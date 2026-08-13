@@ -246,6 +246,8 @@ export const reviewCorpusItemSchema = z
           z.number().int().nonnegative(),
         ),
         honorificTypeCorrections: z.number().int().nonnegative(),
+        englishExcluded: z.boolean().optional(),
+        englishExclusionReasonCodes: z.array(z.string().min(1)).optional(),
         removedApparatusParagraphs: z.number().int().nonnegative(),
         removedEditorialNotes: z.number().int().nonnegative(),
       })
