@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v4"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v5"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -51,6 +51,19 @@ DEFAULT_SOURCE_AUTHORITY = (
     / "source-authorities"
     / "al-isabah.v1.json"
 )
+DEFAULT_ENTRY_TITLE_PROFILE = (
+    Path(__file__).resolve().parents[1]
+    / "fixtures"
+    / "releases"
+    / "al-isabah-entry-title-profile.v1.json"
+)
+ENTRY_TITLE_PROFILE_SOURCE = {
+    "repository": "https://github.com/yaqub0r/al-isabah",
+    "commit": "4ade84756383407cede6711454fce005f15de2d0",
+    "path": "profiles/entry-title-decisions.v1.json",
+    "sha256": "9365188c92ce26899949e7fefd6b27a03338992196a1247a2a140b9717e05e82",
+    "semanticSha256": "b700b870451b104497eded9590eff354bf0bec3285a85c5f61f2a0acd6fd33b7",
+}
 HONORIFIC_REGISTRY_PATH = (
     Path(__file__).resolve().parents[1]
     / "packages"
@@ -157,6 +170,54 @@ def write_json(path: Path, value: Any) -> None:
         encoding="utf-8",
         newline="\n",
     )
+
+
+def load_entry_title_profile(
+    path: Path = DEFAULT_ENTRY_TITLE_PROFILE,
+) -> dict[int, dict[str, Any]]:
+    document = json.loads(path.read_text(encoding="utf-8"))
+    if document.get("schemaVersion") != "1.0.0":
+        raise ValueError("Entry-title profile pin has an unsupported schema")
+    if document.get("source") != ENTRY_TITLE_PROFILE_SOURCE:
+        raise ValueError("Entry-title profile does not match the pinned Al-Isabah artifact")
+    profile = document.get("profile", {})
+    semantic_sha = hashlib.sha256(
+        json.dumps(
+            profile, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+    ).hexdigest()
+    if semantic_sha != ENTRY_TITLE_PROFILE_SOURCE["semanticSha256"]:
+        raise ValueError("Embedded entry-title profile differs from its pinned semantics")
+    expected = {
+        "schemaVersion": "1.0.0",
+        "contractId": "al-isabah-entry-title-structure",
+        "workId": "ibn-hajar-al-isabah",
+        "status": "active",
+    }
+    if any(profile.get(key) != value for key, value in expected.items()):
+        raise ValueError("Entry-title profile identity or status is invalid")
+    authority = profile.get("sourceAuthority", {})
+    if (
+        authority.get("repository") != SOURCE_REPOSITORY
+        or authority.get("commit") != SOURCE_COMMIT
+        or authority.get("license") != LICENSE_SPDX
+    ):
+        raise ValueError("Entry-title profile uses a different public source authority")
+    decisions: dict[int, dict[str, Any]] = {}
+    for decision in profile.get("decisions", []):
+        number = decision.get("sourceEntryNumber")
+        title = decision.get("title", {})
+        opening = decision.get("bodyOpening", {})
+        if not isinstance(number, int) or number < 1 or number in decisions:
+            raise ValueError("Entry-title decisions require unique positive source numbers")
+        if decision.get("bodyOpeningKind") not in {"lineage", "prose"}:
+            raise ValueError(f"Entry-title decision {number} has an invalid body block kind")
+        if any(not str(value.get(language, "")).strip() for value in (title, opening) for language in ("ar", "en")):
+            raise ValueError(f"Entry-title decision {number} is not bilingual")
+        decisions[number] = decision
+    if set(decisions) != {11426, 11427, 11430, 11439, 11441}:
+        raise ValueError("Entry-title profile does not cover the contracted audit set")
+    return decisions
 
 
 def honorific_display(entry: dict[str, Any], language: str) -> str:
@@ -526,6 +587,49 @@ def public_arabic_body(source: OpenITIEntry, title: str) -> str:
     return " ".join(words[len(title.split()) :])
 
 
+def structure_body_opening(body: str, opening: str, kind: str, entry_number: int) -> str:
+    if not body.startswith(opening):
+        raise ValueError(
+            f"Entry-title decision {entry_number} would lose or reorder its {kind} body opening"
+        )
+    if kind != "lineage":
+        return body
+    remainder = body[len(opening) :]
+    if not remainder or remainder.startswith("\n\n"):
+        return body
+    punctuation = re.match(r"^([.,;:،؛]+)", remainder)
+    suffix = punctuation.group(1) if punctuation else ""
+    remainder = remainder[len(suffix) :].lstrip()
+    return f"{opening}{suffix}\n\n{remainder}" if remainder else f"{opening}{suffix}"
+
+
+def apply_entry_title_decision(
+    source: OpenITIEntry,
+    legacy_title_en: str,
+    english: str,
+    decision: dict[str, Any],
+) -> tuple[str, str, str, str]:
+    number = source.number
+    title_ar = str(decision["title"]["ar"])
+    title_en = str(decision["title"]["en"])
+    opening_ar = str(decision["bodyOpening"]["ar"])
+    opening_en = str(decision["bodyOpening"]["en"])
+    kind = str(decision["bodyOpeningKind"])
+
+    if not source.rendered.startswith(f"{title_ar} "):
+        raise ValueError(f"Entry-title decision {number} does not match the pinned Arabic source")
+    arabic = source.rendered[len(title_ar) :].lstrip()
+    arabic = structure_body_opening(arabic, opening_ar, kind, number)
+
+    if not legacy_title_en.casefold().startswith(title_en.casefold()):
+        raise ValueError(f"Entry-title decision {number} does not match the working English title")
+    moved = legacy_title_en[len(title_en) :].lstrip(" \t\r\n,:;.-—")
+    if moved and not english.casefold().startswith(moved.casefold()):
+        english = f"{moved}\n\n{english}".strip()
+    english = structure_body_opening(english, opening_en, kind, number)
+    return title_ar, title_en, arabic, english
+
+
 def render_english_formulas(value: str) -> str:
     value = compact_registry_aliases(value, "en")
     compact_characters = "".join(
@@ -595,6 +699,7 @@ SOURCE_LOCKED_ENGLISH_REPLACEMENTS: dict[int, tuple[tuple[str, str], ...]] = {
         ),
     ),
     10804: (("lived until the early part of 73 AH", "lived until the early part of 24 AH"),),
+    11430: (("ibn Rabi'a ibn Amir", "ibn Bi'a ibn Amir"),),
     11587: (
         (
             "May Allah fight you, O people of Iraq!",
@@ -676,10 +781,16 @@ def public_item(
     english_exclusion_reasons: list[str],
     decisions: list[dict[str, str]],
     source_uncertainty: bool,
+    title_decision: dict[str, Any] | None,
 ) -> dict[str, Any]:
     legacy_number = int(legacy["printedEntryNumber"])
-    title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
-    arabic_body = public_arabic_body(source, title_ar)
+    if title_decision is not None:
+        title_ar, title_en, arabic_body, english = apply_entry_title_decision(
+            source, title_en, english, title_decision
+        )
+    else:
+        title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
+        arabic_body = public_arabic_body(source, title_ar)
     segment_id = f"{legacy['id']}-public-segment-0001"
     source_honorifics = honorific_occurrences(
         source.clean,
@@ -982,9 +1093,16 @@ def build_sections(items: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], l
     return sections, volumes
 
 
-def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: str) -> dict[str, Any]:
+def rebuild(
+    legacy_root: Path,
+    openiti_path: Path,
+    output: Path,
+    generated_at: str,
+    entry_title_profile: Path = DEFAULT_ENTRY_TITLE_PROFILE,
+) -> dict[str, Any]:
     reset_output(output)
     openiti = parse_openiti(openiti_path)
+    title_decisions = load_entry_title_profile(entry_title_profile)
     legacy_items = [
         json.loads(path.read_text(encoding="utf-8"))
         for path in sorted((legacy_root / "items").glob("*.json"))
@@ -1045,6 +1163,7 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
                 english_exclusion_reasons,
                 decisions,
                 source_uncertainty,
+                title_decisions.get(source.number),
             )
         )
 
@@ -1158,6 +1277,9 @@ def main() -> int:
         "--source-authority", type=Path, default=DEFAULT_SOURCE_AUTHORITY
     )
     parser.add_argument(
+        "--entry-title-profile", type=Path, default=DEFAULT_ENTRY_TITLE_PROFILE
+    )
+    parser.add_argument(
         "--generated-at",
         default=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     )
@@ -1168,6 +1290,7 @@ def main() -> int:
         args.openiti.resolve(),
         args.output.resolve(),
         args.generated_at,
+        args.entry_title_profile.resolve(),
     )
     print(
         f"Rebuilt {summary['counts']['entries']} public entries; "
