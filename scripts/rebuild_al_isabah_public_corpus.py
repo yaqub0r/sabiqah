@@ -4,9 +4,10 @@
 The legacy corpus is a private comparison input. No legacy Arabic, source URL,
 workflow trace, or modern apparatus is copied to the output. Source-aligned
 records receive Arabic from the pinned OpenITI publication base. Sabiqah's
-English is retained only when it passes every public-output gate; otherwise the
-record remains publicly readable in Arabic with an explicit translation gap.
-Records without a reliable source identity are accounted for in quarantine.json.
+English is retained as public working text after private apparatus is removed
+and unsupported emendations are returned to the pinned source wording.
+Honorific differences become review evidence rather than hidden output. Records
+without a reliable source identity are accounted for in quarantine.json.
 """
 
 from __future__ import annotations
@@ -25,8 +26,8 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = "3.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v1"
+SCHEMA_VERSION = "4.0.0"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v2"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -50,6 +51,25 @@ DEFAULT_SOURCE_AUTHORITY = (
     / "source-authorities"
     / "al-isabah.v1.json"
 )
+HONORIFIC_REGISTRY_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "packages"
+    / "release-model"
+    / "src"
+    / "honorifics.registry.json"
+)
+HONORIFIC_REGISTRY = json.loads(
+    HONORIFIC_REGISTRY_PATH.read_text(encoding="utf-8")
+)
+HONORIFIC_POLICY_VERSION = str(HONORIFIC_REGISTRY["schemaVersion"])
+HONORIFIC_ENTRIES: tuple[dict[str, Any], ...] = tuple(
+    HONORIFIC_REGISTRY["entries"]
+)
+HONORIFIC_BY_CHARACTER = {
+    character: entry
+    for entry in HONORIFIC_ENTRIES
+    for character in (entry["compactCharacter"], *entry["alternateCharacters"])
+}
 
 ENTRY_RE = re.compile(r"^### \$+\s+(\d+)\s+(.*)$")
 PAGE_RE = re.compile(r"\bPageV(\d{2})P(\d{3})\b")
@@ -106,41 +126,6 @@ SOURCE_FORMULAS = (
     (re.compile(r"عز\s+وجل"), "﷿"),
 )
 
-ENGLISH_FORMULAS = (
-    (
-        re.compile(
-            r"may (?:Allah|God) bless him and (?:his family|the members of his family) and grant (?:him|them) peace",
-            re.I,
-        ),
-        "﵌",
-    ),
-    (re.compile(r"may (?:Allah|God) bless him and grant him peace", re.I), "ﷺ"),
-    (re.compile(r"peace and blessings be upon him", re.I), "ﷺ"),
-    (re.compile(r"blessings and peace be upon him", re.I), "ﷺ"),
-    (re.compile(r"may (?:Allah|God) be pleased with them all", re.I), "﵃"),
-    (re.compile(r"may (?:Allah|God) be pleased with them both", re.I), "﵄"),
-    (re.compile(r"may (?:Allah|God) be pleased with them", re.I), "﵃"),
-    (re.compile(r"may (?:Allah|God) be pleased with her", re.I), "﵂"),
-    (re.compile(r"may (?:Allah|God) be pleased with him", re.I), "﵁"),
-    (re.compile(r"peace be upon them both", re.I), "﵉"),
-    (re.compile(r"peace be upon them", re.I), "﵈"),
-    (re.compile(r"peace be upon her", re.I), "﵍"),
-    (re.compile(r"prayers and peace be upon him", re.I), "﵊"),
-    (re.compile(r"peace be upon him", re.I), "﵇"),
-    (re.compile(r"may (?:Allah|God) have mercy on them", re.I), "﵏"),
-    (re.compile(r"may (?:Allah|God) have mercy on him", re.I), "﵀"),
-    (re.compile(r"blessed and exalted is He", re.I), "﵎"),
-    (re.compile(r"(?:Allah|God),? (?:the )?[Mm]ighty and [Mm]ajestic", re.I), "Allah ﷿"),
-)
-
-FORMULA_TOKENS = ("ﷺ", "﵌", "﵀", "﵁", "﵂", "﵃", "﵄", "﵅", "﵇", "﵈", "﵉", "﵊", "﵎", "﵏", "﷿")
-ARABIC_TEXT_FORMULAS: tuple[str, ...] = ()
-FORMULA_OCCURRENCE_RE = re.compile(
-    r"(?:Allah|الله)\s+تعالى|"
-    + "|".join(
-        re.escape(token) for token in (*FORMULA_TOKENS, *ARABIC_TEXT_FORMULAS)
-    )
-)
 FORBIDDEN_PUBLIC_PATTERNS = (
     re.compile(r"usul\.ai", re.I),
     re.compile(r"\[Editorial note:", re.I),
@@ -155,6 +140,7 @@ FORBIDDEN_PUBLIC_PATTERNS = (
 @dataclass(frozen=True)
 class OpenITIEntry:
     number: int
+    exact: str
     clean: str
     rendered: str
     pages: tuple[tuple[int, int], ...]
@@ -171,6 +157,186 @@ def write_json(path: Path, value: Any) -> None:
         encoding="utf-8",
         newline="\n",
     )
+
+
+def honorific_display(entry: dict[str, Any], language: str) -> str:
+    if entry["fontSupport"] == "supported":
+        return str(entry["compactCharacter"])
+    if language == "en":
+        return str(entry["accessibleEnglish"])
+    return str(entry["expandedArabic"])
+
+
+def compact_registry_aliases(value: str, language: str) -> str:
+    """Compact formulaic aliases without changing their semantic identity.
+
+    Unsupported Unicode 17 characters deliberately remain expanded in the
+    reading language. Divine aliases that include the name Allah or God retain
+    that name because the Unicode character represents the following
+    exaltation, not the name itself.
+    """
+
+    grouped: dict[str, list[tuple[str, dict[str, Any]]]] = {}
+    key = "englishAliases" if language == "en" else "arabicAliases"
+    for entry in HONORIFIC_ENTRIES:
+        for raw_alias in entry[key]:
+            alias = str(raw_alias)
+            lookup = alias.casefold() if language == "en" else alias
+            grouped.setdefault(lookup, []).append((alias, entry))
+    aliases: dict[str, tuple[str, dict[str, Any]]] = {}
+    for lookup, candidates in grouped.items():
+        semantic_keys = {
+            honorific_semantic_key(entry) for _alias, entry in candidates
+        }
+        if len(semantic_keys) > 1:
+            continue
+        aliases[lookup] = next(
+            (
+                candidate
+                for candidate in candidates
+                if candidate[1]["fontSupport"] == "supported"
+            ),
+            candidates[0],
+        )
+    if not aliases:
+        return value
+    pattern = re.compile(
+        "|".join(
+            re.escape(alias)
+            for alias, _entry in sorted(
+                aliases.values(), key=lambda candidate: len(candidate[0]), reverse=True
+            )
+        ),
+        re.I if language == "en" else 0,
+    )
+
+    def replace(match: re.Match[str]) -> str:
+        lookup = match.group(0).casefold() if language == "en" else match.group(0)
+        alias, entry = aliases[lookup]
+        replacement = honorific_display(entry, language)
+        if language == "en" and entry["semanticClass"] == "divine-exaltation":
+            divine_name = re.match(r"^(Allah|God)\b", match.group(0), re.I)
+            if divine_name:
+                replacement = f"{divine_name.group(1)} {replacement}"
+        return replacement
+
+    return pattern.sub(replace, value)
+
+
+def honorific_semantic_key(entry: dict[str, Any]) -> str:
+    agreement = entry["agreement"]
+    return "|".join(
+        (
+            str(entry["semanticClass"]),
+            str(agreement["number"]),
+            str(agreement["gender"]),
+            "family" if entry["familyIncluded"] else "no-family",
+        )
+    )
+
+
+def honorific_occurrences(
+    value: str,
+    language: str,
+    field: str,
+    id_prefix: str,
+    segment_id: str | None = None,
+) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for entry in HONORIFIC_ENTRIES:
+        displayed = honorific_display(entry, language)
+        forms = [
+            displayed,
+            *[str(character) for character in entry["alternateCharacters"]],
+            *[
+                str(alias)
+                for alias in entry[
+                    "englishAliases" if language == "en" else "arabicAliases"
+                ]
+            ],
+        ]
+        for form in forms:
+            if form:
+                lookup = form.casefold() if language == "en" else form
+                grouped.setdefault(lookup, []).append(entry)
+    by_form: dict[str, dict[str, Any]] = {}
+    for lookup, entries in grouped.items():
+        semantic_keys = {honorific_semantic_key(entry) for entry in entries}
+        if len(semantic_keys) > 1:
+            continue
+        by_form[lookup] = next(
+            (entry for entry in entries if entry["fontSupport"] == "supported"),
+            entries[0],
+        )
+    pattern = re.compile(
+        "|".join(re.escape(form) for form in sorted(by_form, key=len, reverse=True)),
+        re.I if language == "en" else 0,
+    )
+    results: list[dict[str, Any]] = []
+    for position, match in enumerate(pattern.finditer(value), start=1):
+        lookup = match.group(0).casefold() if language == "en" else match.group(0)
+        entry = by_form[lookup]
+        context_start = max(0, match.start() - 80)
+        context_end = min(len(value), match.end() + 80)
+        occurrence = {
+            "id": f"{id_prefix}-honorific-{position:04d}",
+            "semanticId": entry["id"],
+            "semanticClass": entry["semanticClass"],
+            "language": language,
+            "field": field,
+            "observedForm": match.group(0),
+            "renderedForm": honorific_display(entry, language),
+            "expandedArabic": entry["expandedArabic"],
+            "accessibleText": (
+                entry["accessibleEnglish"]
+                if language == "en"
+                else entry["expandedArabic"]
+            ),
+            "formulaRole": "formulaic",
+            "referent": {
+                "kind": entry["referent"]["kind"],
+                "scope": entry["referent"]["scope"],
+                "context": value[context_start:context_end],
+                "status": "machine-inferred",
+            },
+            "agreement": entry["agreement"],
+            "familyIncluded": entry["familyIncluded"],
+        }
+        if segment_id is not None:
+            occurrence["segmentId"] = segment_id
+        results.append(occurrence)
+    return results
+
+
+def honorific_inventory(
+    occurrences: list[dict[str, Any]], semantic: bool = False
+) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for occurrence in occurrences:
+        if semantic:
+            entry = next(
+                entry
+                for entry in HONORIFIC_ENTRIES
+                if entry["id"] == occurrence["semanticId"]
+            )
+            counts[honorific_semantic_key(entry)] += 1
+        else:
+            counts[str(occurrence["semanticId"])] += 1
+    return dict(sorted(counts.items()))
+
+
+def normalize_search_text(value: str) -> str:
+    for character, entry in HONORIFIC_BY_CHARACTER.items():
+        searchable = " ".join(
+            (
+                str(entry["expandedArabic"]),
+                str(entry["accessibleEnglish"]),
+                *[str(alias) for alias in entry["arabicAliases"]],
+                *[str(alias) for alias in entry["englishAliases"]],
+            )
+        )
+        value = value.replace(character, searchable)
+    return " ".join(unicodedata.normalize("NFC", value).casefold().split())
 
 
 def reset_output(output: Path) -> None:
@@ -236,7 +402,7 @@ def normalize_arabic(value: str) -> str:
 def render_source_formulas(value: str) -> str:
     for pattern, replacement in SOURCE_FORMULAS:
         value = pattern.sub(replacement, value)
-    return value
+    return compact_registry_aliases(value, "ar")
 
 
 def parse_openiti(path: Path) -> dict[int, OpenITIEntry]:
@@ -252,7 +418,8 @@ def parse_openiti(path: Path) -> dict[int, OpenITIEntry]:
         nonlocal number, lines, entry_pages
         if number is None:
             return
-        value = "\n".join(lines)
+        exact = "\n".join(lines)
+        value = exact
         value = PAGE_RE.sub("", value)
         value = MILESTONE_RE.sub("", value)
         value = re.sub(r"^### \$+\s+\d+\s+", "", value)
@@ -263,6 +430,7 @@ def parse_openiti(path: Path) -> dict[int, OpenITIEntry]:
         entries.append(
             OpenITIEntry(
                 number=number,
+                exact=exact,
                 clean=clean,
                 rendered=render_source_formulas(clean),
                 pages=pages,
@@ -346,11 +514,11 @@ def public_arabic_body(source: OpenITIEntry, title: str) -> str:
 
 
 def render_english_formulas(value: str) -> str:
-    for pattern, replacement in ENGLISH_FORMULAS:
-        value = pattern.sub(replacement, value)
-    value = re.sub(r"\(([ﷺ-﷿﵀-﵏])\)", r"\1", value)
-    value = re.sub(r"\b(?:Allah|God) Most High\b", "Allah تعالى", value, flags=re.I)
-    return value
+    value = compact_registry_aliases(value, "en")
+    compact_characters = "".join(
+        re.escape(character) for character in HONORIFIC_BY_CHARACTER
+    )
+    return re.sub(rf"\(([{compact_characters}])\)", r"\1", value)
 
 
 def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
@@ -390,43 +558,86 @@ def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
 
 
 def formula_counts(value: str) -> dict[str, int]:
-    counts = {token: value.count(token) for token in FORMULA_TOKENS if value.count(token)}
-    allah_taala = len(re.findall(r"(?:الله|Allah)\s+تعالى", value))
-    if allah_taala:
-        counts["Allah تعالى"] = allah_taala
-    for formula in ARABIC_TEXT_FORMULAS:
-        if value.count(formula):
-            counts[formula] = value.count(formula)
-    return counts
+    counts: Counter[str] = Counter()
+    for character, entry in HONORIFIC_BY_CHARACTER.items():
+        count = value.count(character)
+        if count:
+            counts[str(entry["id"])] += count
+    for entry in HONORIFIC_ENTRIES:
+        if entry["fontSupport"] != "fallback-expanded":
+            continue
+        for displayed in (entry["expandedArabic"], entry["accessibleEnglish"]):
+            count = value.count(displayed)
+            if count:
+                counts[str(entry["id"])] += count
+    return dict(sorted(counts.items()))
 
 
-def formula_sequence(value: str) -> list[str]:
-    return [
-        "Allah تعالى" if "تعالى" in match.group(0) else match.group(0)
-        for match in FORMULA_OCCURRENCE_RE.finditer(value)
-    ]
+SOURCE_LOCKED_ENGLISH_REPLACEMENTS: dict[int, tuple[tuple[str, str], ...]] = {
+    10800: (
+        ("al-Daraqutni transmitted her hadith", "al-Dar al-Daraqutni transmitted her hadith"),
+        (
+            "from Abu Harmala, from Abu Thifal, from Ribah ibn Abd al-Rahman",
+            "from Abu Harmala, from his father, who said, from Ribah ibn Abd al-Rahman",
+        ),
+    ),
+    10804: (("lived until the early part of 73 AH", "lived until the early part of 24 AH"),),
+    11587: (
+        (
+            "May Allah fight you, O people of Iraq!",
+            "May Allah fight you, O people of nocturnal incursions!",
+        ),
+    ),
+    11588: (("mother of Ali and his brothers", "father of Ali and his brothers"),),
+}
+
+SUPPLEMENTAL_SOURCE_TRANSLATIONS: dict[int, str] = {
+    10886: "She pledged allegiance to the Prophet ﷺ. Ibn Habib said this, and Ibn al-Athir added her."
+}
 
 
-def align_formula_types(
-    source: OpenITIEntry, title: str, english: str
-) -> tuple[str, str, int]:
-    source_sequence = formula_sequence(source.rendered)
-    combined = f"{title}\u0000{english}"
-    english_sequence = formula_sequence(combined)
-    if len(source_sequence) != len(english_sequence) or source_sequence == english_sequence:
-        return title, english, 0
-    position = 0
+def apply_source_locked_english(
+    legacy_number: int, title: str, english: str, removals: dict[str, int]
+) -> tuple[str, str, list[dict[str, str]], bool]:
+    """Undo unsupported emendations while retaining transparent decisions."""
 
-    def replace(_match: re.Match[str]) -> str:
-        nonlocal position
-        replacement = source_sequence[position]
-        position += 1
-        return replacement
-
-    aligned = FORMULA_OCCURRENCE_RE.sub(replace, combined)
-    aligned_title, aligned_english = aligned.split("\u0000", 1)
-    corrections = sum(left != right for left, right in zip(source_sequence, english_sequence))
-    return aligned_title, aligned_english, corrections
+    decisions: list[dict[str, str]] = []
+    source_uncertainty = False
+    for old, new in SOURCE_LOCKED_ENGLISH_REPLACEMENTS.get(legacy_number, ()):
+        combined = f"{title}\u0000{english}"
+        if old not in combined:
+            raise ValueError(
+                f"Expected source-locked correction text is absent for {legacy_number}: {old}"
+            )
+        combined = combined.replace(old, new, 1)
+        title, english = combined.split("\u0000", 1)
+        decisions.append(
+            {
+                "issue": "The legacy working translation adopted an editorial emendation not present in the approved source authority.",
+                "resolution": f"The public working text follows the approved source wording: {new}",
+                "basis": "Pinned OpenITI source authority and Sabiqah's source-faithful public-output contract.",
+            }
+        )
+        source_uncertainty = True
+    supplement = SUPPLEMENTAL_SOURCE_TRANSLATIONS.get(legacy_number)
+    if supplement and supplement not in english:
+        english = f"{english}\n\n{supplement}".strip()
+        decisions.append(
+            {
+                "issue": "The legacy working English omitted a sentence present in the approved source authority.",
+                "resolution": f"Added an independent source-faithful translation: {supplement}",
+                "basis": "Pinned OpenITI source authority.",
+            }
+        )
+    if removals["removedEditorialNotes"]:
+        decisions.append(
+            {
+                "issue": "The private comparison text contained an editorial workflow note.",
+                "resolution": "Removed the note from public reading text; any source-locked wording change is recorded separately.",
+                "basis": "Public-output compliance policy excludes private apparatus from reader-facing prose.",
+            }
+        )
+    return title, english, decisions, source_uncertainty
 
 
 def item_alignment(item: dict[str, Any], source: OpenITIEntry) -> tuple[float, float]:
@@ -450,10 +661,42 @@ def public_item(
     removals: dict[str, int],
     formula_type_corrections: int,
     english_exclusion_reasons: list[str],
+    decisions: list[dict[str, str]],
+    source_uncertainty: bool,
 ) -> dict[str, Any]:
     legacy_number = int(legacy["printedEntryNumber"])
     title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
     arabic_body = public_arabic_body(source, title_ar)
+    segment_id = f"{legacy['id']}-public-segment-0001"
+    source_honorifics = honorific_occurrences(
+        source.clean,
+        "ar",
+        "segment",
+        f"{legacy['id']}-ar-source",
+        segment_id,
+    )
+    english_honorifics = [
+        *honorific_occurrences(
+            title_en, "en", "title", f"{legacy['id']}-en-title"
+        ),
+        *honorific_occurrences(
+            english,
+            "en",
+            "segment",
+            f"{legacy['id']}-en-segment",
+            segment_id,
+        ),
+    ]
+    source_semantics = honorific_inventory(source_honorifics, semantic=True)
+    english_semantics = honorific_inventory(english_honorifics, semantic=True)
+    source_literals = honorific_inventory(source_honorifics)
+    english_literals = honorific_inventory(english_honorifics)
+    honorific_findings = []
+    if source_semantics != english_semantics:
+        honorific_findings.append(
+            "Source and English formula inventories differ semantically or in grammatical agreement; a human must adjudicate referents before approval."
+        )
+    literal_inventory_differs = source_literals != english_literals
     page = source.pages[0] if source.pages else (1, 0)
     unresolved = []
     if legacy.get("unresolved"):
@@ -464,15 +707,31 @@ def public_item(
                 "priority": "review",
             }
         )
-    if english_exclusion_reasons:
+    if honorific_findings:
         unresolved.append(
             {
-                "category": "translation-withheld",
-                "explanation": "The legacy English did not pass the public-output gates and is not displayed. The approved Arabic remains available for a new or corrected translation.",
+                "category": "honorific-semantic-review",
+                "explanation": honorific_findings[0],
                 "priority": "review",
             }
         )
+    if source_uncertainty:
+        unresolved.append(
+            {
+                "category": "source-text-uncertainty",
+                "explanation": "The public English now follows the approved source authority, but the locked source wording appears textually uncertain and requires human review before approval.",
+                "priority": "review",
+            }
+        )
+    if english_exclusion_reasons:
+        raise ValueError(
+            f"Public working English unexpectedly failed for {legacy['id']}: "
+            + ", ".join(english_exclusion_reasons)
+        )
+    if not title_en.strip() and not english.strip():
+        raise ValueError(f"No public working English remains for {legacy['id']}")
     source_sha = sha256_text(source.rendered)
+    exact_source_sha = sha256_text(source.exact)
     alignment_score = round(body_score, 4)
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -484,13 +743,13 @@ def public_item(
         "sourceEntryNumber": source.number,
         "volume": page[0],
         "title": {"en": title_en, "ar": title_ar},
-        "translationState": "translated" if english else "untranslated",
-        "machineAssessment": "needs_attention" if unresolved or not english else "passed",
+        "translationState": "translated",
+        "machineAssessment": "needs_attention" if unresolved else "passed",
         "humanReview": "unreviewed",
         "publicEligibility": "eligible",
         "segments": [
             {
-                "id": f"{legacy['id']}-public-segment-0001",
+                "id": segment_id,
                 "arabic": arabic_body,
                 "english": english,
                 "pages": [
@@ -501,15 +760,14 @@ def public_item(
                         "providerPage": SOURCE_URL,
                     }
                 ],
-                "machineState": (
-                    "public_source_remediated_unreviewed"
-                    if english
-                    else "public_source_remediated_untranslated"
-                ),
+                "machineState": "public_source_remediated_unreviewed",
             }
         ],
         "names": [],
         "unresolved": unresolved,
+        "honorificPolicyVersion": HONORIFIC_POLICY_VERSION,
+        "honorifics": [*source_honorifics, *english_honorifics],
+        "decisions": decisions,
         "workflowStages": [
             {
                 "stage": "source_alignment",
@@ -519,16 +777,16 @@ def public_item(
             {
                 "stage": "adjudication",
                 "state": "complete",
-                "summary": (
-                    "The legacy English did not pass every public-output gate and was withheld; only the approved Arabic is displayed."
-                    if english_exclusion_reasons
-                    else "Sabiqah-authored English was retained only after modern apparatus and private workflow expression were removed."
-                ),
+                "summary": "Sabiqah-authored working English was retained after private apparatus was removed and unsupported emendations were returned to the approved source wording.",
             },
             {
                 "stage": "machine_validation",
                 "state": "needs_attention" if unresolved else "complete",
-                "summary": "Public-source alignment, apparatus exclusion, provenance, and honorific inventories passed automated validation.",
+                "summary": (
+                    "Honorific semantics or source-locked wording require human adjudication; the working English remains public."
+                    if unresolved
+                    else "Public-source alignment, apparatus exclusion, provenance, and honorific semantics passed automated validation."
+                ),
             },
             {
                 "stage": "human_review",
@@ -546,6 +804,7 @@ def public_item(
             "entryNumber": source.number,
             "pages": [f"V{volume:02d}P{printed_page:03d}" for volume, printed_page in source.pages],
             "sourceTextSha256": source_sha,
+            "sourceExactTextSha256": exact_source_sha,
             "sourceUrl": SOURCE_URL,
             "license": {"spdx": LICENSE_SPDX, "url": LICENSE_URL},
             "alignment": {
@@ -560,14 +819,22 @@ def public_item(
             "privateLocatorsRemoved": True,
             "honorificInventory": formula_counts(source.rendered),
             "honorificTypeCorrections": formula_type_corrections,
-            "englishExcluded": bool(english_exclusion_reasons),
-            "englishExclusionReasonCodes": sorted(set(english_exclusion_reasons)),
+            "sourceHonorificSemantics": source_semantics,
+            "englishHonorificSemantics": english_semantics,
+            "honorificLiteralInventoryDiffers": literal_inventory_differs,
+            "honorificSemanticReview": (
+                "needs_attention" if honorific_findings else "passed"
+            ),
+            "honorificFindings": honorific_findings,
+            "englishExcluded": False,
+            "englishExclusionReasonCodes": [],
             **removals,
         },
         "provenance": {
             "sourceAuthorityId": SOURCE_AUTHORITY_ID,
             "sourceArtifactSha256": SOURCE_SHA256,
             "sourceTextSha256": source_sha,
+            "sourceExactTextSha256": exact_source_sha,
         },
     }
 
@@ -584,6 +851,18 @@ def printed_page_bounds(item: dict[str, Any]) -> tuple[int | None, int | None]:
 
 def list_item(item: dict[str, Any], section_id: str) -> dict[str, Any]:
     page_start, page_end = printed_page_bounds(item)
+    search_text = normalize_search_text(
+        "\n".join(
+            (
+                item["title"]["en"],
+                item["title"]["ar"],
+                *(
+                    f"{segment['english']}\n{segment['arabic']}"
+                    for segment in item["segments"]
+                ),
+            )
+        )
+    )
     return {
         "id": item["id"],
         "kind": item["kind"],
@@ -601,6 +880,7 @@ def list_item(item: dict[str, Any], section_id: str) -> dict[str, Any]:
         "humanReview": item["humanReview"],
         "publicEligibility": item["publicEligibility"],
         "unresolvedCount": len(item["unresolved"]),
+        "searchText": search_text,
     }
 
 
@@ -712,26 +992,19 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
         english, removals = sanitize_english(legacy)
         title_en = clean_english_title(str(legacy.get("title", {}).get("en", "")))
         formula_type_corrections = 0
-        if source is not None:
-            title_en, english, formula_type_corrections = align_formula_types(
-                source, title_en, english
-            )
-        if source is not None and formula_counts(source.rendered) != formula_counts(
-            f"{title_en}\n{english}"
+        title_en, english, decisions, source_uncertainty = apply_source_locked_english(
+            int(legacy["printedEntryNumber"]), title_en, english, removals
+        )
+        if any(
+            pattern.search(f"{title_en}\n{english}")
+            for pattern in FORBIDDEN_PUBLIC_PATTERNS
         ):
-            english_exclusion_reasons.append("honorific-inventory-mismatch")
-        if removals["removedEditorialNotes"]:
-            english_exclusion_reasons.append("unsupported-editorial-intervention")
-        if any(pattern.search(english) for pattern in FORBIDDEN_PUBLIC_PATTERNS):
             english_exclusion_reasons.append("unapproved-apparatus-remains")
         if reasons or source is None:
             quarantined.append(quarantine_record(legacy, mapped_number, reasons))
             continue
-        if not english:
+        if not title_en.strip() and not english.strip():
             english_exclusion_reasons.append("no-retainable-translation")
-        if english_exclusion_reasons:
-            title_en = f"Entry {source.number}"
-            english = ""
         eligible.append(
             public_item(
                 legacy,
@@ -743,6 +1016,8 @@ def rebuild(legacy_root: Path, openiti_path: Path, output: Path, generated_at: s
                 removals,
                 formula_type_corrections,
                 english_exclusion_reasons,
+                decisions,
+                source_uncertainty,
             )
         )
 

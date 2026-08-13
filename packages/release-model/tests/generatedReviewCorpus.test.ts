@@ -21,7 +21,7 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     const summary = parseReviewCorpusSummary(load("summary.json"));
     const index = parseReviewCorpusIndex(load("index.json"));
 
-    expect(summary.schemaVersion).toBe("3.0.0");
+    expect(summary.schemaVersion).toBe("4.0.0");
     expect(summary.corpus.publicationStatus).toBe("public-working");
     expect(summary.corpus.sourceAuthorityId).toBe(
       "al-isabah-openiti-5835c18-aco-v1",
@@ -36,6 +36,7 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     expect(index.items).toHaveLength(
       summary.counts.entries + summary.counts.passages,
     );
+    expect(summary.counts.translated).toBe(summary.counts.entries);
     for (const listed of index.items) {
       const item = parseReviewCorpusItem(load(`items/${listed.id}.json`));
       expect(item.id).toBe(listed.id);
@@ -44,6 +45,9 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
       expect(item.source?.authorityId).toBe(summary.corpus.sourceAuthorityId);
       expect(item.remediation?.sourceArabicReplaced).toBe(true);
       expect(item.remediation?.privateLocatorsRemoved).toBe(true);
+      expect(item.remediation?.englishExcluded).toBe(false);
+      expect(item.honorificPolicyVersion).toBe("1.0.0");
+      expect(item.honorifics).toBeDefined();
       expect(JSON.stringify(item).toLocaleLowerCase()).not.toContain("usul.ai");
     }
     const sectionIds = new Set(index.items.map((item) => item.sectionId));

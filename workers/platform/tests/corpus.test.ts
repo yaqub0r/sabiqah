@@ -12,7 +12,7 @@ describe("public working corpus", () => {
 
   it("builds only pinned, sanitized object keys", () => {
     expect(corpusObjectKey("summary")).toContain(
-      "al-isabah-public-openiti-5835c18-v1",
+      "al-isabah-public-openiti-5835c18-v2",
     );
     expect(corpusObjectKey("item", "isabah-entry-00010759")).toMatch(
       /items\/isabah-entry-00010759\.json$/,

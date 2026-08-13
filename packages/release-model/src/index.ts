@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export * from "./reviewCorpus";
+export * from "./honorifics";
 
 const identifier = z
   .string()

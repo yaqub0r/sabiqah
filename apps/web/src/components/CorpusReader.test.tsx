@@ -8,6 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { normalizeHonorificSearch } from "@sabiqah/release-model";
 
 import { CorpusReader } from "./CorpusReader";
 
@@ -150,6 +151,9 @@ describe("CorpusReader", () => {
             machineAssessment: record.machineAssessment,
             humanReview: record.humanReview,
             unresolvedCount: 0,
+            searchText: normalizeHonorificSearch(
+              `${record.title.en} ${record.segments[0]?.english} ${record === secondItem ? "Muhammad ﷺ" : ""}`,
+            ),
           })),
         },
       ],
@@ -202,6 +206,13 @@ describe("CorpusReader", () => {
     expect(
       screen.queryByRole("button", { name: "Approve this translation" }),
     ).toBeNull();
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Name or entry number" }),
+      { target: { value: "peace and blessings be upon him" } },
+    );
+    expect(
+      screen.getByRole("button", { name: /Second short entry/ }),
+    ).toBeTruthy();
   });
 
   it("presents consecutive short records inside a volume reading section", async () => {
@@ -326,7 +337,9 @@ describe("CorpusReader", () => {
       await screen.findByRole("heading", { name: "Pages 1–25" }),
     ).toBeTruthy();
     expect(screen.getByText("The first short translated record.")).toBeTruthy();
-    expect(screen.getByText("Translation not yet available.")).toBeTruthy();
+    expect(
+      screen.getByText("English text is contained in the entry heading."),
+    ).toBeTruthy();
     expect(
       screen.getByText(
         "This Arabic-only record has no translation to approve. Add or correct the translation through the review workspace first.",
@@ -345,7 +358,9 @@ describe("CorpusReader", () => {
       }),
     );
     expect(screen.queryByText("The first short translated record.")).toBeNull();
-    expect(screen.getByText("Translation not yet available.")).toBeTruthy();
+    expect(
+      screen.getByText("English text is contained in the entry heading."),
+    ).toBeTruthy();
     expect(
       screen.getByText("Showing 1 of 2 records in this section"),
     ).toBeTruthy();

@@ -61,9 +61,12 @@ The preservation workflow then rebuilds the reader corpus from that legacy
 inventory and the pinned OpenITI source authority in
 `evidence/source-authorities/al-isabah.v1.json`. It replaces displayed Arabic,
 removes restricted apparatus and locators, enforces the honorific inventory,
-and emits a quarantine ledger. Validation fails unless every legacy record is
+records exact observed and rendered honorific forms separately, and emits a
+quarantine ledger. Validation fails unless every legacy record is
 accounted for exactly once as public or quarantined and every public record is
-bound to the approved source and license.
+bound to the approved source and license. A literal honorific difference is a
+review diagnostic; only a semantic, referent, or agreement concern changes
+translation readiness, and working English remains readable.
 
 Ordinary development deployments download only the immutable public corpus
 selected by `AL_ISABAH_PUBLIC_CORPUS_URI`. They validate its complete manifest,
@@ -79,6 +82,13 @@ Never overwrite or delete a deployed corpus in place. Upload and verify the new
 immutable objects before switching the Worker to them. A rollback therefore
 restores the preceding Worker version, whose corpus ID still resolves to the
 preceding immutable objects.
+
+Before dispatching the preservation workflow, update the development
+`AL_ISABAH_PUBLIC_CORPUS_URI` variable to a new prefix whose final directory is
+the exporter `CORPUS_ID`. The workflow rejects a mismatched suffix, uploads and
+downloads the new prefix, and validates the downloaded copy. Dispatch the
+development deployment only after that preservation run succeeds. Retain the
+previous prefix for rollback.
 
 The summary, index, section, item, and aggregate-review endpoints are public.
 The Worker is the only R2 origin client and returns cacheable reader responses;

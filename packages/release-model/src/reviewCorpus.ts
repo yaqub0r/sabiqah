@@ -39,7 +39,7 @@ const volumeSchema = z
 
 export const reviewCorpusSummarySchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
     work: z
       .object({
         slug: z.literal("al-isabah"),
@@ -101,12 +101,13 @@ export const reviewCorpusListItemSchema = z
     unresolvedCount: z.number().int().nonnegative(),
     publicEligibility: z.literal("eligible").optional(),
     relationship: z.string().optional(),
+    searchText: z.string().optional(),
   })
   .strict();
 
 export const reviewCorpusIndexSchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
     corpusId: identifier,
     items: z.array(reviewCorpusListItemSchema),
   })
@@ -129,9 +130,47 @@ const corpusUnresolvedSchema = z
   })
   .strict();
 
+const honorificOccurrenceSchema = z
+  .object({
+    id: identifier,
+    semanticId: identifier,
+    semanticClass: z.string().min(1),
+    language: z.enum(["ar", "en", "ur"]),
+    field: z.enum(["title", "segment"]),
+    segmentId: identifier.optional(),
+    observedForm: z.string().min(1),
+    renderedForm: z.string().min(1),
+    expandedArabic: z.string().min(1),
+    accessibleText: z.string().min(1),
+    formulaRole: z.enum(["formulaic", "substantive", "uncertain"]),
+    referent: z
+      .object({
+        kind: z.string().min(1),
+        scope: z.string().min(1),
+        context: z.string(),
+        status: z.enum(["machine-inferred", "human-reviewed", "unresolved"]),
+      })
+      .strict(),
+    agreement: z
+      .object({
+        number: z.enum(["singular", "dual", "plural", "not-applicable"]),
+        gender: z.enum([
+          "masculine",
+          "feminine",
+          "masculine-or-mixed",
+          "mixed",
+          "common",
+          "not-applicable",
+        ]),
+      })
+      .strict(),
+    familyIncluded: z.boolean(),
+  })
+  .strict();
+
 export const reviewCorpusItemSchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
     corpusId: identifier,
     id: identifier,
     kind: z.enum(["entry", "passage"]),
@@ -170,6 +209,8 @@ export const reviewCorpusItemSchema = z
       .min(1),
     names: z.array(corpusNameSchema),
     unresolved: z.array(corpusUnresolvedSchema),
+    honorificPolicyVersion: z.string().optional(),
+    honorifics: z.array(honorificOccurrenceSchema).optional(),
     decisions: z
       .array(
         z
@@ -224,6 +265,10 @@ export const reviewCorpusItemSchema = z
         entryNumber: z.number().int().positive(),
         pages: z.array(z.string().regex(/^V\d{2}P\d{3}$/)),
         sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
+        sourceExactTextSha256: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
         sourceUrl: z.url(),
         license: z.object({ spdx: z.string().min(1), url: z.url() }).strict(),
         alignment: z
@@ -246,6 +291,17 @@ export const reviewCorpusItemSchema = z
           z.number().int().nonnegative(),
         ),
         honorificTypeCorrections: z.number().int().nonnegative(),
+        sourceHonorificSemantics: z
+          .record(z.string(), z.number().int().nonnegative())
+          .optional(),
+        englishHonorificSemantics: z
+          .record(z.string(), z.number().int().nonnegative())
+          .optional(),
+        honorificLiteralInventoryDiffers: z.boolean().optional(),
+        honorificSemanticReview: z
+          .enum(["passed", "needs_attention"])
+          .optional(),
+        honorificFindings: z.array(z.string().min(1)).optional(),
         englishExcluded: z.boolean().optional(),
         englishExclusionReasonCodes: z.array(z.string().min(1)).optional(),
         removedApparatusParagraphs: z.number().int().nonnegative(),
@@ -265,15 +321,38 @@ export const reviewCorpusItemSchema = z
           sourceAuthorityId: identifier,
           sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
           sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
+          sourceExactTextSha256: z
+            .string()
+            .regex(/^[a-f0-9]{64}$/)
+            .optional(),
         })
         .strict(),
     ]),
   })
-  .strict();
+  .strict()
+  .superRefine((item, context) => {
+    if (item.schemaVersion !== "4.0.0") return;
+    if (!item.honorificPolicyVersion || !item.honorifics) {
+      context.addIssue({
+        code: "custom",
+        message: "Schema 4.0.0 items require honorific policy metadata.",
+      });
+    }
+    if (
+      !item.source?.sourceExactTextSha256 ||
+      !("sourceExactTextSha256" in item.provenance) ||
+      !item.provenance.sourceExactTextSha256
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Schema 4.0.0 items require exact-source integrity metadata.",
+      });
+    }
+  });
 
 export const reviewCorpusSectionSchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
     corpusId: identifier,
     id: identifier,
     volume: z.number().int().positive(),

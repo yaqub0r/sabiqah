@@ -13,6 +13,9 @@ from typing import Any
 from rebuild_al_isabah_public_corpus import (
     CORPUS_ID,
     FORBIDDEN_PUBLIC_PATTERNS,
+    HONORIFIC_BY_CHARACTER,
+    HONORIFIC_ENTRIES,
+    HONORIFIC_POLICY_VERSION,
     LICENSE_SPDX,
     LICENSE_URL,
     SCHEMA_VERSION,
@@ -21,20 +24,18 @@ from rebuild_al_isabah_public_corpus import (
     SOURCE_REPOSITORY,
     SOURCE_SHA256,
     SOURCE_URL,
-    formula_counts,
+    honorific_display,
+    honorific_semantic_key,
+    normalize_search_text,
 )
 
 
 ITEM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
 SHA256 = re.compile(r"^[a-f0-9]{64}$")
-TRANSLATED_HONORIFIC = re.compile(
-    r"may (?:Allah|God) bless him and (?:his family and )?grant (?:him|them) peace|"
-    r"may (?:Allah|God) be pleased with (?:him|her|them)|"
-    r"may (?:Allah|God) have mercy on (?:him|them)|"
-    r"peace (?:and blessings )?be upon (?:him|her|them)|"
-    r"(?:Allah|God) Most High",
-    re.I,
+HONORIFIC_CODEPOINT_RANGES = re.compile(
+    r"[\uFBC3-\uFBD2\uFD40-\uFD4F\uFDC8-\uFDCF\uFDFD-\uFDFF\U00010ED1-\U00010ED8]"
 )
+HONORIFIC_ENTRY_BY_ID = {entry["id"]: entry for entry in HONORIFIC_ENTRIES}
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -116,6 +117,13 @@ def validate(root: Path) -> list[str]:
             errors.append(f"detail: wrong source license URL for {item_id}")
         if provenance.get("sourceArtifactSha256") != SOURCE_SHA256:
             errors.append(f"detail: wrong source artifact hash for {item_id}")
+        exact_source_sha = source.get("sourceExactTextSha256")
+        if (
+            not isinstance(exact_source_sha, str)
+            or not SHA256.fullmatch(exact_source_sha)
+            or provenance.get("sourceExactTextSha256") != exact_source_sha
+        ):
+            errors.append(f"detail: exact source text integrity is missing for {item_id}")
         remediation = detail.get("remediation", {})
         if remediation.get("sourceArabicReplaced") is not True:
             errors.append(f"detail: source Arabic was not replaced for {item_id}")
@@ -138,22 +146,80 @@ def validate(root: Path) -> list[str]:
         )
         translation_state = detail.get("translationState")
         exclusion_reasons = remediation.get("englishExclusionReasonCodes", [])
-        if translation_state == "translated":
-            if formula_counts(displayed_arabic) != formula_counts(displayed_english):
-                errors.append(f"detail: honorific inventory mismatch for {item_id}")
-            if remediation.get("englishExcluded") is not False or exclusion_reasons:
-                errors.append(f"detail: translated record claims English exclusion for {item_id}")
-        elif translation_state == "untranslated":
-            if any(str(segment.get("english", "")).strip() for segment in segments):
-                errors.append(f"detail: untranslated record contains English text for {item_id}")
-            if detail.get("title", {}).get("en") != f"Entry {source.get('entryNumber')}":
-                errors.append(f"detail: untranslated record contains an English title for {item_id}")
-            if remediation.get("englishExcluded") is not True or not exclusion_reasons:
-                errors.append(f"detail: untranslated record lacks an exclusion reason for {item_id}")
-        else:
-            errors.append(f"detail: invalid translation state for {item_id}")
-        if TRANSLATED_HONORIFIC.search(displayed_english):
-            errors.append(f"detail: translated honorific remains for {item_id}")
+        if translation_state != "translated":
+            errors.append(f"detail: {item_id} must expose public working English")
+        if not displayed_english.strip() or detail.get("title", {}).get("en", "").startswith(
+            "Entry "
+        ):
+            errors.append(f"detail: public working English is empty or generic for {item_id}")
+        if remediation.get("englishExcluded") is not False or exclusion_reasons:
+            errors.append(f"detail: public working English is marked excluded for {item_id}")
+        if detail.get("honorificPolicyVersion") != HONORIFIC_POLICY_VERSION:
+            errors.append(f"detail: wrong honorific policy version for {item_id}")
+        occurrences = detail.get("honorifics")
+        if not isinstance(occurrences, list):
+            errors.append(f"detail: honorific occurrence metadata missing for {item_id}")
+            occurrences = []
+        semantic_counts = {"ar": {}, "en": {}}
+        literal_counts = {"ar": {}, "en": {}}
+        for occurrence in occurrences:
+            semantic_id = occurrence.get("semanticId")
+            entry = HONORIFIC_ENTRY_BY_ID.get(semantic_id)
+            if entry is None:
+                errors.append(f"detail: unknown honorific semantic ID for {item_id}")
+                continue
+            if occurrence.get("agreement") != entry["agreement"]:
+                errors.append(f"detail: honorific agreement differs from registry for {item_id}")
+            if occurrence.get("familyIncluded") != entry["familyIncluded"]:
+                errors.append(f"detail: honorific family scope differs from registry for {item_id}")
+            language = occurrence.get("language")
+            if language not in semantic_counts:
+                continue
+            if occurrence.get("renderedForm") != honorific_display(entry, language):
+                errors.append(f"detail: honorific rendering differs from registry for {item_id}")
+            semantic_key = honorific_semantic_key(entry)
+            semantic_counts[language][semantic_key] = (
+                semantic_counts[language].get(semantic_key, 0) + 1
+            )
+            literal_counts[language][semantic_id] = (
+                literal_counts[language].get(semantic_id, 0) + 1
+            )
+        source_semantics = dict(sorted(semantic_counts["ar"].items()))
+        english_semantics = dict(sorted(semantic_counts["en"].items()))
+        literal_differs = literal_counts["ar"] != literal_counts["en"]
+        semantic_differs = source_semantics != english_semantics
+        if remediation.get("sourceHonorificSemantics") != source_semantics:
+            errors.append(f"detail: source honorific semantics differ for {item_id}")
+        if remediation.get("englishHonorificSemantics") != english_semantics:
+            errors.append(f"detail: English honorific semantics differ for {item_id}")
+        if remediation.get("honorificLiteralInventoryDiffers") != literal_differs:
+            errors.append(f"detail: honorific literal-difference flag is wrong for {item_id}")
+        expected_review = "needs_attention" if semantic_differs else "passed"
+        if remediation.get("honorificSemanticReview") != expected_review:
+            errors.append(f"detail: honorific semantic review state is wrong for {item_id}")
+        if semantic_differs and detail.get("machineAssessment") != "needs_attention":
+            errors.append(f"detail: semantic honorific difference did not fail review for {item_id}")
+        for character in HONORIFIC_CODEPOINT_RANGES.findall(
+            f"{displayed_arabic}\n{displayed_english}"
+        ):
+            if character not in HONORIFIC_BY_CHARACTER:
+                errors.append(f"detail: unknown compact honorific {ord(character):04X} for {item_id}")
+            elif HONORIFIC_BY_CHARACTER[character]["fontSupport"] != "supported":
+                errors.append(f"detail: unsupported compact honorific {ord(character):04X} for {item_id}")
+        expected_search = normalize_search_text(
+            "\n".join(
+                [
+                    str(detail.get("title", {}).get("en", "")),
+                    str(detail.get("title", {}).get("ar", "")),
+                ]
+                + [
+                    f"{segment.get('english', '')}\n{segment.get('arabic', '')}"
+                    for segment in segments
+                ]
+            )
+        )
+        if item.get("searchText") != expected_search:
+            errors.append(f"index: expanded honorific search text differs for {item_id}")
         serialized = json.dumps(detail, ensure_ascii=False)
         if any(pattern.search(serialized) for pattern in FORBIDDEN_PUBLIC_PATTERNS):
             errors.append(f"detail: private or unapproved expression remains for {item_id}")

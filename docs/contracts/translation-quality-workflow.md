@@ -173,14 +173,25 @@ prompt or policy version, schema version, model identity, reasoning setting,
 and run identity. Preserve names, isnads, negation, dates, numerals, entry
 numbers, citations, notes, poetry, uncertainty, and cross-unit continuation.
 
-Preserve every honorific and devotional formula from the authoritative source
-at the corresponding occurrence in the English candidate, using its Arabic
-written form rather than an English translation or transliteration. When the
-source uses a compact form such as `ﷺ`, carry that form unchanged. Do not omit,
-expand, substitute, or add a formula that is absent from the source. A versioned
-book profile may define reversible typography-only normalization, but it must
-record both source and rendered forms and must not change the formula, referent,
-grammatical number, or gender.
+Preserve the semantics of every honorific and devotional formula from the
+authoritative source. Record its semantic class, referent scope, grammatical
+agreement, observed source form, expanded Arabic form, and target realization.
+A versioned language and book profile may use an established equivalent
+formula or a supported compact Unicode character. Literal spelling and global
+count equality are diagnostics, not proof of correctness.
+
+Never change a formula's referent, grammatical number or gender, family
+inclusion, or substantive meaning. If the words are quoted, defined,
+contrasted, or analyzed, they are substantive text rather than replaceable
+formulaic typography and must remain faithfully translated. An uncertain
+classification is an explicit review finding.
+
+Compact characters are presentation values, not the only semantic record.
+Keep the exact observed form in provenance and retain expanded Arabic plus a
+target-language accessible expansion for fallback, search, copy, and
+assistive technology. Use the accepted
+[`honorific-presentation`](../architecture/honorific-presentation.md) decision
+and the versioned machine-readable registry.
 
 ### 5. Independent critique
 
@@ -223,9 +234,10 @@ Fail closed unless validation proves:
 - public-source eligibility and public-output provenance;
 - no duplicated or missing substantive unit;
 - preservation of material numbers, names, notes, citations, and boundaries;
-- preservation and placement of every source honorific and devotional formula
-  in Arabic written form, with no omitted, translated, transliterated,
-  substituted, or added formula;
+- a complete semantic inventory for honorific and devotional formulas,
+  including referent scope and grammatical agreement;
+- no known meaning-changing, wrong-referent, wrong-number, or wrong-gender
+  realization;
 - consistent terminology and durable name identities;
 - a complete unresolved-item inventory; and
 - separation of machine assessment from human-review state.
@@ -235,6 +247,13 @@ COMET or XCOMET, back-translation diagnostics, terminology checks, named-entity
 consistency, and targeted entailment or omission tests. Such signals prioritize
 investigation; none independently certifies historical or theological
 accuracy.
+
+Literal-form and global-count differences may create review findings, but they
+do not by themselves make an independently written, rights-compliant working
+translation ineligible for public reading. A genuine semantic or agreement
+error fails translation readiness and blocks approval and canonical promotion;
+the record remains visible with an honest `needs_attention` state unless a
+separate public-output invariant fails.
 
 ### 9. Review presentation
 

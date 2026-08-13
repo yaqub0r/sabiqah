@@ -57,6 +57,12 @@ jobs:
           test -n "${AL_ISABAH_PUBLIC_CORPUS_URI}"
           test -n "${R2_ACCESS_KEY_ID}"
           test -n "${R2_SECRET_ACCESS_KEY}"
+          public_corpus_id="$(python3 -c 'from scripts.rebuild_al_isabah_public_corpus import CORPUS_ID; print(CORPUS_ID)')"
+          expected_suffix="/${public_corpus_id}/"
+          if [[ "${AL_ISABAH_PUBLIC_CORPUS_URI}" != *"${expected_suffix}" ]]; then
+            echo "::error::AL_ISABAH_PUBLIC_CORPUS_URI must end with ${expected_suffix}"
+            exit 1
+          fi
 
       - name: Build and validate immutable research objects
         run: |
@@ -64,7 +70,7 @@ jobs:
           python3 scripts/export_al_isabah_review_corpus.py \
             --git-dir .runtime/al-isabah-review-source/.git \
             --output .runtime/al-isabah-review-corpus \
-            --generated-at 2026-08-12T00:00:00Z
+            --generated-at 2026-08-13T00:00:00Z
           python3 scripts/validate_review_corpus.py .runtime/al-isabah-review-corpus
           python3 scripts/build_canonical_git_archive.py \
             --repository .runtime/al-isabah-review-source \

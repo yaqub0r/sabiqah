@@ -1,0 +1,1095 @@
+{
+  "schemaVersion": "1.0.0",
+  "unicodeVersion": "17.0.0",
+  "fontBaseline": {
+    "family": "Noto Naskh Arabic",
+    "version": "2.021",
+    "package": "@fontsource-variable/noto-naskh-arabic",
+    "packageVersion": "5.3.0",
+    "arabicWoff2Sha256": "2a10d33e1f7129ab2b6ec76666e82ac5b509fbcfa7b4a3a1289bff42d2d64cd7",
+    "compactThroughUnicode": "14.0"
+  },
+  "entries": [
+    {
+      "id": "prophet-blessing",
+      "semanticClass": "prophet-blessing",
+      "expandedArabic": "صلى الله عليه وسلم",
+      "accessibleEnglish": "may Allah bless him and grant him peace",
+      "compactCharacter": "ﷺ",
+      "codePoint": "U+FDFA",
+      "unicodeVersion": "1.1",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "prophet",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": ["ؐ"],
+      "arabicAliases": ["صلى الله عليه وسلم"],
+      "englishAliases": [
+        "may Allah bless him and grant him peace",
+        "may God bless him and grant him peace",
+        "peace and blessings be upon him",
+        "blessings and peace be upon him"
+      ]
+    },
+    {
+      "id": "prophet-and-family-blessing",
+      "semanticClass": "prophet-blessing",
+      "expandedArabic": "صلى الله عليه وآله وسلم",
+      "accessibleEnglish": "may Allah bless him and his family and grant them peace",
+      "compactCharacter": "﵌",
+      "codePoint": "U+FD4C",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "prophet-and-family",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "mixed" },
+      "familyIncluded": true,
+      "alternateCharacters": [],
+      "arabicAliases": ["صلى الله عليه وآله وسلم"],
+      "englishAliases": [
+        "may Allah bless him and his family and grant them peace",
+        "may Allah bless him and the members of his family and grant them peace"
+      ]
+    },
+    {
+      "id": "prophet-and-family-blessing-with-upon",
+      "semanticClass": "prophet-blessing",
+      "expandedArabic": "صلى الله عليه وعلى آله وسلم",
+      "accessibleEnglish": "may Allah bless him and his family and grant them peace",
+      "compactCharacter": "﷌",
+      "codePoint": "U+FDCC",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "prophet-and-family",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "mixed" },
+      "familyIncluded": true,
+      "alternateCharacters": [],
+      "arabicAliases": ["صلى الله عليه وعلى آله وسلم"],
+      "englishAliases": [
+        "may Allah bless him and his family and grant them peace"
+      ]
+    },
+    {
+      "id": "prophet-and-family-blessing-without-peace",
+      "semanticClass": "prophet-blessing",
+      "expandedArabic": "صلى الله عليه وآله",
+      "accessibleEnglish": "may Allah bless him and his family",
+      "compactCharacter": "﵆",
+      "codePoint": "U+FD46",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "prophet-and-family",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "mixed" },
+      "familyIncluded": true,
+      "alternateCharacters": [],
+      "arabicAliases": ["صلى الله عليه وآله"],
+      "englishAliases": ["may Allah bless him and his family"]
+    },
+    {
+      "id": "prophet-blessing-with-exaltation",
+      "semanticClass": "prophet-blessing",
+      "expandedArabic": "صلى الله تعالى عليه وسلم",
+      "accessibleEnglish": "may Allah Most High bless him and grant him peace",
+      "compactCharacter": "﯐",
+      "codePoint": "U+FBD0",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "prophet",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["صلى الله تعالى عليه وسلم"],
+      "englishAliases": ["may Allah Most High bless him and grant him peace"]
+    },
+    {
+      "id": "approval-masculine-singular",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله عنه",
+      "accessibleEnglish": "may Allah be pleased with him",
+      "compactCharacter": "﵁",
+      "codePoint": "U+FD41",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": ["ؓ"],
+      "arabicAliases": ["رضي الله عنه"],
+      "englishAliases": [
+        "may Allah be pleased with him",
+        "may God be pleased with him"
+      ]
+    },
+    {
+      "id": "approval-feminine-singular",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله عنها",
+      "accessibleEnglish": "may Allah be pleased with her",
+      "compactCharacter": "﵂",
+      "codePoint": "U+FD42",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "feminine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله عنها"],
+      "englishAliases": [
+        "may Allah be pleased with her",
+        "may God be pleased with her"
+      ]
+    },
+    {
+      "id": "approval-masculine-or-mixed-plural",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله عنهم",
+      "accessibleEnglish": "may Allah be pleased with them",
+      "compactCharacter": "﵃",
+      "codePoint": "U+FD43",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله عنهم", "رضي الله عنهم أجمعين"],
+      "englishAliases": [
+        "may Allah be pleased with them",
+        "may Allah be pleased with them all",
+        "may God be pleased with them"
+      ]
+    },
+    {
+      "id": "approval-dual",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله عنهما",
+      "accessibleEnglish": "may Allah be pleased with them both",
+      "compactCharacter": "﵄",
+      "codePoint": "U+FD44",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله عنهما"],
+      "englishAliases": [
+        "may Allah be pleased with them both",
+        "may God be pleased with them both"
+      ]
+    },
+    {
+      "id": "approval-feminine-plural",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله عنهن",
+      "accessibleEnglish": "may Allah be pleased with them",
+      "compactCharacter": "﵅",
+      "codePoint": "U+FD45",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "feminine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله عنهن"],
+      "englishAliases": ["may Allah be pleased with them"]
+    },
+    {
+      "id": "peace-masculine-singular",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليه السلام",
+      "accessibleEnglish": "peace be upon him",
+      "compactCharacter": "﵇",
+      "codePoint": "U+FD47",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": ["ؑ"],
+      "arabicAliases": ["عليه السلام"],
+      "englishAliases": ["peace be upon him"]
+    },
+    {
+      "id": "peace-feminine-singular",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليها السلام",
+      "accessibleEnglish": "peace be upon her",
+      "compactCharacter": "﵍",
+      "codePoint": "U+FD4D",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "feminine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليها السلام"],
+      "englishAliases": ["peace be upon her"]
+    },
+    {
+      "id": "peace-masculine-or-mixed-plural",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليهم السلام",
+      "accessibleEnglish": "peace be upon them",
+      "compactCharacter": "﵈",
+      "codePoint": "U+FD48",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليهم السلام"],
+      "englishAliases": ["peace be upon them"]
+    },
+    {
+      "id": "peace-dual",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليهما السلام",
+      "accessibleEnglish": "peace be upon them both",
+      "compactCharacter": "﵉",
+      "codePoint": "U+FD49",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليهما السلام"],
+      "englishAliases": ["peace be upon them both"]
+    },
+    {
+      "id": "prayers-and-peace-masculine-singular",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليه الصلاة والسلام",
+      "accessibleEnglish": "prayers and peace be upon him",
+      "compactCharacter": "﵊",
+      "codePoint": "U+FD4A",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليه الصلاة والسلام"],
+      "englishAliases": ["prayers and peace be upon him"]
+    },
+    {
+      "id": "mercy-masculine-singular",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمه الله",
+      "accessibleEnglish": "may Allah have mercy on him",
+      "compactCharacter": "﵀",
+      "codePoint": "U+FD40",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": ["ؒ"],
+      "arabicAliases": ["رحمه الله", "رحمة الله عليه"],
+      "englishAliases": [
+        "may Allah have mercy on him",
+        "may God have mercy on him"
+      ]
+    },
+    {
+      "id": "mercy-masculine-or-mixed-plural",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمهم الله",
+      "accessibleEnglish": "may Allah have mercy on them",
+      "compactCharacter": "﵏",
+      "codePoint": "U+FD4F",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمهم الله", "رحمة الله عليهم"],
+      "englishAliases": [
+        "may Allah have mercy on them",
+        "may God have mercy on them"
+      ]
+    },
+    {
+      "id": "allah-subhanahu-wa-taala",
+      "semanticClass": "divine-exaltation",
+      "expandedArabic": "سبحانه وتعالى",
+      "accessibleEnglish": "glorified and exalted is He",
+      "compactCharacter": "﷾",
+      "codePoint": "U+FDFE",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "Allah",
+        "scope": "explicit-or-implied-divine-name"
+      },
+      "agreement": { "number": "not-applicable", "gender": "not-applicable" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["سبحانه وتعالى"],
+      "englishAliases": [
+        "glorified and exalted is He",
+        "Allah Most High",
+        "God Most High"
+      ]
+    },
+    {
+      "id": "allah-azza-wa-jall",
+      "semanticClass": "divine-exaltation",
+      "expandedArabic": "عز وجل",
+      "accessibleEnglish": "Mighty and Majestic is He",
+      "compactCharacter": "﷿",
+      "codePoint": "U+FDFF",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "Allah",
+        "scope": "explicit-or-implied-divine-name"
+      },
+      "agreement": { "number": "not-applicable", "gender": "not-applicable" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عز وجل"],
+      "englishAliases": [
+        "Mighty and Majestic is He",
+        "Allah the Mighty and Majestic",
+        "God the Mighty and Majestic"
+      ]
+    },
+    {
+      "id": "allah-tabaraka-wa-taala",
+      "semanticClass": "divine-exaltation",
+      "expandedArabic": "تبارك وتعالى",
+      "accessibleEnglish": "blessed and exalted is He",
+      "compactCharacter": "﵎",
+      "codePoint": "U+FD4E",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "Allah",
+        "scope": "explicit-or-implied-divine-name"
+      },
+      "agreement": { "number": "not-applicable", "gender": "not-applicable" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["تبارك وتعالى"],
+      "englishAliases": ["blessed and exalted is He"]
+    },
+    {
+      "id": "allah-jalla-jalaluhu",
+      "semanticClass": "divine-exaltation",
+      "expandedArabic": "جل جلاله",
+      "accessibleEnglish": "majestic is His glory",
+      "compactCharacter": "ﷻ",
+      "codePoint": "U+FDFB",
+      "unicodeVersion": "1.1",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "Allah",
+        "scope": "explicit-or-implied-divine-name"
+      },
+      "agreement": { "number": "not-applicable", "gender": "not-applicable" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["جل جلاله"],
+      "englishAliases": ["majestic is His glory"]
+    },
+    {
+      "id": "allah-jalla-wa-alaa",
+      "semanticClass": "divine-exaltation",
+      "expandedArabic": "جل وعلا",
+      "accessibleEnglish": "majestic and exalted is He",
+      "compactCharacter": "﯃",
+      "codePoint": "U+FBC3",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "Allah",
+        "scope": "explicit-or-implied-divine-name"
+      },
+      "agreement": { "number": "not-applicable", "gender": "not-applicable" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["جل وعلا"],
+      "englishAliases": ["majestic and exalted is He"]
+    },
+    {
+      "id": "bismillah",
+      "semanticClass": "devotional-invocation",
+      "expandedArabic": "بسم الله الرحمن الرحيم",
+      "accessibleEnglish": "in the name of Allah, the Most Compassionate, the Most Merciful",
+      "compactCharacter": "﷽",
+      "codePoint": "U+FDFD",
+      "unicodeVersion": "4.0",
+      "fontSupport": "supported",
+      "referent": { "kind": "Allah", "scope": "formula-internal" },
+      "agreement": { "number": "not-applicable", "gender": "not-applicable" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["بسم الله الرحمن الرحيم"],
+      "englishAliases": [
+        "in the name of Allah, the Most Compassionate, the Most Merciful"
+      ]
+    },
+    {
+      "id": "sanctification-masculine-singular",
+      "semanticClass": "sanctification",
+      "expandedArabic": "قدس سره",
+      "accessibleEnglish": "may his secret be sanctified",
+      "compactCharacter": "﵋",
+      "codePoint": "U+FD4B",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["قدس سره"],
+      "englishAliases": ["may his secret be sanctified"]
+    },
+    {
+      "id": "approval-masculine-singular-with-exaltation",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله تعالى عنه",
+      "accessibleEnglish": "may Allah Most High be pleased with him",
+      "compactCharacter": "﷉",
+      "codePoint": "U+FDC9",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله تعالى عنه"],
+      "englishAliases": ["may Allah Most High be pleased with him"]
+    },
+    {
+      "id": "approval-feminine-singular-with-exaltation",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله تعالى عنها",
+      "accessibleEnglish": "may Allah Most High be pleased with her",
+      "compactCharacter": "﷊",
+      "codePoint": "U+FDCA",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "feminine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله تعالى عنها"],
+      "englishAliases": ["may Allah Most High be pleased with her"]
+    },
+    {
+      "id": "approval-dual-with-exaltation",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله تعالى عنهما",
+      "accessibleEnglish": "may Allah Most High be pleased with them both",
+      "compactCharacter": "﷋",
+      "codePoint": "U+FDCB",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله تعالى عنهما"],
+      "englishAliases": ["may Allah Most High be pleased with them both"]
+    },
+    {
+      "id": "approval-plural-with-exaltation",
+      "semanticClass": "companion-approval",
+      "expandedArabic": "رضي الله تعالى عنهم",
+      "accessibleEnglish": "may Allah Most High be pleased with them",
+      "compactCharacter": "﯋",
+      "codePoint": "U+FBCB",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رضي الله تعالى عنهم"],
+      "englishAliases": ["may Allah Most High be pleased with them"]
+    },
+    {
+      "id": "mercy-masculine-singular-with-exaltation",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمه الله تعالى",
+      "accessibleEnglish": "may Allah Most High have mercy on him",
+      "compactCharacter": "﷈",
+      "codePoint": "U+FDC8",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمه الله تعالى"],
+      "englishAliases": ["may Allah Most High have mercy on him"]
+    },
+    {
+      "id": "mercy-dual",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمهما الله",
+      "accessibleEnglish": "may Allah have mercy on them both",
+      "compactCharacter": "﯉",
+      "codePoint": "U+FBC9",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمهما الله"],
+      "englishAliases": ["may Allah have mercy on them both"]
+    },
+    {
+      "id": "preservation-masculine-singular",
+      "semanticClass": "preservation",
+      "expandedArabic": "حفظه الله",
+      "accessibleEnglish": "may Allah preserve him",
+      "compactCharacter": "﯌",
+      "codePoint": "U+FBCC",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["حفظه الله"],
+      "englishAliases": ["may Allah preserve him"]
+    },
+    {
+      "id": "preservation-dual-with-exaltation",
+      "semanticClass": "preservation",
+      "expandedArabic": "حفظهما الله تعالى",
+      "accessibleEnglish": "may Allah Most High preserve them both",
+      "compactCharacter": "﯏",
+      "codePoint": "U+FBCF",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["حفظهما الله تعالى"],
+      "englishAliases": ["may Allah Most High preserve them both"]
+    },
+    {
+      "id": "esteem-masculine-singular",
+      "semanticClass": "esteem",
+      "expandedArabic": "كرم الله وجهه",
+      "accessibleEnglish": "may Allah honor his face",
+      "compactCharacter": "﷎",
+      "codePoint": "U+FDCE",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["كرم الله وجهه"],
+      "englishAliases": ["may Allah honor his face"]
+    },
+    {
+      "id": "messianic-supplication",
+      "semanticClass": "messianic-supplication",
+      "expandedArabic": "عجل الله فرجه الشريف",
+      "accessibleEnglish": "may Allah hasten his noble reappearance",
+      "compactCharacter": "﯑",
+      "codePoint": "U+FBD1",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عجل الله فرجه الشريف"],
+      "englishAliases": ["may Allah hasten his noble reappearance"]
+    },
+    {
+      "id": "enduring-blessings-plural",
+      "semanticClass": "enduring-blessings",
+      "expandedArabic": "دامت بركاتهم",
+      "accessibleEnglish": "may their blessings endure",
+      "compactCharacter": "\uFBC4",
+      "codePoint": "U+FBC4",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["دامت بركاتهم"],
+      "englishAliases": ["may their blessings endure"]
+    },
+    {
+      "id": "mercy-noun-masculine-singular-with-exaltation",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمة الله تعالى عليه",
+      "accessibleEnglish": "may Allah Most High have mercy on him",
+      "compactCharacter": "\uFBC5",
+      "codePoint": "U+FBC5",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمة الله تعالى عليه"],
+      "englishAliases": ["may Allah Most High have mercy on him"]
+    },
+    {
+      "id": "mercy-noun-masculine-or-mixed-plural",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمة الله عليهم",
+      "accessibleEnglish": "may Allah's mercy be upon them",
+      "compactCharacter": "\uFBC6",
+      "codePoint": "U+FBC6",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمة الله عليهم"],
+      "englishAliases": ["may Allah's mercy be upon them"]
+    },
+    {
+      "id": "mercy-noun-dual",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمة الله عليهما",
+      "accessibleEnglish": "may Allah's mercy be upon them both",
+      "compactCharacter": "\uFBC7",
+      "codePoint": "U+FBC7",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمة الله عليهما"],
+      "englishAliases": ["may Allah's mercy be upon them both"]
+    },
+    {
+      "id": "mercy-masculine-or-mixed-plural-with-exaltation",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمهم الله تعالى",
+      "accessibleEnglish": "may Allah Most High have mercy on them",
+      "compactCharacter": "\uFBC8",
+      "codePoint": "U+FBC8",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمهم الله تعالى"],
+      "englishAliases": ["may Allah Most High have mercy on them"]
+    },
+    {
+      "id": "mercy-dual-with-exaltation",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمهما الله تعالى",
+      "accessibleEnglish": "may Allah Most High have mercy on them both",
+      "compactCharacter": "\uFBCA",
+      "codePoint": "U+FBCA",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمهما الله تعالى"],
+      "englishAliases": ["may Allah Most High have mercy on them both"]
+    },
+    {
+      "id": "preservation-masculine-singular-with-exaltation",
+      "semanticClass": "preservation",
+      "expandedArabic": "حفظه الله تعالى",
+      "accessibleEnglish": "may Allah Most High preserve him",
+      "compactCharacter": "\uFBCD",
+      "codePoint": "U+FBCD",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["حفظه الله تعالى"],
+      "englishAliases": ["may Allah Most High preserve him"]
+    },
+    {
+      "id": "preservation-masculine-or-mixed-plural-with-exaltation",
+      "semanticClass": "preservation",
+      "expandedArabic": "حفظهم الله تعالى",
+      "accessibleEnglish": "may Allah Most High preserve them",
+      "compactCharacter": "\uFBCE",
+      "codePoint": "U+FBCE",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["حفظهم الله تعالى"],
+      "englishAliases": ["may Allah Most High preserve them"]
+    },
+    {
+      "id": "mercy-upon-masculine-singular",
+      "semanticClass": "mercy",
+      "expandedArabic": "عليه الرحمة",
+      "accessibleEnglish": "may mercy be upon him",
+      "compactCharacter": "\uFBD2",
+      "codePoint": "U+FBD2",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليه الرحمة"],
+      "englishAliases": ["may mercy be upon him"]
+    },
+    {
+      "id": "mercy-noun-masculine-singular",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمة الله عليه",
+      "accessibleEnglish": "may Allah's mercy be upon him",
+      "compactCharacter": "\uFD90",
+      "codePoint": "U+FD90",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمة الله عليه"],
+      "englishAliases": ["may Allah's mercy be upon him"]
+    },
+    {
+      "id": "mercy-noun-feminine-singular",
+      "semanticClass": "mercy",
+      "expandedArabic": "رحمة الله عليها",
+      "accessibleEnglish": "may Allah's mercy be upon her",
+      "compactCharacter": "\uFD91",
+      "codePoint": "U+FD91",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "feminine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["رحمة الله عليها"],
+      "englishAliases": ["may Allah's mercy be upon her"]
+    },
+    {
+      "id": "messianic-supplication-with-exaltation",
+      "semanticClass": "messianic-supplication",
+      "expandedArabic": "عجل الله تعالى فرجه الشريف",
+      "accessibleEnglish": "may Allah Most High hasten his noble reappearance",
+      "compactCharacter": "\uFDCD",
+      "codePoint": "U+FDCD",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عجل الله تعالى فرجه الشريف"],
+      "englishAliases": ["may Allah Most High hasten his noble reappearance"]
+    },
+    {
+      "id": "prayers-and-peace-feminine-singular",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليها الصلاة والسلام",
+      "accessibleEnglish": "prayers and peace be upon her",
+      "compactCharacter": "\uD803\uDED1",
+      "codePoint": "U+10ED1",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "feminine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليها الصلاة والسلام"],
+      "englishAliases": ["prayers and peace be upon her"]
+    },
+    {
+      "id": "prayers-and-peace-masculine-or-mixed-plural",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليهم الصلاة والسلام",
+      "accessibleEnglish": "prayers and peace be upon them",
+      "compactCharacter": "\uD803\uDED2",
+      "codePoint": "U+10ED2",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليهم الصلاة والسلام"],
+      "englishAliases": ["prayers and peace be upon them"]
+    },
+    {
+      "id": "prayers-and-peace-dual",
+      "semanticClass": "prophetic-peace",
+      "expandedArabic": "عليهما الصلاة والسلام",
+      "accessibleEnglish": "prayers and peace be upon them both",
+      "compactCharacter": "\uD803\uDED3",
+      "codePoint": "U+10ED3",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["عليهما الصلاة والسلام"],
+      "englishAliases": ["prayers and peace be upon them both"]
+    },
+    {
+      "id": "sanctification-by-allah-masculine-singular",
+      "semanticClass": "sanctification",
+      "expandedArabic": "قدس الله سره",
+      "accessibleEnglish": "may Allah sanctify his secret",
+      "compactCharacter": "\uD803\uDED4",
+      "codePoint": "U+10ED4",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["قدس الله سره"],
+      "englishAliases": ["may Allah sanctify his secret"]
+    },
+    {
+      "id": "sanctification-masculine-or-mixed-plural",
+      "semanticClass": "sanctification",
+      "expandedArabic": "قدس سرهم",
+      "accessibleEnglish": "may their secret be sanctified",
+      "compactCharacter": "\uD803\uDED5",
+      "codePoint": "U+10ED5",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["قدس سرهم"],
+      "englishAliases": ["may their secret be sanctified"]
+    },
+    {
+      "id": "sanctification-dual",
+      "semanticClass": "sanctification",
+      "expandedArabic": "قدس سرهما",
+      "accessibleEnglish": "may the secrets of both be sanctified",
+      "compactCharacter": "\uD803\uDED6",
+      "codePoint": "U+10ED6",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "dual", "gender": "common" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["قدس سرهما"],
+      "englishAliases": ["may the secrets of both be sanctified"]
+    },
+    {
+      "id": "sanctification-secrets-masculine-or-mixed-plural",
+      "semanticClass": "sanctification",
+      "expandedArabic": "قدست أسرارهم",
+      "accessibleEnglish": "may their secrets be sanctified",
+      "compactCharacter": "\uD803\uDED7",
+      "codePoint": "U+10ED7",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "people",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "plural", "gender": "masculine-or-mixed" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["قدست أسرارهم"],
+      "englishAliases": ["may their secrets be sanctified"]
+    },
+    {
+      "id": "resting-place-illumination-masculine-singular",
+      "semanticClass": "resting-place-illumination",
+      "expandedArabic": "نور الله مرقده",
+      "accessibleEnglish": "may Allah illuminate his resting place",
+      "compactCharacter": "\uD803\uDED8",
+      "codePoint": "U+10ED8",
+      "unicodeVersion": "17.0",
+      "fontSupport": "fallback-expanded",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["نور الله مرقده"],
+      "englishAliases": ["may Allah illuminate his resting place"]
+    },
+    {
+      "id": "christian-blessing",
+      "semanticClass": "blessing",
+      "expandedArabic": "سلامه علينا",
+      "accessibleEnglish": "his blessing upon us",
+      "compactCharacter": "﷏",
+      "codePoint": "U+FDCF",
+      "unicodeVersion": "14.0",
+      "fontSupport": "supported",
+      "referent": {
+        "kind": "person",
+        "scope": "preceding-explicit-or-implied"
+      },
+      "agreement": { "number": "singular", "gender": "masculine" },
+      "familyIncluded": false,
+      "alternateCharacters": [],
+      "arabicAliases": ["سلامه علينا"],
+      "englishAliases": ["his blessing upon us"]
+    }
+  ]
+}

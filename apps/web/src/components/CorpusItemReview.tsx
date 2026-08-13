@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
+import { HonorificText } from "./HonorificText";
 import {
   TranslationApproval,
   type TranslationReviewState,
@@ -104,10 +105,12 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
           <p className="eyebrow">
             {item.kind} · Volume {item.volume} · @{identity?.login}
           </p>
-          <h1>{item.title.en}</h1>
+          <h1>
+            <HonorificText text={item.title.en} language="en" />
+          </h1>
         </div>
         <p className="arabic-title" lang="ar" dir="rtl">
-          {item.title.ar}
+          <HonorificText text={item.title.ar} language="ar" />
         </p>
       </header>
       <aside className="issue-banner">
@@ -141,7 +144,11 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
         <section className="bilingual-segment" id={segment.id} key={segment.id}>
           <div className="english-column" lang="en" dir="ltr">
             <p className="corpus-text">
-              {segment.english || "Translation not yet available."}
+              {segment.english ? (
+                <HonorificText text={segment.english} language="en" />
+              ) : (
+                "English text is contained in the entry heading."
+              )}
             </p>
             <p className="segment-meta">
               {segment.machineState.replaceAll("_", " ")}
@@ -149,8 +156,11 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
           </div>
           <div className="arabic-column" lang="ar" dir="rtl">
             <p className="arabic corpus-text">
-              {segment.arabic ||
-                "Arabic source text is not included in this review record."}
+              {segment.arabic ? (
+                <HonorificText text={segment.arabic} language="ar" />
+              ) : (
+                "Arabic source text is not included in this review record."
+              )}
             </p>
             <p className="segment-meta">
               {segment.pages
@@ -183,7 +193,7 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
               <h3>{note.category.replaceAll("_", " ")}</h3>
               {note.arabicSpan && (
                 <p lang="ar" dir="rtl">
-                  {note.arabicSpan}
+                  <HonorificText text={note.arabicSpan} language="ar" />
                 </p>
               )}
               <p>{note.explanation}</p>

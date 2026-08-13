@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@astrojs/react": "6.0.2",
+    "@fontsource-variable/noto-naskh-arabic": "5.3.0",
     "@sabiqah/editor": "workspace:*",
     "@sabiqah/release-model": "workspace:*",
     "astro": "7.2.0",
