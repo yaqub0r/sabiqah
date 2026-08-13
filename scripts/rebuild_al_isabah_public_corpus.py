@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v6"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v7"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -600,6 +600,12 @@ def public_arabic_body(source: OpenITIEntry, title: str) -> str:
     return " ".join(words[len(title.split()) :])
 
 
+def render_arabic_poetry(value: str) -> str:
+    """Turn OpenITI poetry delimiters into reader-visible verse boundaries."""
+
+    return re.sub(r"\s*%\s*", "\n", value).strip()
+
+
 def structure_body_opening(body: str, opening: str, kind: str, entry_number: int) -> str:
     if not body.startswith(opening):
         raise ValueError(
@@ -832,6 +838,7 @@ def public_item(
     else:
         title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
         arabic_body = public_arabic_body(source, title_ar)
+    arabic_body = render_arabic_poetry(arabic_body)
     segment_id = f"{legacy['id']}-public-segment-0001"
     source_honorifics = honorific_occurrences(
         source.clean,
@@ -895,7 +902,8 @@ def public_item(
         )
     if not title_en.strip() and not english.strip():
         raise ValueError(f"No public working English remains for {legacy['id']}")
-    source_sha = sha256_text(source.rendered)
+    displayed_source = " ".join(f"{title_ar} {arabic_body}".split())
+    source_sha = sha256_text(displayed_source)
     exact_source_sha = sha256_text(source.exact)
     alignment_score = round(body_score, 4)
     return {
