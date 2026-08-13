@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -27,6 +28,14 @@ VALIDATE_SPEC.loader.exec_module(VALIDATE)
 
 
 class PublicCorpusTests(unittest.TestCase):
+    def test_worker_and_exporter_pin_the_same_public_corpus(self):
+        runtime = (ROOT / "workers" / "platform" / "src" / "corpus.ts").read_text(
+            encoding="utf-8"
+        )
+        match = re.search(r'export const CORPUS_ID = "([^"]+)";', runtime)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), REBUILD.CORPUS_ID)
+
     def test_entry_title_profile_is_pinned_and_covers_the_reported_entries(self):
         decisions = REBUILD.load_entry_title_profile()
         self.assertEqual(set(decisions), {11426, 11427, 11430, 11439, 11441})

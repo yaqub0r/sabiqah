@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { canReviewCorpus, corpusJson, corpusObjectKey } from "../src/corpus";
+import {
+  canReviewCorpus,
+  CORPUS_ID,
+  corpusJson,
+  corpusObjectKey,
+} from "../src/corpus";
 
 describe("public working corpus", () => {
   it("requires an active member only for review actions", () => {
@@ -11,9 +16,8 @@ describe("public working corpus", () => {
   });
 
   it("builds only pinned, sanitized object keys", () => {
-    expect(corpusObjectKey("summary")).toContain(
-      "al-isabah-public-openiti-5835c18-v4",
-    );
+    expect(CORPUS_ID).toBe("al-isabah-public-openiti-5835c18-v5");
+    expect(corpusObjectKey("summary")).toContain(CORPUS_ID);
     expect(corpusObjectKey("exclusions")).toMatch(/\/exclusions\.json$/);
     expect(corpusObjectKey("item", "isabah-entry-00010759")).toMatch(
       /items\/isabah-entry-00010759\.json$/,
