@@ -196,6 +196,8 @@ export const reviewCorpusItemSchema = z
             level: z.enum(["letter", "section", "subsection"]),
             en: z.string().min(1),
             ar: z.string().min(1),
+            noteEn: z.string().min(1).optional(),
+            noteAr: z.string().min(1).optional(),
           })
           .strict(),
       )

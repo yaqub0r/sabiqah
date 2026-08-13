@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v7"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v8"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -55,14 +55,14 @@ DEFAULT_ENTRY_TITLE_PROFILE = (
     Path(__file__).resolve().parents[1]
     / "fixtures"
     / "releases"
-    / "al-isabah-entry-title-profile.v1.json"
+    / "al-isabah-entry-title-profile.v2.json"
 )
 ENTRY_TITLE_PROFILE_SOURCE = {
     "repository": "https://github.com/yaqub0r/al-isabah",
-    "commit": "4ade84756383407cede6711454fce005f15de2d0",
-    "path": "profiles/entry-title-decisions.v1.json",
-    "sha256": "9365188c92ce26899949e7fefd6b27a03338992196a1247a2a140b9717e05e82",
-    "semanticSha256": "b700b870451b104497eded9590eff354bf0bec3285a85c5f61f2a0acd6fd33b7",
+    "commit": "29c39e3f5428d1d00f3dcff11e674feb96c6d19b",
+    "path": "profiles/entry-title-decisions.v2.json",
+    "sha256": "818a0a1ad51fd898839f7f65374879afe18edde6bb47fcfd04ba536987c21898",
+    "semanticSha256": "0e69aea83c096f9d9540d64d729c8d61879106b2ff73cb0ffb5ea4d6921d8ff3",
 }
 HONORIFIC_REGISTRY_PATH = (
     Path(__file__).resolve().parents[1]
@@ -95,10 +95,23 @@ FOOTNOTE_PARAGRAPH_RE = re.compile(
 )
 EDITORIAL_NOTE_RE = re.compile(r"\[(?:Editorial|Textual) note:.*?\]", re.I | re.S)
 STRUCTURAL_HEADING_PARAGRAPH_RE = re.compile(
-    r"^(?:THE LETTER\b.*|SECTION\s+(?:ONE|TWO|THREE|FOUR)\s*)$", re.I
+    r"^(?:THE LETTER\b.*|(?:THE\s+)?(?:SECOND\s+AND\s+THIRD\s+SECTIONS|SECOND,\s+THIRD,\s+AND\s+FOURTH\s+SECTIONS|SECTION\s+(?:ONE|TWO|THREE|FOUR)|FOURTH\s+SECTION)|NO ONE WAS MENTIONED IN (?:EITHER|ANY) OF THEM\.?\s*)$",
+    re.I,
 )
-METER_LABEL_RE = re.compile(r"\[al-([A-Za-z-]+) meter\]", re.I)
-METER_PARAGRAPH_RE = re.compile(r"^\[al-([A-Za-z-]+) meter\]$", re.I)
+METER_LABEL_RE = re.compile(
+    r"\[(?:al-)?(rajaz|tawil|basit)(?: meter)?\]|\[al-([A-Za-z-]+) meter\]",
+    re.I,
+)
+METER_PARAGRAPH_RE = re.compile(
+    r"^\[(?:al-)?(rajaz|tawil|basit)(?: meter)?\]$|^\[al-([A-Za-z-]+) meter\]$",
+    re.I,
+)
+
+
+def display_meter(value: str) -> str:
+    names = {"tawil": "Ṭawīl", "rajaz": "Rajaz", "basit": "Basit"}
+    normalized = value.strip().casefold()
+    return f"Meter: al-{names.get(normalized, value.strip().title())}"
 
 # These records precede the contiguous women-entry run. Their mappings were
 # independently checked against title and body text. The final three correct
@@ -155,9 +168,64 @@ FORBIDDEN_PUBLIC_PATTERNS = (
 )
 
 SOURCE_HEADINGS_BEFORE: dict[int, tuple[dict[str, str], ...]] = {
+    11431: (
+        {"level": "section", "ar": "القسم الثاني والقسم الثالث", "en": "Sections Two and Three", "noteAr": "لم يذكر فيهما أحد", "noteEn": "No entries are recorded in either section."},
+        {"level": "section", "ar": "الرابع", "en": "Section Four"},
+    ),
+    11433: (
+        {"level": "letter", "ar": "حرف الطاء المهملة", "en": "Letter Ṭāʾ (ط)"},
+        {"level": "section", "ar": "الأول", "en": "Section One"},
+    ),
+    11438: (
+        {"level": "section", "ar": "القسم الثاني", "en": "Section Two", "noteAr": "لم يذكر فيه أحد", "noteEn": "No entries are recorded in this section."},
+        {"level": "section", "ar": "الثالث", "en": "Section Three"},
+    ),
     11441: (
         {"level": "letter", "ar": "حرف الظاء المشالة", "en": "Letter Ẓāʾ (ظ)"},
         {"level": "section", "ar": "الأول", "en": "Section One"},
+    ),
+    11445: (
+        {"level": "section", "ar": "القسم الثاني والقسم الثالث والقسم الرابع", "en": "Sections Two, Three, and Four", "noteAr": "لم يذكر فيها أحد", "noteEn": "No entries are recorded in these sections."},
+        {"level": "letter", "ar": "العين المهملة", "en": "Letter ʿAyn (ع)"},
+        {"level": "section", "ar": "القسم الأول", "en": "Section One"},
+    ),
+}
+
+# Exact, source-entry-scoped removal of modern page/callout numerals that are
+# embedded inside words in the approved digital source. The untouched source
+# bytes remain bound by sourceExactTextSha256; only the public projection is
+# repaired and the decision is recorded on the entry.
+SOURCE_ARABIC_APPARATUS_REPLACEMENTS: dict[int, tuple[tuple[str, str], ...]] = {
+    11448: (("عبد الله 327 بن الزبير", "عبد الله بن الزبير"),),
+    11456: (("نكح 328 رسول الله", "نكح رسول الله"),),
+    11457: (("زيد 329 بن خالد", "زيد بن خالد"),),
+    11472: (
+        ("ألا 33 تشرك", "ألا تشرك"),
+        ("ولا تسرق 33 ولا تزني", "ولا تسرق ولا تزني"),
+    ),
+}
+
+ENGLISH_HONORIFIC_SOURCE_CORRECTIONS: dict[int, tuple[tuple[str, str], ...]] = {
+    11457: (
+        (
+            "may Allah Most High be pleased with them",
+            "may Allah be pleased with them",
+        ),
+    ),
+    11473: (
+        (
+            "may Allah Most High bless him and grant him peace",
+            "may Allah bless him and grant him peace",
+        ),
+    ),
+}
+
+ENGLISH_PRESENTATION_SOURCE_REPAIRS: dict[int, tuple[tuple[str, str], ...]] = {
+    11446: (
+        (
+            "Word was sent by Umar ibn...\n\n…ibn al-Khattab sent",
+            "Umar ibn al-Khattab sent",
+        ),
     ),
 }
 
@@ -227,7 +295,11 @@ def load_entry_title_profile(
         if any(not str(value.get(language, "")).strip() for value in (title, opening) for language in ("ar", "en")):
             raise ValueError(f"Entry-title decision {number} is not bilingual")
         decisions[number] = decision
-    if set(decisions) != {11426, 11427, 11430, 11439, 11441}:
+    if set(decisions) != {
+        11426, 11427, 11430, 11436, 11439, 11441, 11442, 11443,
+        11445, 11446, 11449, 11451, 11454, 11458, 11459, 11473,
+        11474, 11476,
+    }:
         raise ValueError("Entry-title profile does not cover the contracted audit set")
     return decisions
 
@@ -657,13 +729,53 @@ def render_english_formulas(value: str) -> str:
     return re.sub(rf"\(([{compact_characters}])\)", r"\1", value)
 
 
-def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
+def repair_public_arabic_projection(
+    source_number: int, title: str, body: str, decisions: list[dict[str, str]]
+) -> tuple[str, str]:
+    """Remove only audited modern apparatus from the displayed projection."""
+
+    combined = f"{title}\u0000{body}"
+    for old, new in SOURCE_ARABIC_APPARATUS_REPLACEMENTS.get(source_number, ()):
+        if combined.count(old) != 1:
+            raise ValueError(
+                f"Expected one audited Arabic apparatus marker for {source_number}: {old}"
+            )
+        combined = combined.replace(old, new, 1)
+        decisions.append(
+            {
+                "issue": "The approved digital source embeds a modern numeric apparatus marker inside the reading text.",
+                "resolution": "Removed the audited marker from the public reading projection without changing the pinned source evidence.",
+                "basis": "Al-Isabah public-presentation and source-integrity contracts; exact entry-scoped replacement.",
+            }
+        )
+    repaired_title, repaired_body = combined.split("\u0000", 1)
+    return repaired_title, repaired_body
+
+
+def sanitize_english(
+    item: dict[str, Any], source_number: int | None = None
+) -> tuple[str, dict[str, int]]:
     removed_notes = 0
     removed_editorial = 0
+    honorific_type_corrections = 0
+    source_honorific_corrections = ENGLISH_HONORIFIC_SOURCE_CORRECTIONS.get(
+        source_number or 0, ()
+    )
+    source_presentation_repairs = ENGLISH_PRESENTATION_SOURCE_REPAIRS.get(
+        source_number or 0, ()
+    )
     kept: list[str] = []
     title = clean_english_title(str(item.get("title", {}).get("en", "")))
     for segment in item.get("segments", []):
         value = str(segment.get("english", "")).split("_________", 1)[0]
+        for old, new in source_honorific_corrections:
+            if value.count(old) > 1:
+                raise ValueError(
+                    f"Found repeated source-locked honorific correction for source entry {source_number}"
+                )
+            if old in value:
+                value = value.replace(old, new, 1)
+                honorific_type_corrections += 1
         editorial = list(EDITORIAL_NOTE_RE.finditer(value))
         removed_editorial += len(editorial)
         value = EDITORIAL_NOTE_RE.sub("", value)
@@ -692,7 +804,7 @@ def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
             paragraph = re.sub(r"^\s*\d+\s*[.\-—]\s*", "", paragraph)
             meter = METER_PARAGRAPH_RE.fullmatch(paragraph)
             if meter:
-                paragraph = f"Meter: al-{meter.group(1).replace('Tawil', 'Ṭawīl')}"
+                paragraph = display_meter(meter.group(1) or meter.group(2))
             elif index in poetry_indices:
                 paragraph = "\n".join(
                     " ".join(line.split())
@@ -709,15 +821,29 @@ def sanitize_english(item: dict[str, Any]) -> tuple[str, dict[str, int]]:
                 if not paragraph:
                     continue
             kept.append(paragraph)
+    if honorific_type_corrections != len(source_honorific_corrections):
+        raise ValueError(
+            f"Expected {len(source_honorific_corrections)} source-locked honorific corrections for source entry {source_number}"
+        )
     value = render_english_formulas("\n\n".join(kept)).strip()
+    presentation_repairs = 0
+    for old, new in source_presentation_repairs:
+        if value.count(old) != 1:
+            raise ValueError(
+                f"Expected one source-locked presentation repair for source entry {source_number}"
+            )
+        value = value.replace(old, new, 1)
+        presentation_repairs += 1
     value = METER_LABEL_RE.sub(
-        lambda match: f"Meter: al-{match.group(1).replace('Tawil', 'Ṭawīl')}",
+        lambda match: display_meter(match.group(1) or match.group(2)),
         value,
     )
-    value = re.sub(r"—\n\n(?=[a-z])", " ", value)
+    value = re.sub(r"—\n\n(?=\S)", " ", value)
     return value, {
         "removedApparatusParagraphs": removed_notes,
         "removedEditorialNotes": removed_editorial,
+        "honorificTypeCorrections": honorific_type_corrections,
+        "sourcePresentationRepairs": presentation_repairs,
     }
 
 
@@ -802,6 +928,14 @@ def apply_source_locked_english(
                 "basis": "Public-output compliance policy excludes private apparatus from reader-facing prose.",
             }
         )
+    if removals["sourcePresentationRepairs"]:
+        decisions.append(
+            {
+                "issue": "The working translation split a single name across a paragraph boundary and duplicated its connective text.",
+                "resolution": "Joined the audited phrase into one continuous sentence without changing its meaning.",
+                "basis": "Al-Isabah presentation contract and the pinned source sequence.",
+            }
+        )
     return title, english, decisions, source_uncertainty
 
 
@@ -838,6 +972,9 @@ def public_item(
     else:
         title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
         arabic_body = public_arabic_body(source, title_ar)
+    title_ar, arabic_body = repair_public_arabic_projection(
+        source.number, title_ar, arabic_body, decisions
+    )
     arabic_body = render_arabic_poetry(arabic_body)
     segment_id = f"{legacy['id']}-public-segment-0001"
     source_honorifics = honorific_occurrences(
@@ -1184,9 +1321,11 @@ def rebuild(
                 and not exact_title_with_substantial_body_overlap
             ):
                 reasons.append("source-alignment-below-threshold")
-        english, removals = sanitize_english(legacy)
+        english, removals = sanitize_english(
+            legacy, source.number if source is not None else None
+        )
         title_en = clean_english_title(str(legacy.get("title", {}).get("en", "")))
-        formula_type_corrections = 0
+        formula_type_corrections = removals["honorificTypeCorrections"]
         title_en, english, decisions, source_uncertainty = apply_source_locked_english(
             int(legacy["printedEntryNumber"]), title_en, english, removals
         )

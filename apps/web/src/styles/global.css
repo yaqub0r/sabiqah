@@ -576,6 +576,12 @@ button {
     serif;
   text-align: right;
 }
+.source-structure-heading .source-structure-note {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font: inherit;
+  line-height: 1.5;
+}
 .reading-record {
   padding: clamp(2rem, 4vw, 3.5rem) 0;
   scroll-margin-top: 1.5rem;

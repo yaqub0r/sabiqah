@@ -87,7 +87,13 @@ const structuredRecord = {
   })),
   headingsBefore: [
     { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
-    { level: "section", en: "Section One", ar: "الأول" },
+    {
+      level: "section",
+      en: "Sections Two and Three",
+      ar: "القسم الثاني والقسم الثالث",
+      noteEn: "No entries are recorded in either section.",
+      noteAr: "لم يذكر فيهما أحد",
+    },
   ],
 };
 
@@ -320,6 +326,9 @@ describe("CorpusReader presentation quality", () => {
     expect(heading).not.toBeNull();
     expect(heading?.textContent).toContain("Letter Ẓāʾ (ظ)");
     expect(heading?.textContent).toContain("حرف الظاء المشالة");
+    expect(heading?.textContent).toContain(
+      "No entries are recorded in either section.",
+    );
     expect(heading?.scrollWidth).toBeLessThanOrEqual(heading!.clientWidth);
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
       document.documentElement.clientWidth,

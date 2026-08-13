@@ -21,7 +21,9 @@ from rebuild_al_isabah_public_corpus import (
     LICENSE_URL,
     SCHEMA_VERSION,
     SOURCE_AUTHORITY_ID,
+    SOURCE_ARABIC_APPARATUS_REPLACEMENTS,
     SOURCE_COMMIT,
+    SOURCE_HEADINGS_BEFORE,
     SOURCE_REPOSITORY,
     SOURCE_SHA256,
     SOURCE_URL,
@@ -52,11 +54,14 @@ MISATTACHED_COMPACT_HONORIFIC = re.compile(
     + r")[\t ]*—"
 )
 EMBEDDED_ENTRY_HEADING = re.compile(r"(?m)^\s*\d+\s*[.\-—]\s*\S")
-DANGLING_DASH_BOUNDARY = re.compile(r"—\n\n(?=[a-z])")
+DANGLING_DASH_BOUNDARY = re.compile(r"—\n\n(?=\S)")
 STRUCTURAL_HEADING_IN_PROSE = re.compile(
-    r"(?mi)^(?:THE LETTER\b.*|SECTION\s+(?:ONE|TWO|THREE|FOUR))\s*$"
+    r"(?mi)^(?:THE LETTER\b.*|(?:THE\s+)?(?:SECOND\s+AND\s+THIRD\s+SECTIONS|SECOND,\s+THIRD,\s+AND\s+FOURTH\s+SECTIONS|SECTION\s+(?:ONE|TWO|THREE|FOUR)|FOURTH\s+SECTION)|NO ONE WAS MENTIONED IN (?:EITHER|ANY) OF THEM\.?)\s*$"
 )
-RAW_METER_LABEL = re.compile(r"\[al-[A-Za-z-]+ meter\]", re.I)
+RAW_METER_LABEL = re.compile(
+    r"\[(?:al-)?(?:rajaz|tawil|basit)(?: meter)?\]|\[al-[A-Za-z-]+ meter\]",
+    re.I,
+)
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -219,11 +224,16 @@ def validate(root: Path) -> list[str]:
             errors.append(f"detail: source structure is embedded in entry prose for {item_id}")
         if RAW_METER_LABEL.search(displayed_english):
             errors.append(f"detail: raw poetry meter label remains for {item_id}")
-        if source_entry_number == 11441 and detail.get("headingsBefore") != [
-            {"level": "letter", "ar": "حرف الظاء المشالة", "en": "Letter Ẓāʾ (ظ)"},
-            {"level": "section", "ar": "الأول", "en": "Section One"},
-        ]:
-            errors.append(f"detail: source headings before entry 11441 are missing for {item_id}")
+        expected_headings = list(SOURCE_HEADINGS_BEFORE.get(source_entry_number, ()))
+        if detail.get("headingsBefore", []) != expected_headings:
+            errors.append(
+                f"detail: source headings before entry {source_entry_number} differ for {item_id}"
+            )
+        for old, _new in SOURCE_ARABIC_APPARATUS_REPLACEMENTS.get(
+            source_entry_number, ()
+        ):
+            if old in displayed_arabic:
+                errors.append(f"detail: audited Arabic apparatus remains for {item_id}")
         if detail.get("honorificPolicyVersion") != HONORIFIC_POLICY_VERSION:
             errors.append(f"detail: wrong honorific policy version for {item_id}")
         occurrences = detail.get("honorifics")
@@ -385,6 +395,16 @@ def validate(root: Path) -> list[str]:
         for item_id in ids
         if (root / "items" / f"{item_id}.json").is_file()
     }
+    volume_eight_opening = sorted(
+        int(detail["sourceEntryNumber"])
+        for detail in detail_by_id.values()
+        if detail.get("volume") == 8
+        and 11426 <= int(detail.get("sourceEntryNumber", 0)) <= 11481
+    )
+    if volume_eight_opening and volume_eight_opening != list(range(11426, 11482)):
+        errors.append(
+            "sections: Volume 8 pages 1-25 must contain entries 11426-11481 exactly once"
+        )
     for volume in summary.get("volumes", []):
         matching = {
             item.get("sectionId") for item in items if item.get("volume") == volume.get("number")

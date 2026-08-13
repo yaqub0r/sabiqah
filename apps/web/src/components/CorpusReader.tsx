@@ -294,6 +294,14 @@ function ReadingRecord({
               <p lang="ar" dir="rtl">
                 {heading.ar}
               </p>
+              {heading.noteEn && (
+                <p className="source-structure-note">{heading.noteEn}</p>
+              )}
+              {heading.noteAr && (
+                <p className="source-structure-note" lang="ar" dir="rtl">
+                  {heading.noteAr}
+                </p>
+              )}
             </div>
           ))}
         </header>

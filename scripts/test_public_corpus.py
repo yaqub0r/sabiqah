@@ -38,7 +38,14 @@ class PublicCorpusTests(unittest.TestCase):
 
     def test_entry_title_profile_is_pinned_and_covers_the_reported_entries(self):
         decisions = REBUILD.load_entry_title_profile()
-        self.assertEqual(set(decisions), {11426, 11427, 11430, 11439, 11441})
+        self.assertEqual(
+            set(decisions),
+            {
+                11426, 11427, 11430, 11436, 11439, 11441, 11442, 11443,
+                11445, 11446, 11449, 11451, 11454, 11458, 11459, 11473,
+                11474, 11476,
+            },
+        )
 
     def test_entry_title_decision_moves_relationship_prose_into_the_body(self):
         source = REBUILD.OpenITIEntry(
@@ -133,6 +140,35 @@ class PublicCorpusTests(unittest.TestCase):
         english, _ = REBUILD.sanitize_english(transition)
         self.assertEqual(english, "Biography.")
 
+        plural_transition = {
+            "title": {"en": "al-Dayzana bint Abi Qays"},
+            "segments": [
+                {
+                    "english": (
+                        "Biography.\n\nTHE SECOND AND THIRD SECTIONS\n\n"
+                        "No one was mentioned in either of them.\n\nTHE FOURTH SECTION"
+                    )
+                }
+            ],
+        }
+        english, _ = REBUILD.sanitize_english(plural_transition)
+        self.assertEqual(english, "Biography.")
+
+        split_name = {
+            "title": {"en": "Atika bint Usayd"},
+            "segments": [
+                {
+                    "english": (
+                        "Word was sent by Umar ibn...\n\n"
+                        "…ibn al-Khattab sent word to al-Shifa."
+                    )
+                }
+            ],
+        }
+        english, repairs = REBUILD.sanitize_english(split_name, 11446)
+        self.assertEqual(english, "Umar ibn al-Khattab sent word to al-Shifa.")
+        self.assertEqual(repairs["sourcePresentationRepairs"], 1)
+
         atika = {
             "title": {"en": "Atika bint Zayd"},
             "segments": [
@@ -154,6 +190,33 @@ class PublicCorpusTests(unittest.TestCase):
         self.assertIn("Meter: al-Ṭawīl", english)
         self.assertIn("Meter: al-Basit", english)
         self.assertEqual(removals["removedEditorialNotes"], 1)
+
+        rajaz = {
+            "printedEntryNumber": 11426,
+            "title": {"en": "Duba'a bint Amir"},
+            "segments": [{"english": "A verse line.\n\n[rajaz]"}],
+        }
+        english, _ = REBUILD.sanitize_english(rajaz)
+        self.assertEqual(english, "A verse line.\n\nMeter: al-Rajaz")
+
+    def test_audited_arabic_apparatus_repairs_preserve_a_decision(self):
+        decisions = []
+        title, body = REBUILD.repair_public_arabic_projection(
+            11448,
+            "عاتكة بنت زيد",
+            "عن عبد الله 327 بن الزبير خبر",
+            decisions,
+        )
+        self.assertEqual(title, "عاتكة بنت زيد")
+        self.assertEqual(body, "عن عبد الله بن الزبير خبر")
+        self.assertEqual(len(decisions), 1)
+
+    def test_volume_eight_opening_has_all_source_structure_transitions(self):
+        self.assertEqual(set(REBUILD.SOURCE_HEADINGS_BEFORE), {11431, 11433, 11438, 11441, 11445})
+        self.assertEqual(
+            REBUILD.SOURCE_HEADINGS_BEFORE[11445][0]["noteEn"],
+            "No entries are recorded in these sections.",
+        )
 
     def test_arabic_poetry_delimiters_become_line_boundaries(self):
         self.assertEqual(

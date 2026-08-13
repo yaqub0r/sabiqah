@@ -238,7 +238,13 @@ describe("CorpusReader", () => {
       ...firstItem,
       headingsBefore: [
         { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
-        { level: "section", en: "Section One", ar: "الأول" },
+        {
+          level: "section",
+          en: "Sections Two and Three",
+          ar: "القسم الثاني والقسم الثالث",
+          noteEn: "No entries are recorded in either section.",
+          noteAr: "لم يذكر فيهما أحد",
+        },
       ],
     };
     const responses = new Map<string, unknown>([
@@ -343,7 +349,12 @@ describe("CorpusReader", () => {
     expect(
       await screen.findByRole("heading", { name: "Letter Ẓāʾ (ظ)" }),
     ).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Section One" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Sections Two and Three" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("No entries are recorded in either section."),
+    ).toBeTruthy();
     expect(
       document.querySelector(".source-structure-heading + .reading-record"),
     ).toBeTruthy();
