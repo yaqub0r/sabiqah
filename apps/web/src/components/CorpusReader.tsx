@@ -30,6 +30,116 @@ interface SectionLink {
   itemCount: number;
 }
 
+interface EnglishReadingBlock {
+  kind: "prose" | "poetry";
+  paragraphs: string[];
+  meter?: string;
+  continuation?: string;
+}
+
+const METER_LABEL =
+  /^(?:Meter:\s*)?(?:\[)?(al-[^\]]+?)(?:\])?(?:\s+(And the remaining verses\.))?$/i;
+
+function englishReadingBlocks(text: string): EnglishReadingBlock[] {
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  const poetryByStart = new Map<
+    number,
+    { end: number; meter: string; continuation?: string }
+  >();
+
+  for (let meterIndex = 0; meterIndex < paragraphs.length; meterIndex += 1) {
+    const meter = paragraphs[meterIndex]?.match(METER_LABEL);
+    if (!meter || meterIndex === 0) continue;
+    let start = meterIndex - 1;
+    while (
+      start > 0 &&
+      meterIndex - start < 12 &&
+      !paragraphs[start - 1]?.endsWith(":") &&
+      !paragraphs[start - 1]?.match(METER_LABEL)
+    ) {
+      start -= 1;
+    }
+    poetryByStart.set(start, {
+      end: meterIndex,
+      meter: meter[1]!,
+      continuation: meter[2],
+    });
+  }
+
+  const blocks: EnglishReadingBlock[] = [];
+  for (let index = 0; index < paragraphs.length; index += 1) {
+    const poetry = poetryByStart.get(index);
+    if (poetry) {
+      blocks.push({
+        kind: "poetry",
+        paragraphs: paragraphs.slice(index, poetry.end),
+        meter: poetry.meter,
+        continuation: poetry.continuation,
+      });
+      index = poetry.end;
+      continue;
+    }
+    blocks.push({ kind: "prose", paragraphs: [paragraphs[index]!] });
+  }
+  return blocks;
+}
+
+function EnglishReadingText({ text }: { text: string }) {
+  return englishReadingBlocks(text).map((block, index) =>
+    block.kind === "poetry" ? (
+      <figure className="poetry-block" key={`poetry-${index}`}>
+        <blockquote aria-label="Poetry">
+          {block.paragraphs.map((paragraph, paragraphIndex) => (
+            <p key={paragraphIndex}>
+              <HonorificText text={paragraph} language="en" />
+            </p>
+          ))}
+        </blockquote>
+        <figcaption>Meter: {block.meter}</figcaption>
+        {block.continuation && <p>{block.continuation}</p>}
+      </figure>
+    ) : (
+      <p className="corpus-text" key={`prose-${index}`}>
+        <HonorificText text={block.paragraphs[0]!} language="en" />
+      </p>
+    ),
+  );
+}
+
+function ArabicReadingText({ text }: { text: string }) {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph, index) => {
+      const lines = paragraph.split("\n").map((line) => line.trim());
+      if (lines.length === 1) {
+        return (
+          <p className="arabic corpus-text" key={index}>
+            <HonorificText text={paragraph} language="ar" />
+          </p>
+        );
+      }
+      return (
+        <Fragment key={index}>
+          <p className="arabic corpus-text">
+            <HonorificText text={lines[0]!} language="ar" />
+          </p>
+          <div className="arabic arabic-poetry" aria-label="Poetry">
+            {lines.slice(1).map((line, lineIndex) => (
+              <p key={lineIndex}>
+                <HonorificText text={line} language="ar" />
+              </p>
+            ))}
+          </div>
+        </Fragment>
+      );
+    });
+}
+
 function sectionLinks(index: ReviewCorpusIndex, volume: number): SectionLink[] {
   const grouped = new Map<string, ReviewCorpusIndex["items"]>();
   for (const item of index.items.filter(
@@ -214,20 +324,16 @@ function ReadingRecord({
         {item.segments.map((segment) => (
           <section className="reading-bilingual" key={segment.id}>
             <div lang="en" dir="ltr">
-              <p className="corpus-text">
-                {segment.english ? (
-                  <HonorificText text={segment.english} language="en" />
-                ) : (
-                  <span className="continuation-note">
-                    English text is contained in the entry heading.
-                  </span>
-                )}
-              </p>
+              {segment.english ? (
+                <EnglishReadingText text={segment.english} />
+              ) : (
+                <p className="corpus-text continuation-note">
+                  English text is contained in the entry heading.
+                </p>
+              )}
             </div>
             <div lang="ar" dir="rtl">
-              <p className="arabic corpus-text">
-                <HonorificText text={segment.arabic} language="ar" />
-              </p>
+              <ArabicReadingText text={segment.arabic} />
             </div>
           </section>
         ))}

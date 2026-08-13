@@ -197,6 +197,22 @@ material quality regression.
 
 ## Reviewer handoff
 
+### Poetry presentation
+
+Al-Isabah reading surfaces preserve poetry as a distinct literary structure.
+When the working English supplies an explicit meter label, the complete verse
+passage governed by that label is grouped, indented, and italicized; the meter
+is shown as a caption rather than allowed to run into the prose. OpenITI `%`
+verse delimiters are never displayed to readers. They become parallel Arabic
+line boundaries with matching indentation and spacing. Arabic is not forced
+into a synthetic italic face: separation, lineation, and the visual rule carry
+the distinction while preserving the script's legibility.
+
+The reader must return to ordinary prose styling after the poetry block. When
+the source or translation does not establish a reliable poetry boundary, the
+pipeline records a review finding rather than inventing one from line length
+or punctuation alone.
+
 The public bilingual presentation exposes the work product and its honest
 review state through continuous reading, search, stable entry navigation,
 names, workflow history, interventions, and unresolved findings. Name review

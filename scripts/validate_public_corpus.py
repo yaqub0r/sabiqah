@@ -186,6 +186,8 @@ def validate(root: Path) -> list[str]:
             + [str(segment.get("arabic", "")) for segment in segments]
         ).strip()
         displayed_arabic = " ".join(displayed_arabic.split())
+        if "%" in displayed_arabic:
+            errors.append(f"detail: OpenITI poetry delimiter remains for {item_id}")
         source_text_sha = hashlib.sha256(displayed_arabic.encode("utf-8")).hexdigest()
         if source.get("sourceTextSha256") != source_text_sha:
             errors.append(f"detail: source text hash mismatch for {item_id}")

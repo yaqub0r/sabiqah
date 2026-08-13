@@ -155,6 +155,12 @@ class PublicCorpusTests(unittest.TestCase):
         self.assertIn("Meter: al-Basit", english)
         self.assertEqual(removals["removedEditorialNotes"], 1)
 
+    def test_arabic_poetry_delimiters_become_line_boundaries(self):
+        self.assertEqual(
+            REBUILD.render_arabic_poetry("قال % البيت الأول % البيت الثاني ثم نثر"),
+            "قال\nالبيت الأول\nالبيت الثاني ثم نثر",
+        )
+
     def test_source_authority_record_matches_the_pinned_contract(self):
         REBUILD.validate_source_authority_record(REBUILD.DEFAULT_SOURCE_AUTHORITY)
 
@@ -423,6 +429,17 @@ class PublicCorpusTests(unittest.TestCase):
             self.assertTrue(any("dangling dash" in error for error in errors))
             self.assertTrue(any("source structure" in error for error in errors))
             self.assertTrue(any("raw poetry meter" in error for error in errors))
+
+    def test_validator_rejects_openiti_poetry_delimiters(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["segments"][0]["arabic"] += " % بيت"
+            item_path.write_text(json.dumps(item, ensure_ascii=False), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(any("poetry delimiter remains" in error for error in errors))
 
     def test_validator_rejects_honorific_agreement_that_differs_from_registry(self):
         with tempfile.TemporaryDirectory() as temp:
