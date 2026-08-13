@@ -29,6 +29,7 @@
         "docs/operations/private-evidence-ingestion.md",
         "docs/security/access-model.md",
         "docs/security/credential-register.md",
+        "AGENTS.md",
         "ops/credential-expirations.json",
         "scripts/acquisition/**",
         ".github/workflows/application-validate.yml",
