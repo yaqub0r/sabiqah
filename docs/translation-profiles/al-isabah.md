@@ -66,11 +66,12 @@ the translation base or supplies public wording. Clear Arabic from the
 publication-approved authority remains decisive; a corrected reading requires
 a cited, independently written, reviewable emendation.
 
-### Honorific typography map
+### Honorific language profile
 
-The public renderer may replace an exact source formula with the corresponding
-Unicode ligature below. This is reversible typography, not translation or
-editorial substitution:
+Al-Isabah uses the semantic registry and the accepted
+[`honorific-presentation`](../architecture/honorific-presentation.md) decision.
+The renderer prefers the following compact Unicode forms when the detected
+formula is formulaic and the bundled font supports the character:
 
 - `صلى الله عليه وسلم` → `ﷺ`
 - `صلى الله عليه وعلى آله وسلم` → `﵌`
@@ -81,10 +82,16 @@ editorial substitution:
 - `عليه الصلاة والسلام` → `﵊`
 - `تبارك وتعالى` → `﵎`; `عز وجل` → `﷿`
 
-The English record must contain the same formula inventory as its displayed
-Arabic source, at the corresponding occurrences. Ordinary dialogue or a
-narrator's quoted supplication is translated normally unless it is one of the
-source formulas above.
+Arabic and English display the same preferred compact character for the same
+semantic formula. The reader exposes expanded Arabic in Arabic context and an
+English meaning in English context for accessibility, search, and copy.
+
+The exact source form and the target realization are inventoried separately.
+Literal spelling or global count differences open a semantic-review finding;
+they do not withhold otherwise public-eligible working English. Known changes
+to referent, masculine or feminine agreement, singular, dual or plural number,
+or inclusion of the Prophet's family fail machine readiness. Formula wording
+that is quoted or analyzed remains substantive and is not compacted.
 
 ## Stable units
 
@@ -134,16 +141,16 @@ English may be migrated only after each displayed Arabic unit and resulting
 record is reproducibly rebuilt or audited against the approved public source
 bundle. Restricted workflow evidence remains private after migration.
 
-The deterministic remediation produces
-`al-isabah-public-openiti-5835c18-v1`. All 1,565 legacy book entries are rebuilt
-as public-source-bound records. The 1,496 translations that pass the
-public-output checks retain Sabiqah-authored English; 69 entries remain
-publicly readable in Arabic while their legacy English is withheld for
-replacement or correction. The 14 FirstLight contextual passages are not book
-entries and remain excluded with explicit quarantine reasons. `quarantine.json`
-records every exclusion, and the generated manifest binds every public object
-to the pinned authority. These counts describe the first deployed corpus
-version; a later repair creates a new version rather than overwriting it.
+The first deterministic remediation produced
+`al-isabah-public-openiti-5835c18-v1`. It exposed all 1,565 source-bound book
+entries but incorrectly withheld English from 69 of them. Version 2 restores
+publicly consumable working English as
+`al-isabah-public-openiti-5835c18-v2`, repairs five source-fidelity
+interventions, preserves twelve valid title-only translations, and records
+honorific semantic differences as translation-readiness findings rather than
+public-output failures. The 14 FirstLight contextual passages are not book
+entries and remain excluded with explicit quarantine reasons. Every version is
+immutable and bound to its own generated manifest.
 
 The former FirstLight implementation and closed Al-Isabah development branches
 are historical evidence, not the governing location. Sabiqah owns future
@@ -153,8 +160,8 @@ complete human review, compliance approval, and explicit promotion.
 ## Volume and cohort coverage
 
 A whole-volume run locks every substantive page and entry in that volume. A
-topic cohort such as Khadijah and her immediate associates additionally records
-the discovery query, relationship or inclusion rationale, all direct-mention
+topic cohort additionally records the discovery query, relationship or
+inclusion rationale, all direct-mention
 include/exclude decisions, and source spans across Volumes 1-8.
 
 Both shapes produce the same entry and segment contracts. A cohort is therefore

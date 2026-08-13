@@ -31,6 +31,7 @@ production remains protected and undeployed.
 - Content-governance model: [`docs/architecture/content-governance.md`](docs/architecture/content-governance.md)
 - Repository contracts: [`docs/contracts/INDEX.md`](docs/contracts/INDEX.md)
 - Book release contract: [`docs/architecture/book-release-contract.md`](docs/architecture/book-release-contract.md)
+- Honorific semantics and presentation: [`docs/architecture/honorific-presentation.md`](docs/architecture/honorific-presentation.md)
 - Reviewer access model: [`docs/security/reviewer-access.md`](docs/security/reviewer-access.md)
 
 ## Project boundaries

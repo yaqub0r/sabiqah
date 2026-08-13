@@ -2,6 +2,7 @@ import {
   parseReviewCorpusIndex,
   parseReviewCorpusSection,
   parseReviewCorpusSummary,
+  normalizeHonorificSearch,
   type ReviewCorpusIndex,
   type ReviewCorpusItem,
   type ReviewCorpusSection,
@@ -10,6 +11,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
+import { HonorificText } from "./HonorificText";
 import {
   TranslationApproval,
   type TranslationReviewState,
@@ -65,7 +67,7 @@ function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
               <strong>{note.category.replaceAll("_", " ")}</strong>
               {note.arabicSpan && (
                 <p lang="ar" dir="rtl">
-                  {note.arabicSpan}
+                  <HonorificText text={note.arabicSpan} language="ar" />
                 </p>
               )}
               <p>{note.explanation}</p>
@@ -184,9 +186,11 @@ function ReadingRecord({
           {pages.length > 0 && ` · p. ${pages.join("–")}`}
         </p>
         <div>
-          <h3>{item.title.en}</h3>
+          <h3>
+            <HonorificText text={item.title.en} language="en" />
+          </h3>
           <p lang="ar" dir="rtl">
-            {item.title.ar}
+            <HonorificText text={item.title.ar} language="ar" />
           </p>
         </div>
       </header>
@@ -197,11 +201,19 @@ function ReadingRecord({
         <section className="reading-bilingual" key={segment.id}>
           <div lang="en" dir="ltr">
             <p className="corpus-text">
-              {segment.english || "Translation not yet available."}
+              {segment.english ? (
+                <HonorificText text={segment.english} language="en" />
+              ) : (
+                <span className="continuation-note">
+                  English text is contained in the entry heading.
+                </span>
+              )}
             </p>
           </div>
           <div lang="ar" dir="rtl">
-            <p className="arabic corpus-text">{segment.arabic}</p>
+            <p className="arabic corpus-text">
+              <HonorificText text={segment.arabic} language="ar" />
+            </p>
           </div>
         </section>
       ))}
@@ -363,13 +375,15 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   }, [pendingAnchor, section]);
 
   const searchResults = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
+    const normalized = normalizeHonorificSearch(query.trim());
     if (!normalized || !index) return [];
     return index.items
       .filter(
         (item) =>
-          item.titleEn.toLocaleLowerCase().includes(normalized) ||
-          item.titleAr.includes(query.trim()) ||
+          (
+            item.searchText ??
+            normalizeHonorificSearch(`${item.titleEn} ${item.titleAr}`)
+          ).includes(normalized) ||
           String(item.printedEntryNumber ?? "").includes(normalized),
       )
       .slice(0, 50);
@@ -420,10 +434,11 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
             <p className="eyebrow">Available working edition</p>
             <h2 id="edition-map-title">Read by the book’s own volumes</h2>
             <p>
-              Read the records that have passed public-source, apparatus, and
-              honorific checks. Coverage is partial and every visible entry is
-              still labeled as working or human-reviewed rather than presented
-              as a finished canonical edition.
+              Read the records that have passed public-source and apparatus
+              checks. Honorific or source-wording questions remain visible as
+              review evidence, and every entry is labeled as working or
+              human-reviewed rather than presented as a finished canonical
+              edition.
             </p>
           </div>
           <div className="volume-shelf" aria-label="Available volumes">

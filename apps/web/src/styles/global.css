@@ -24,6 +24,28 @@
 * {
   box-sizing: border-box;
 }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.honorific {
+  display: inline;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+.honorific-glyph::before {
+  content: attr(data-glyph);
+  font-family: "Noto Naskh Arabic Variable", "Traditional Arabic", serif;
+  font-size: 1.08em;
+  font-variation-settings: "wght" 500;
+}
 body {
   margin: 0;
   min-height: 100vh;
@@ -560,7 +582,7 @@ button {
 .reading-record header div > p {
   margin: 0;
   font:
-    1.8rem/1.7 Georgia,
+    1.8rem/1.7 "Noto Naskh Arabic Variable",
     "Traditional Arabic",
     serif;
   text-align: right;
@@ -592,9 +614,14 @@ button {
     serif;
 }
 .reading-bilingual .arabic {
+  font-family: "Noto Naskh Arabic Variable", "Traditional Arabic", serif;
   font-size: 1.6rem;
   line-height: 2;
   text-align: right;
+}
+.continuation-note {
+  color: var(--muted);
+  font-style: italic;
 }
 .translation-approval {
   display: grid;

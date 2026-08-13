@@ -125,7 +125,22 @@ class PublicCorpusTests(unittest.TestCase):
             displayed = item["title"]["ar"] + " " + item["segments"][0]["arabic"]
             self.assertIn("ﷺ", displayed)
             self.assertNotIn("صلى الله عليه وسلم", displayed)
-            self.assertNotIn("may Allah bless", json.dumps(item))
+            self.assertEqual(item["honorificPolicyVersion"], "1.0.0")
+            self.assertTrue(
+                any(
+                    occurrence["accessibleText"]
+                    == "may Allah bless him and grant him peace"
+                    for occurrence in item["honorifics"]
+                )
+            )
+            self.assertTrue(
+                any(
+                    occurrence["language"] == "ar"
+                    and occurrence["observedForm"] == "صلى الله عليه وسلم"
+                    and occurrence["renderedForm"] == "ﷺ"
+                    for occurrence in item["honorifics"]
+                )
+            )
             quarantine = json.loads(
                 (output / "quarantine.json").read_text(encoding="utf-8")
             )
@@ -134,7 +149,7 @@ class PublicCorpusTests(unittest.TestCase):
                 ["no-approved-entry-alignment"],
             )
 
-    def test_rebuild_keeps_aligned_arabic_when_legacy_english_fails(self):
+    def test_rebuild_keeps_public_english_when_literal_honorific_counts_differ(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             legacy, openiti, digest = self.make_inputs(root)
@@ -151,7 +166,7 @@ class PublicCorpusTests(unittest.TestCase):
                     legacy, openiti, output, "2026-08-12T00:00:00Z"
                 )
                 self.assertEqual(summary["counts"]["entries"], 1)
-                self.assertEqual(summary["counts"]["translated"], 0)
+                self.assertEqual(summary["counts"]["translated"], 1)
                 self.assertEqual(summary["counts"]["quarantined"], 1)
                 self.assertEqual(VALIDATE.validate(output), [])
             public = json.loads(
@@ -159,12 +174,16 @@ class PublicCorpusTests(unittest.TestCase):
                     encoding="utf-8"
                 )
             )
-            self.assertEqual(public["translationState"], "untranslated")
-            self.assertEqual(public["title"]["en"], "Entry 10753")
-            self.assertEqual(public["segments"][0]["english"], "")
+            self.assertEqual(public["translationState"], "translated")
+            self.assertEqual(public["title"]["en"], "Asiya, sister of the Prophet")
             self.assertEqual(
-                public["remediation"]["englishExclusionReasonCodes"],
-                ["honorific-inventory-mismatch"],
+                public["segments"][0]["english"], "She was one of the Companions."
+            )
+            self.assertEqual(public["machineAssessment"], "needs_attention")
+            self.assertEqual(public["remediation"]["englishExclusionReasonCodes"], [])
+            self.assertEqual(
+                public["remediation"]["honorificSemanticReview"],
+                "needs_attention",
             )
 
     def test_exact_title_and_substantial_body_overlap_survive_edition_apparatus(self):
@@ -181,21 +200,17 @@ class PublicCorpusTests(unittest.TestCase):
         self.assertFalse(short_exact_title)
         self.assertTrue(exact_title_with_substantial_body_overlap)
 
-    def test_validator_rejects_english_in_an_untranslated_record(self):
+    def test_validator_rejects_an_untranslated_public_record(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             output = self.build(root)
             item_path = output / "items" / "isabah-entry-00010759.json"
             item = json.loads(item_path.read_text(encoding="utf-8"))
             item["translationState"] = "untranslated"
-            item["remediation"]["englishExcluded"] = True
-            item["remediation"]["englishExclusionReasonCodes"] = [
-                "honorific-inventory-mismatch"
-            ]
             item_path.write_text(json.dumps(item), encoding="utf-8")
             errors = VALIDATE.validate(output)
             self.assertTrue(
-                any("untranslated record contains English" in error for error in errors)
+                any("must expose public working English" in error for error in errors)
             )
 
     def test_validator_rejects_a_private_locator(self):
@@ -208,6 +223,25 @@ class PublicCorpusTests(unittest.TestCase):
             item_path.write_text(json.dumps(item), encoding="utf-8")
             errors = VALIDATE.validate(output)
             self.assertTrue(any("private or unapproved" in error for error in errors))
+
+    def test_validator_rejects_honorific_agreement_that_differs_from_registry(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build(root)
+            item_path = output / "items" / "isabah-entry-00010759.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["honorifics"][0]["agreement"] = {
+                "number": "dual",
+                "gender": "common",
+            }
+            item_path.write_text(json.dumps(item), encoding="utf-8")
+            errors = VALIDATE.validate(output)
+            self.assertTrue(
+                any(
+                    "honorific agreement differs from registry" in error
+                    for error in errors
+                )
+            )
 
     def test_validator_rejects_section_content_that_differs_from_item(self):
         with tempfile.TemporaryDirectory() as temp:
