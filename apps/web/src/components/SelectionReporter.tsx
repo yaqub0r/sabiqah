@@ -30,6 +30,30 @@ const categories = [
   "source structure",
 ];
 
+const blockTextElements = new Set([
+  "BLOCKQUOTE",
+  "DIV",
+  "FIGCAPTION",
+  "FIGURE",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "LI",
+  "P",
+  "SECTION",
+]);
+
+function renderedText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+  const content = [...node.childNodes].map(renderedText).join("");
+  return node instanceof Element && blockTextElements.has(node.tagName)
+    ? ` ${content} `
+    : content;
+}
+
 function targetFor(node: Node | null): ReportTarget | null {
   const element =
     node instanceof Element
@@ -51,7 +75,7 @@ export function draftFromSelection(
   if (!anchor || anchor !== focus) return null;
   const selectedText = selection.toString().normalize("NFC").trim();
   if (!selectedText || selectedText.length > 1_000) return null;
-  const targetText = (anchor.textContent ?? "").replace(/\s+/g, " ").trim();
+  const targetText = renderedText(anchor).replace(/\s+/g, " ").trim();
   const selectedCollapsed = selectedText.replace(/\s+/g, " ").trim();
   const offset = targetText.indexOf(selectedCollapsed);
   if (offset < 0) return null;
@@ -97,9 +121,19 @@ export function SelectionReporter({ corpusId }: { corpusId: string }) {
       if (open) return;
       setDraft(draftFromSelection(window.getSelection(), corpusId));
     };
+    let pendingUpdate = 0;
+    const updateAfterInput = () => {
+      cancelAnimationFrame(pendingUpdate);
+      pendingUpdate = requestAnimationFrame(update);
+    };
     document.addEventListener("selectionchange", update);
+    document.addEventListener("pointerup", updateAfterInput);
+    document.addEventListener("keyup", updateAfterInput);
     return () => {
+      cancelAnimationFrame(pendingUpdate);
       document.removeEventListener("selectionchange", update);
+      document.removeEventListener("pointerup", updateAfterInput);
+      document.removeEventListener("keyup", updateAfterInput);
     };
   }, [corpusId, open]);
 

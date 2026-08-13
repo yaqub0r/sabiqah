@@ -65,7 +65,7 @@ const shortRecord = record(
   11426,
   "Duba'a bint Amir",
   "ضباعة بنت عامر",
-  "A short body.",
+  "The sister of Huwaysa.\n\nIbn Manda mentioned her, but he erred. Abu Nu'aym corrected him, explaining that she is Umm al-Dahhak, as she will appear correctly under the kunyahs.",
 );
 const longRecord = record(
   "isabah-entry-00011443",
@@ -392,9 +392,14 @@ describe("CorpusReader presentation quality", () => {
     const deadline = Date.now() + 5_000;
     let paragraph: HTMLElement | null = null;
     while (Date.now() < deadline) {
-      paragraph = document.querySelector<HTMLElement>(
-        '[data-report-language="English"] .corpus-text',
-      );
+      paragraph =
+        [
+          ...document.querySelectorAll<HTMLElement>(
+            '[data-report-language="English"] .corpus-text',
+          ),
+        ].find((candidate) =>
+          candidate.textContent?.includes("Ibn Manda mentioned her"),
+        ) ?? null;
       if (paragraph) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
@@ -409,7 +414,7 @@ describe("CorpusReader presentation quality", () => {
     const selection = window.getSelection()!;
     selection.removeAllRanges();
     selection.addRange(range);
-    document.dispatchEvent(new Event("selectionchange"));
+    paragraph!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
 
     const action = await page.getByRole("button", {
       name: "Report selected text",

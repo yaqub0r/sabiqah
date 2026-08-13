@@ -18,7 +18,12 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-function selectText(element: HTMLElement, start: number, end: number) {
+function selectText(
+  element: HTMLElement,
+  start: number,
+  end: number,
+  notify = true,
+) {
   const range = document.createRange();
   range.setStart(element.firstChild!, start);
   range.setEnd(element.firstChild!, end);
@@ -35,7 +40,7 @@ function selectText(element: HTMLElement, start: number, end: number) {
   const selection = window.getSelection()!;
   selection.removeAllRanges();
   selection.addRange(range);
-  document.dispatchEvent(new Event("selectionchange"));
+  if (notify) document.dispatchEvent(new Event("selectionchange"));
 }
 
 describe("SelectionReporter", () => {
@@ -55,21 +60,25 @@ describe("SelectionReporter", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(
       <>
-        <p
+        <div
           data-report-item-id="isabah-entry-00011452"
           data-report-segment-id="isabah-entry-00011452-segment-1"
           data-report-field="segment"
           data-report-language="English"
         >
-          Ibn Manda mentioned her, but he erred. Abu Nu'aym corrected him,
-          explaining that she is Umm al-Dahhak, as she will appear correctly
-          under the kunyahs.
-        </p>
+          <p>The sister of Huwaysa.</p>
+          <p>
+            Ibn Manda mentioned her, but he erred. Abu Nu'aym corrected him,
+            explaining that she is Umm al-Dahhak, as she will appear correctly
+            under the kunyahs.
+          </p>
+        </div>
         <SelectionReporter corpusId="al-isabah-public-openiti-5835c18-v8" />
       </>,
     );
 
-    selectText(screen.getByText(/Ibn Manda mentioned her/), 0, 18);
+    selectText(screen.getByText(/Ibn Manda mentioned her/), 0, 18, false);
+    fireEvent.pointerUp(screen.getByText(/Ibn Manda mentioned her/));
     fireEvent.click(
       await screen.findByRole("button", { name: "Report selected text" }),
     );
@@ -95,6 +104,7 @@ describe("SelectionReporter", () => {
       language: "English",
       category: "translation",
     });
+    expect(body.context).toContain("The sister of Huwaysa. Ibn Manda");
   });
 
   it("keeps the native context menu without losing the selection action", async () => {
