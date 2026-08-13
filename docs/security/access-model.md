@@ -12,15 +12,16 @@ members, deploy production, and delete production data.
 
 ## Cloudflare identities
 
-| Identity | Purpose | Standing access |
-| --- | --- | --- |
-| Account owner | Recovery, billing, membership, and emergency revocation | Named login with MFA; no routine automation |
-| Bootstrap operator token | Initial DNS, Pages/Workers, R2, and token setup | Temporary account-owned token; revoke after bootstrap |
-| Deployment token (development) | Deploy development application resources | Protected development environment |
-| Deployment token (production) | Deploy approved production resources | Protected production environment |
-| R2 publisher (development) | Read, list, and write development assets | Development bucket only |
-| R2 publisher (production) | Publish approved production assets | Production bucket only; no bucket administration |
-| R2 validator | Verify hashes and releases | Read/list only on specified buckets |
+| Identity                       | Purpose                                                 | Standing access                                       |
+| ------------------------------ | ------------------------------------------------------- | ----------------------------------------------------- |
+| Account owner                  | Recovery, billing, membership, and emergency revocation | Named login with MFA; no routine automation           |
+| Bootstrap operator token       | Initial DNS, Pages/Workers, R2, and token setup         | Temporary account-owned token; revoke after bootstrap |
+| Deployment token (development) | Deploy development application resources                | Protected development environment                     |
+| Deployment token (production)  | Deploy approved production resources                    | Protected production environment                      |
+| R2 publisher (development)     | Read, list, and write development assets                | Development bucket only                               |
+| Local acquisition publisher    | Preserve workstation-only restricted evidence           | Development bucket only; separate named local profile |
+| R2 publisher (production)      | Publish approved production assets                      | Production bucket only; no bucket administration      |
+| R2 validator                   | Verify hashes and releases                              | Read/list only on specified buckets                   |
 
 The bootstrap operator is a service principal represented by an account-owned
 API token, not a shared human login. The owner creates and can revoke it. The
@@ -33,6 +34,8 @@ and exclude billing unless a specific task requires it.
 - DNS administration is scoped to the `sabiqah.org` zone.
 - Development and production use separate deployment credentials.
 - R2 object publishing does not include bucket deletion or account settings.
+- Workstation-only evidence uses a separate local credential and never borrows
+  a GitHub Actions or production credential.
 - Public readers never receive Cloudflare or R2 credentials.
 - Production changes require a protected GitHub environment and human approval.
 

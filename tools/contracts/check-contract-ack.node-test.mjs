@@ -83,6 +83,7 @@ test("all required acknowledgements pass", () => {
 - [x] I read the contracts.
 - [ ] None required
 - \`content-source-compliance\`
+- \`private-evidence-ingestion\`
 - \`canonical-book-promotion\`
 - \`translation-quality-workflow\`
 `,
@@ -102,7 +103,11 @@ test("a missing required contract fails", () => {
   );
   assert.deepEqual(
     [...result.missing],
-    ["canonical-book-promotion", "translation-quality-workflow"],
+    [
+      "private-evidence-ingestion",
+      "canonical-book-promotion",
+      "translation-quality-workflow",
+    ],
   );
   assert.match(result.errors.join("\n"), /Missing contract ids/);
 });
