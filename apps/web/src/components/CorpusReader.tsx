@@ -39,9 +39,9 @@ interface EnglishReadingBlock {
 }
 
 const METER_LABEL =
-  /^(?:Meter:\s*)?(?:\[)?(al-[^\]]+?)(?:\])?(?:\s+(And the remaining verses\.))?$/i;
+  /^Meter:\s*(al-[\p{L}\p{M}-]+)(?:\s+(And the remaining verses\.))?$/iu;
 
-function englishReadingBlocks(text: string): EnglishReadingBlock[] {
+export function englishReadingBlocks(text: string): EnglishReadingBlock[] {
   const paragraphs = text
     .split(/\n\s*\n/)
     .map((paragraph) => paragraph.trim())

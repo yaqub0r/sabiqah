@@ -54,7 +54,7 @@ MISATTACHED_COMPACT_HONORIFIC = re.compile(
     + r")[\t ]*—"
 )
 EMBEDDED_ENTRY_HEADING = re.compile(r"(?m)^\s*\d+\s*[.\-—]\s*\S")
-DANGLING_DASH_BOUNDARY = re.compile(r"—\n\n(?=\S)")
+DANGLING_DASH_BOUNDARY = re.compile(r"—[ \t]*\n\s*\n[ \t]*(?=\S)")
 STRUCTURAL_HEADING_IN_PROSE = re.compile(
     r"(?mi)^(?:THE LETTER\b.*|(?:THE\s+)?(?:SECOND\s+AND\s+THIRD\s+SECTIONS|SECOND,\s+THIRD,\s+AND\s+FOURTH\s+SECTIONS|SECTION\s+(?:ONE|TWO|THREE|FOUR)|FOURTH\s+SECTION)|NO ONE WAS MENTIONED IN (?:EITHER|ANY) OF THEM\.?)\s*$"
 )
