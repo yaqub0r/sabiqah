@@ -70,15 +70,24 @@ export function draftFromSelection(
 ): SelectionDraft | null {
   if (!selection || selection.isCollapsed || selection.rangeCount !== 1)
     return null;
-  const anchor = targetFor(selection.anchorNode);
-  const focus = targetFor(selection.focusNode);
-  if (!anchor || anchor !== focus) return null;
   const selectedText = selection.toString().normalize("NFC").trim();
   if (!selectedText || selectedText.length > 1_000) return null;
-  const targetText = renderedText(anchor).replace(/\s+/g, " ").trim();
   const selectedCollapsed = selectedText.replace(/\s+/g, " ").trim();
-  const offset = targetText.indexOf(selectedCollapsed);
-  if (offset < 0) return null;
+  const candidates = [
+    targetFor(selection.anchorNode),
+    targetFor(selection.focusNode),
+  ].filter(
+    (candidate, index, values): candidate is ReportTarget =>
+      candidate !== null && values.indexOf(candidate) === index,
+  );
+  const matches = candidates
+    .map((target) => {
+      const text = renderedText(target).replace(/\s+/g, " ").trim();
+      return { target, text, offset: text.indexOf(selectedCollapsed) };
+    })
+    .filter(({ offset }) => offset >= 0);
+  if (matches.length !== 1) return null;
+  const [{ target: anchor, text: targetText, offset }] = matches;
   const start = Math.max(0, offset - 180);
   const end = Math.min(
     targetText.length,

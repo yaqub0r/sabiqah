@@ -65,7 +65,7 @@ const shortRecord = record(
   11426,
   "Duba'a bint Amir",
   "ضباعة بنت عامر",
-  "The sister of Huwaysa.\n\nIbn Manda mentioned her, but he erred. Abu Nu'aym corrected him, explaining that she is Umm al-Dahhak, as she will appear correctly under the kunyahs.",
+  "al-Tabari mentioned her among those concerning whom the following was revealed: “And do not marry those women whom your fathers married” [al-Nisa': 22].",
 );
 const longRecord = record(
   "isabah-entry-00011443",
@@ -398,19 +398,24 @@ describe("CorpusReader presentation quality", () => {
             '[data-report-language="English"] .corpus-text',
           ),
         ].find((candidate) =>
-          candidate.textContent?.includes("Ibn Manda mentioned her"),
+          candidate.textContent?.includes("al-Tabari mentioned her"),
         ) ?? null;
       if (paragraph) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     expect(paragraph).not.toBeNull();
-    const text = document
-      .createTreeWalker(paragraph!, NodeFilter.SHOW_TEXT)
-      .nextNode();
-    expect(text).not.toBeNull();
+    const englishTarget = paragraph!.closest<HTMLElement>(
+      '[data-report-language="English"]',
+    );
+    const arabicTarget =
+      englishTarget?.parentElement?.querySelector<HTMLElement>(
+        '[data-report-language="Arabic"]',
+      );
+    expect(englishTarget).not.toBeNull();
+    expect(arabicTarget).not.toBeNull();
     const range = document.createRange();
-    range.setStart(text!, 0);
-    range.setEnd(text!, Math.min(18, text!.textContent!.length));
+    range.setStart(paragraph!.firstChild!, 0);
+    range.setEnd(arabicTarget!, 0);
     const selection = window.getSelection()!;
     selection.removeAllRanges();
     selection.addRange(range);

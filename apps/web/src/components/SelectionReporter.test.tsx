@@ -141,6 +141,51 @@ describe("SelectionReporter", () => {
     ).toBeTruthy();
   });
 
+  it("accepts a trailing paragraph boundary in the adjacent language target", async () => {
+    render(
+      <>
+        <div
+          data-report-item-id="isabah-entry-00011429"
+          data-report-segment-id="isabah-entry-00011429-segment-1"
+          data-report-field="segment"
+          data-report-language="English"
+        >
+          <p>
+            al-Tabari mentioned her among those concerning whom the following
+            was revealed: “And do not marry those women whom your fathers
+            married” [al-Nisa&apos;: 22].
+          </p>
+        </div>
+        <div
+          data-report-item-id="isabah-entry-00011429"
+          data-report-segment-id="isabah-entry-00011429-segment-1"
+          data-report-field="segment"
+          data-report-language="Arabic"
+        >
+          <p>زوج أبي قيس بن الأسلت</p>
+        </div>
+        <SelectionReporter corpusId="al-isabah-public-openiti-5835c18-v9" />
+      </>,
+    );
+
+    const english = screen.getByText(/al-Tabari mentioned her/);
+    const arabic = screen.getByText(/زوج أبي قيس/);
+    const range = document.createRange();
+    range.setStart(english.firstChild!, 0);
+    range.setEnd(arabic, 0);
+    Object.defineProperty(range, "getBoundingClientRect", {
+      value: () => ({ left: 20, bottom: 48 }),
+    });
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fireEvent.pointerUp(english);
+
+    expect(
+      await screen.findByRole("button", { name: "Report selected text" }),
+    ).toBeTruthy();
+  });
+
   it("does not report a selection spanning two stable targets", async () => {
     render(
       <>
