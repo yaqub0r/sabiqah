@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v8"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v9"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -202,6 +202,18 @@ SOURCE_ARABIC_APPARATUS_REPLACEMENTS: dict[int, tuple[tuple[str, str], ...]] = {
     11472: (
         ("ألا 33 تشرك", "ألا تشرك"),
         ("ولا تسرق 33 ولا تزني", "ولا تسرق ولا تزني"),
+    ),
+}
+
+# Exact, entry-scoped reading-boundary repairs applied only to the public
+# projection. The pinned OpenITI bytes remain unchanged and independently
+# hashed. These repairs restore prose after an explicitly identified verse.
+SOURCE_ARABIC_PRESENTATION_REPAIRS: dict[int, tuple[tuple[str, str], ...]] = {
+    11426: (
+        (
+            "فما بدا منه فلا أحله حتى نزعت",
+            "فما بدا منه فلا أحله\n\nحتى نزعت",
+        ),
     ),
 }
 
@@ -748,6 +760,19 @@ def repair_public_arabic_projection(
                 "basis": "Al-Isabah public-presentation and source-integrity contracts; exact entry-scoped replacement.",
             }
         )
+    for old, new in SOURCE_ARABIC_PRESENTATION_REPAIRS.get(source_number, ()):
+        if combined.count(old) != 1:
+            raise ValueError(
+                f"Expected one audited Arabic presentation boundary for {source_number}: {old}"
+            )
+        combined = combined.replace(old, new, 1)
+        decisions.append(
+            {
+                "issue": "The approved digital source does not mark where prose resumes after an explicitly delimited verse.",
+                "resolution": "Restored the audited paragraph boundary in the public reading projection without changing the pinned source evidence.",
+                "basis": "Al-Isabah poetry-presentation and source-integrity contracts; exact entry-scoped replacement.",
+            }
+        )
     repaired_title, repaired_body = combined.split("\u0000", 1)
     return repaired_title, repaired_body
 
@@ -838,7 +863,7 @@ def sanitize_english(
         lambda match: display_meter(match.group(1) or match.group(2)),
         value,
     )
-    value = re.sub(r"—\n\n(?=\S)", " ", value)
+    value = re.sub(r"—[ \t]*\n\s*\n[ \t]*(?=\S)", " ", value)
     return value, {
         "removedApparatusParagraphs": removed_notes,
         "removedEditorialNotes": removed_editorial,
@@ -972,10 +997,13 @@ def public_item(
     else:
         title_ar = public_arabic_title(source, str(legacy["title"]["ar"]))
         arabic_body = public_arabic_body(source, title_ar)
+    arabic_body = render_arabic_poetry(arabic_body)
     title_ar, arabic_body = repair_public_arabic_projection(
         source.number, title_ar, arabic_body, decisions
     )
-    arabic_body = render_arabic_poetry(arabic_body)
+    removals["sourcePresentationRepairs"] += len(
+        SOURCE_ARABIC_PRESENTATION_REPAIRS.get(source.number, ())
+    )
     segment_id = f"{legacy['id']}-public-segment-0001"
     source_honorifics = honorific_occurrences(
         source.clean,

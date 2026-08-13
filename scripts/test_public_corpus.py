@@ -211,6 +211,39 @@ class PublicCorpusTests(unittest.TestCase):
         self.assertEqual(body, "عن عبد الله بن الزبير خبر")
         self.assertEqual(len(decisions), 1)
 
+    def test_audited_arabic_poetry_boundary_returns_to_prose(self):
+        decisions = []
+        title, body = REBUILD.repair_public_arabic_projection(
+            11426,
+            "ضباعة بنت عامر",
+            "قالت\nاليوم يبدو بعضه أو كله\nفما بدا منه فلا أحله حتى نزعت ثيابها",
+            decisions,
+        )
+        self.assertEqual(title, "ضباعة بنت عامر")
+        self.assertEqual(
+            body,
+            "قالت\nاليوم يبدو بعضه أو كله\nفما بدا منه فلا أحله\n\nحتى نزعت ثيابها",
+        )
+        self.assertEqual(len(decisions), 1)
+
+    def test_sanitizer_repairs_spaced_dash_paragraph_boundary(self):
+        item = {
+            "title": {"en": "Azza bint Khabil"},
+            "segments": [
+                {
+                    "english": (
+                        "She came to the Messenger of Allah—\n\n "
+                        "ﷺ and he took her pledge."
+                    )
+                }
+            ],
+        }
+
+        english, _ = REBUILD.sanitize_english(item)
+        self.assertEqual(
+            english, "She came to the Messenger of Allah ﷺ and he took her pledge."
+        )
+
     def test_volume_eight_opening_has_all_source_structure_transitions(self):
         self.assertEqual(set(REBUILD.SOURCE_HEADINGS_BEFORE), {11431, 11433, 11438, 11441, 11445})
         self.assertEqual(
@@ -483,7 +516,7 @@ class PublicCorpusTests(unittest.TestCase):
             item_path = output / "items" / "isabah-entry-00010759.json"
             item = json.loads(item_path.read_text(encoding="utf-8"))
             item["segments"][0]["english"] = (
-                "10759. Embedded title\n\nShe was mentioned by—\n\nal-Tabarani.\n\n"
+                "10759. Embedded title\n\nShe was mentioned by—\n\n al-Tabarani.\n\n"
                 "SECTION ONE\n\n[al-Tawil meter]"
             )
             item_path.write_text(json.dumps(item), encoding="utf-8")

@@ -10,7 +10,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizeHonorificSearch } from "@sabiqah/release-model";
 
-import { CorpusReader } from "./CorpusReader";
+import { CorpusReader, englishReadingBlocks } from "./CorpusReader";
 
 const corpusId = "al-isabah-reading-a3b76bf-v3";
 const sectionId = "volume-08-pages-0001-0025";
@@ -90,6 +90,34 @@ afterEach(() => {
 });
 
 describe("CorpusReader", () => {
+  it("requires an explicit meter label before styling text as poetry", () => {
+    const prose = englishReadingBlocks(
+      "ibn Abd al-Muttalib al-Hashimiyya\n\nal-Daraqutni mentioned her in the Book of Siblings.",
+    );
+
+    expect(prose).toEqual([
+      { kind: "prose", paragraphs: ["ibn Abd al-Muttalib al-Hashimiyya"] },
+      {
+        kind: "prose",
+        paragraphs: ["al-Daraqutni mentioned her in the Book of Siblings."],
+      },
+    ]);
+
+    expect(
+      englishReadingBlocks(
+        "The first verse.\n\nMeter: al-Rajaz\n\nThe prose resumes.",
+      ),
+    ).toEqual([
+      {
+        kind: "poetry",
+        paragraphs: ["The first verse."],
+        meter: "al-Rajaz",
+        continuation: undefined,
+      },
+      { kind: "prose", paragraphs: ["The prose resumes."] },
+    ]);
+  });
+
   it("lets anonymous visitors read while keeping approval controls gated", async () => {
     const responses = new Map<string, unknown>([
       [
