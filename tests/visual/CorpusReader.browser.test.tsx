@@ -3,6 +3,7 @@ import { page } from "vitest/browser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CorpusReader } from "../../apps/web/src/components/CorpusReader";
+import { CorpusCoverage } from "../../apps/web/src/components/CorpusCoverage";
 import "../../apps/web/src/styles/global.css";
 
 const corpusId = "al-isabah-visual-fixture";
@@ -106,10 +107,8 @@ function response(body: unknown, ok = true) {
 async function waitForVolumeShelf() {
   const deadline = Date.now() + 5_000;
   while (Date.now() < deadline) {
-    const buttons = document.querySelectorAll<HTMLButtonElement>(
-      ".volume-shelf button",
-    );
-    if (buttons.length === 8) return [...buttons];
+    const cards = document.querySelectorAll<HTMLElement>(".coverage-card");
+    if (cards.length === 8) return [...cards];
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   throw new Error("The deterministic volume fixture did not render.");
@@ -276,9 +275,9 @@ afterEach(() => {
 });
 
 describe("CorpusReader presentation quality", () => {
-  it("keeps the volume selector legible and collision-free", async () => {
-    root.render(<CorpusReader />);
-    const buttons = await waitForVolumeShelf();
+  it("keeps the separate coverage dashboard legible and actionable", async () => {
+    root.render(<CorpusCoverage />);
+    const cards = await waitForVolumeShelf();
     const width = document.documentElement.clientWidth;
     const expectedColumns = width >= 1_200 ? 4 : width <= 720 ? 1 : 2;
     const shelf = document.querySelector<HTMLElement>(".volume-shelf")!;
@@ -290,45 +289,70 @@ describe("CorpusReader presentation quality", () => {
       document.documentElement.clientWidth,
     );
 
-    for (const [index, button] of buttons.entries()) {
+    for (const [index, card] of cards.entries()) {
       expect(
-        button.scrollWidth,
-        `volume button ${index + 1} width`,
-      ).toBeLessThanOrEqual(button.clientWidth);
+        card.scrollWidth,
+        `coverage card ${index + 1} width`,
+      ).toBeLessThanOrEqual(card.clientWidth);
       expect(
-        button.scrollHeight,
-        `volume button ${index + 1} height`,
-      ).toBeLessThanOrEqual(button.clientHeight);
+        card.scrollHeight,
+        `coverage card ${index + 1} height`,
+      ).toBeLessThanOrEqual(card.clientHeight);
 
-      const buttonRect = button.getBoundingClientRect();
-      for (const child of button.children) {
+      const cardRect = card.getBoundingClientRect();
+      for (const child of card.children) {
         const childRect = child.getBoundingClientRect();
-        expect(childRect.left).toBeGreaterThanOrEqual(buttonRect.left - 1);
-        expect(childRect.right).toBeLessThanOrEqual(buttonRect.right + 1);
+        expect(childRect.left).toBeGreaterThanOrEqual(cardRect.left - 1);
+        expect(childRect.right).toBeLessThanOrEqual(cardRect.right + 1);
       }
 
-      for (const other of buttons.slice(index + 1)) {
-        expect(
-          rectanglesOverlap(buttonRect, other.getBoundingClientRect()),
-        ).toBe(false);
+      for (const other of cards.slice(index + 1)) {
+        expect(rectanglesOverlap(cardRect, other.getBoundingClientRect())).toBe(
+          false,
+        );
       }
     }
 
-    const selected = document.querySelector<HTMLButtonElement>(
-      '.volume-shelf button[aria-pressed="true"]',
-    );
-    expect(selected?.getAttribute("aria-label")).toBe(
+    expect(cards[7]?.getAttribute("aria-label")).toBe(
       "Volume 8: 879 of 879 source entries translated; 1 of 879 translations human reviewed; Complete working translation",
     );
-    expect(selected?.textContent).toContain("Volume");
-    expect(selected?.textContent).toContain("8");
-    expect(selected?.textContent).toContain("100% translated");
-    expect(selected?.textContent).toContain("1 of 879 translations");
-    expect(buttons[0]?.disabled).toBe(true);
-    expect(buttons[0]?.textContent).toContain("Not yet translated");
+    expect(cards[7]?.textContent).toContain("100% translated");
+    expect(cards[7]?.textContent).toContain("1 of 879 translations");
+    expect(cards[7]?.textContent).toContain("Review remaining translations");
+    expect(
+      cards[7]
+        ?.querySelector<HTMLAnchorElement>(
+          'a[href*="review=unreviewed"]',
+        )
+        ?.getAttribute("href"),
+    ).toBe("/works/al-isabah/?volume=8&review=unreviewed");
+    expect(cards[0]?.textContent).toContain("Reading not available");
     await page.screenshot({
-      element: shelf,
+      element: document.querySelector<HTMLElement>(".edition-overview")!,
       path: `../../.runtime/visual-qa/coverage-dashboard-${width}.png`,
+    });
+  });
+
+  it("keeps compact volume selection inside the reader", async () => {
+    root.render(<CorpusReader />);
+    let selector: HTMLSelectElement | null = null;
+    const deadline = Date.now() + 5_000;
+    while (Date.now() < deadline) {
+      selector = document.querySelector<HTMLSelectElement>(
+        ".reader-volume-select select",
+      );
+      if (selector?.options.length) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(selector?.value).toBe("8");
+    expect(document.querySelector(".edition-overview")).toBeNull();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    await page.screenshot({
+      element: document.querySelector<HTMLElement>(".book-reader")!,
+      path: `../../.runtime/visual-qa/reader-volume-selector-${document.documentElement.clientWidth}.png`,
     });
   });
 
@@ -426,7 +450,6 @@ describe("CorpusReader presentation quality", () => {
 
   it("keeps the selected-text action and report dialog usable", async () => {
     root.render(<CorpusReader />);
-    await waitForVolumeShelf();
     const deadline = Date.now() + 5_000;
     let paragraph: HTMLElement | null = null;
     while (Date.now() < deadline) {

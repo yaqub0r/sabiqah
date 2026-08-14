@@ -1,0 +1,13 @@
+---
+import { CorpusCoverage } from "../../../components/CorpusCoverage";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Al-Isabah coverage dashboard">
+  <section class="shell coverage-page">
+    <nav class="surface-navigation" aria-label="Al-Isabah pages">
+      <a href="/works/al-isabah/">← Return to the book</a>
+    </nav>
+    <CorpusCoverage client:load />
+  </section>
+</BaseLayout>
