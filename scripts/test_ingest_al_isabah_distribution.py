@@ -144,6 +144,24 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
                 MODULE.ingest(distribution, self.base_corpus(root), output, "2026-08-14T18:00:00Z")
             self.assertFalse(output.exists())
 
+    def test_rejects_an_invalid_timestamp_before_writing_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            distribution = self.distribution(root)
+            manifest_path = distribution / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["generatedAt"] = "2026-08-14T16:22:30+00:00"
+            write(manifest_path, manifest)
+            output = root / "output"
+            with self.assertRaisesRegex(MODULE.IngestionError, "UTC Z form"):
+                MODULE.ingest(
+                    distribution,
+                    self.base_corpus(root),
+                    output,
+                    "2026-08-14T18:00:00Z",
+                )
+            self.assertFalse(output.exists())
+
     def test_archive_extraction_rejects_path_traversal(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
