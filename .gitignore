@@ -29,6 +29,7 @@ tmp/
 node_modules/
 dist/
 coverage/
+.vitest-attachments/
 .astro/
 .wrangler/
 .pnpm-store/

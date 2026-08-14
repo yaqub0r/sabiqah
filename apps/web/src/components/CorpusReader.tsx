@@ -1,12 +1,10 @@
 import {
   parseReviewCorpusIndex,
   parseReviewCorpusSection,
-  parseReviewCorpusSummary,
   normalizeHonorificSearch,
   type ReviewCorpusIndex,
   type ReviewCorpusItem,
   type ReviewCorpusSection,
-  type ReviewCorpusSummary,
 } from "@sabiqah/release-model";
 import { Fragment, useEffect, useMemo, useState } from "react";
 
@@ -160,20 +158,6 @@ function sectionLinks(index: ReviewCorpusIndex, volume: number): SectionLink[] {
       itemCount: items.length,
     };
   });
-}
-
-function coveragePercent(completed: number, total: number) {
-  return total === 0 ? 0 : Math.round((completed / total) * 100);
-}
-
-function coverageStateLabel(
-  availability: ReviewCorpusSummary["volumes"][number]["availability"],
-) {
-  if (availability === "complete_translation")
-    return "Complete working translation";
-  if (availability === "selected_passages")
-    return "Partial working translation";
-  return "Not yet translated";
 }
 
 function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
@@ -407,7 +391,6 @@ function ReadingRecord({
 }
 
 export function CorpusReader({ siteKey }: { siteKey?: string }) {
-  const [summary, setSummary] = useState<ReviewCorpusSummary>();
   const [index, setIndex] = useState<ReviewCorpusIndex>();
   const [section, setSection] = useState<ReviewCorpusSection>();
   const [reviewSummary, setReviewSummary] =
@@ -427,23 +410,9 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     const params = new URLSearchParams(window.location.search);
     const volume = Number(params.get("volume"));
     if (Number.isInteger(volume) && volume > 0) setSelectedVolume(volume);
+    setHideReviewed(params.get("review") === "unreviewed");
     setSelectedSectionId(params.get("section") ?? "");
     setPendingAnchor(window.location.hash.slice(1));
-
-    fetch("/api/corpus/al-isabah/summary", { credentials: "same-origin" })
-      .then(async (response) => {
-        if (!response.ok)
-          throw new Error("The edition overview is not available.");
-        return parseReviewCorpusSummary(await response.json());
-      })
-      .then(setSummary)
-      .catch((caught) =>
-        setError(
-          caught instanceof Error
-            ? caught.message
-            : "The edition could not be loaded.",
-        ),
-      );
 
     fetch("/api/corpus/al-isabah/index", { credentials: "same-origin" })
       .then(async (response) => {
@@ -521,6 +490,11 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           volume: String(nextSection.volume),
           section: nextSection.id,
         });
+        if (
+          new URLSearchParams(window.location.search).get("review") ===
+          "unreviewed"
+        )
+          params.set("review", "unreviewed");
         window.history.replaceState(
           null,
           "",
@@ -569,25 +543,12 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     [hideReviewed, reviewSummary, section],
   );
 
-  const volumeCoverage = useMemo(
-    () =>
-      summary?.volumes.map((volume) => {
-        const sourceCount = volume.sourceItemCount ?? volume.itemCount;
-        const volumeItems =
-          index?.items.filter((item) => item.volume === volume.number) ?? [];
-        const reviewedCount = volumeItems.filter(
-          (item) => (reviewSummary?.items[item.id]?.approvalCount ?? 0) > 0,
-        ).length;
-        return {
-          ...volume,
-          sourceCount,
-          reviewedCount,
-          translationPercent: coveragePercent(volume.itemCount, sourceCount),
-          reviewPercent: coveragePercent(reviewedCount, volume.itemCount),
-        };
-      }) ?? [],
-    [index, reviewSummary, summary],
-  );
+  const availableVolumes = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const item of index?.items ?? [])
+      counts.set(item.volume, (counts.get(item.volume) ?? 0) + 1);
+    return [...counts.entries()].sort(([left], [right]) => left - right);
+  }, [index]);
 
   function updateReviewState(itemId: string, state: TranslationReviewState) {
     setReviewSummary((current) => {
@@ -615,87 +576,6 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   return (
     <>
       {error && <p className="issue-banner">{error}</p>}
-      {summary && (
-        <section
-          className="edition-overview"
-          aria-labelledby="edition-map-title"
-        >
-          <div>
-            <p className="eyebrow">Live edition coverage</p>
-            <h2 id="edition-map-title">Coverage by source volume</h2>
-            <p>
-              Translation coverage follows the deployed, source-locked corpus.
-              Human-review progress updates from current approvals. Select any
-              available volume to begin reading.
-            </p>
-          </div>
-          <div className="volume-shelf" aria-label="Live coverage by volume">
-            {volumeCoverage.map((volume) => (
-              <button
-                type="button"
-                className={selectedVolume === volume.number ? "selected" : ""}
-                aria-pressed={selectedVolume === volume.number}
-                aria-label={`Volume ${volume.number}: ${volume.itemCount.toLocaleString()} of ${volume.sourceCount.toLocaleString()} source entries translated; ${volume.reviewedCount.toLocaleString()} of ${volume.itemCount.toLocaleString()} translations human reviewed; ${coverageStateLabel(volume.availability)}`}
-                disabled={volume.itemCount === 0}
-                onClick={() => {
-                  setSelectedVolume(volume.number);
-                  setSelectedSectionId("");
-                }}
-                key={volume.id}
-              >
-                <span className="volume-label">Volume</span>
-                <strong>{volume.number}</strong>
-                <span className="coverage-state">
-                  {coverageStateLabel(volume.availability)}
-                </span>
-                <span className="coverage-stat">
-                  <span>
-                    <b>{volume.translationPercent}%</b> translated
-                  </span>
-                  <small>
-                    {volume.itemCount.toLocaleString()} of{" "}
-                    {volume.sourceCount.toLocaleString()} source entries
-                  </small>
-                  <span className="coverage-meter" aria-hidden="true">
-                    <span style={{ width: `${volume.translationPercent}%` }} />
-                  </span>
-                </span>
-                <span className="coverage-stat">
-                  <span>
-                    <b>{volume.reviewPercent}%</b> human reviewed
-                  </span>
-                  <small>
-                    {volume.reviewedCount.toLocaleString()} of{" "}
-                    {volume.itemCount.toLocaleString()} translations
-                  </small>
-                  <span className="coverage-meter review" aria-hidden="true">
-                    <span style={{ width: `${volume.reviewPercent}%` }} />
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className="edition-status">
-            {summary.counts.translated.toLocaleString()} translated records ·{" "}
-            {summary.counts.unresolvedItems.toLocaleString()} unresolved items ·{" "}
-            {(
-              reviewSummary?.reviewedItems ?? summary.counts.humanReviewed
-            ).toLocaleString()}{" "}
-            human reviewed
-            {summary.counts.quarantined !== undefined &&
-              !summary.exclusions &&
-              ` · ${summary.counts.quarantined.toLocaleString()} records excluded from this edition`}
-            {summary.exclusions &&
-              summary.exclusions
-                .contextualPassagesPendingPublicSourceAlignment > 0 &&
-              ` · ${summary.exclusions.contextualPassagesPendingPublicSourceAlignment.toLocaleString()} contextual passages excluded pending public-source alignment`}
-            {summary.exclusions &&
-              summary.exclusions.recordsPendingRemediation > 0 &&
-              ` · ${summary.exclusions.recordsPendingRemediation.toLocaleString()} records withheld for remediation`}
-          </p>
-        </section>
-      )}
-
       {session === "anonymous" && (
         <details className="reviewer-invitation">
           <summary>Have an invitation to review or correct the text?</summary>
@@ -714,7 +594,23 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           aria-label="Al-Isabah working translation"
         >
           <aside className="reader-contents">
-            <p className="eyebrow">Volume {selectedVolume}</p>
+            <label className="reader-volume-select">
+              <span>Reading volume</span>
+              <select
+                aria-label="Reading volume"
+                value={selectedVolume}
+                onChange={(event) => {
+                  setSelectedVolume(Number(event.target.value));
+                  setSelectedSectionId("");
+                }}
+              >
+                {availableVolumes.map(([volume, count]) => (
+                  <option value={volume} key={volume}>
+                    Volume {volume} — {count.toLocaleString()} records
+                  </option>
+                ))}
+              </select>
+            </label>
             <h2>Reading sections</h2>
             <ol>
               {links.map((link) => (
@@ -784,9 +680,20 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                     <input
                       type="checkbox"
                       checked={hideReviewed}
-                      onChange={(event) =>
-                        setHideReviewed(event.target.checked)
-                      }
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setHideReviewed(checked);
+                        const params = new URLSearchParams(
+                          window.location.search,
+                        );
+                        if (checked) params.set("review", "unreviewed");
+                        else params.delete("review");
+                        window.history.replaceState(
+                          null,
+                          "",
+                          `${window.location.pathname}?${params}${window.location.hash}`,
+                        );
+                      }}
                     />
                     Hide human-reviewed translations
                   </label>

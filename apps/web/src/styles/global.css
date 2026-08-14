@@ -402,9 +402,9 @@ button {
   gap: 0.75rem;
   margin-top: 2rem;
 }
-.volume-shelf button {
+.coverage-card {
   display: grid;
-  grid-template-rows: auto auto auto 1fr 1fr;
+  grid-template-rows: auto auto auto 1fr 1fr auto;
   min-width: 0;
   min-height: 15rem;
   align-content: stretch;
@@ -417,35 +417,27 @@ button {
   color: var(--ink);
   text-align: left;
 }
-.volume-shelf button:not(:disabled):hover,
-.volume-shelf button.selected {
-  border-color: var(--green);
-  background: var(--green);
-  color: white;
-}
-.volume-shelf button:disabled {
-  cursor: default;
-  opacity: 1;
+.coverage-card.unavailable {
   background: #f4eee2;
   color: var(--muted);
 }
-.volume-shelf strong {
+.coverage-card strong {
   font:
     3rem/1 Georgia,
     serif;
 }
-.volume-shelf span,
-.volume-shelf small {
+.coverage-card span,
+.coverage-card small {
   display: block;
 }
-.volume-shelf .volume-label {
+.coverage-card .volume-label {
   font-size: 0.68rem;
   font-weight: 850;
   letter-spacing: 0.12em;
   opacity: 0.75;
   text-transform: uppercase;
 }
-.volume-shelf .coverage-state {
+.coverage-card .coverage-state {
   min-height: 2.25rem;
   font-size: 0.82rem;
   font-weight: 800;
@@ -482,13 +474,52 @@ button {
 .coverage-meter.review > span {
   background: var(--gold);
 }
-.volume-shelf button.selected .coverage-meter,
-.volume-shelf button:not(:disabled):hover .coverage-meter {
-  background: rgb(255 255 255 / 24%);
+.coverage-actions {
+  display: grid !important;
+  gap: 0.45rem;
+  margin-top: 1rem;
 }
-.volume-shelf button.selected .coverage-meter > span,
-.volume-shelf button:not(:disabled):hover .coverage-meter > span {
-  background: white;
+.coverage-actions a,
+.coverage-unavailable {
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.coverage-actions a:last-child {
+  color: var(--green);
+}
+.coverage-page .edition-overview {
+  margin-top: 1rem;
+}
+.surface-navigation {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1.25rem 0;
+}
+.surface-navigation a {
+  font-weight: 800;
+}
+.reader-volume-select {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.reader-volume-select select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 2rem 0.55rem 0.7rem;
+  border: 1px solid var(--green);
+  background: var(--paper);
+  color: var(--ink);
+  font:
+    700 0.9rem/1.2 system-ui,
+    sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
 }
 .edition-status {
   margin: 1.5rem 0 0;

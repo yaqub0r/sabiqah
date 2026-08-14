@@ -230,20 +230,13 @@ describe("CorpusReader", () => {
     render(<CorpusReader />);
 
     expect(
-      await screen.findByRole("button", {
-        name: "Volume 8: 2 of 2 source entries translated; 0 of 2 translations human reviewed; Complete working translation",
-        pressed: true,
-      }),
-    ).toBeTruthy();
+      ((await screen.findByLabelText("Reading volume")) as HTMLSelectElement)
+        .value,
+    ).toBe("8");
+    expect(screen.queryByText("Coverage by source volume")).toBeNull();
     expect(
       await screen.findByText("The first short translated record."),
     ).toBeTruthy();
-    expect(
-      await screen.findByText(
-        /14 contextual passages excluded pending public-source alignment/,
-      ),
-    ).toBeTruthy();
-    expect(screen.queryByText(/quarantined for remediation/)).toBeNull();
     expect(
       await screen.findByText(
         "Have an invitation to review or correct the text?",
@@ -510,10 +503,8 @@ describe("CorpusReader", () => {
       await screen.findByRole("heading", { name: "Pages 1–25" }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", {
-        name: "Volume 8: 2 of 2 source entries translated; 1 of 2 translations human reviewed; Complete working translation",
-      }),
-    ).toBeTruthy();
+      (screen.getByLabelText("Reading volume") as HTMLSelectElement).value,
+    ).toBe("8");
     expect(screen.getByText("The first short translated record.")).toBeTruthy();
     expect(
       screen.getByText("English text is contained in the entry heading."),
