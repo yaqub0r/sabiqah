@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CORPUS_ID } from "../src/corpus";
+import { LEGACY_CORPUS_CONTEXT } from "../src/corpus";
 import {
   isSameOrigin,
   parseTranslationReviewAction,
@@ -8,6 +8,7 @@ import {
 } from "../src/translationReviews";
 
 const itemId = "isabah-entry-00010759";
+const CORPUS_ID = LEGACY_CORPUS_CONTEXT.id;
 const serializedItem = JSON.stringify({
   corpusId: CORPUS_ID,
   id: itemId,
@@ -68,6 +69,7 @@ describe("translation reviews", () => {
     const state = await recordTranslationReview(
       db,
       bucket,
+      LEGACY_CORPUS_CONTEXT,
       7,
       itemId,
       "approve",
@@ -114,6 +116,7 @@ describe("translation reviews", () => {
     await recordTranslationReview(
       { prepare } as unknown as D1Database,
       bucket,
+      LEGACY_CORPUS_CONTEXT,
       7,
       itemId,
       "approve",
@@ -128,6 +131,7 @@ describe("translation reviews", () => {
     const state = await recordTranslationReview(
       { prepare: vi.fn() } as unknown as D1Database,
       { get: async () => null } as unknown as R2Bucket,
+      LEGACY_CORPUS_CONTEXT,
       7,
       itemId,
       "approve",
@@ -152,6 +156,7 @@ describe("translation reviews", () => {
       recordTranslationReview(
         { prepare: vi.fn() } as unknown as D1Database,
         bucket,
+        LEGACY_CORPUS_CONTEXT,
         7,
         itemId,
         "approve",

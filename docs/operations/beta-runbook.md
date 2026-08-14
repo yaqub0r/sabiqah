@@ -69,10 +69,13 @@ record is bound to the approved source and license. A literal honorific differen
 review diagnostic; only a semantic, referent, or agreement concern changes
 translation readiness, and working English remains readable.
 
-Ordinary development deployments download only the immutable public corpus
-selected by `AL_ISABAH_PUBLIC_CORPUS_URI`. They validate its complete manifest,
-source hash, eligibility flags, quarantine accounting, and absence of forbidden
-private provenance before deploying. `AL_ISABAH_REVIEW_CORPUS_URI` and
+Ordinary development deployments resolve
+`public-corpora/al-isabah/current.json`, then download and validate the selected
+immutable public corpus. During pointer migration only, a missing pointer falls
+back to `AL_ISABAH_PUBLIC_CORPUS_URI`; a malformed pointer fails the deployment.
+Validation covers the complete manifest, source hash, eligibility flags,
+quarantine accounting, and absence of forbidden private provenance.
+`AL_ISABAH_REVIEW_CORPUS_URI` and
 `AL_ISABAH_RESEARCH_SNAPSHOT_URI` remain private preservation inputs; the
 runtime reader never serves them.
 
@@ -84,12 +87,17 @@ immutable objects before switching the Worker to them. A rollback therefore
 restores the preceding Worker version, whose corpus ID still resolves to the
 preceding immutable objects.
 
-Before dispatching the preservation workflow, update the development
-`AL_ISABAH_PUBLIC_CORPUS_URI` variable to a new prefix whose final directory is
-the exporter `CORPUS_ID`. The workflow rejects a mismatched suffix, uploads and
-downloads the new prefix, and validates the downloaded copy. Dispatch the
-development deployment only after that preservation run succeeds. Retain the
-previous prefix for rollback.
+For a new Al-Isabah repository distribution, dispatch
+`Ingest Al-Isabah public distribution` with the exact GitHub release tag, or
+allow its twice-hourly poll to select the latest `public-working` prerelease.
+The workflow validates the distribution, merges unchanged volumes from the
+active base corpus, uploads and verifies a new immutable prefix, then switches
+the activation pointer. Dispatch the development deployment after ingestion
+succeeds. Retain the preceding pointer value and immutable prefix for rollback.
+
+The older preservation workflow still accepts an explicit
+`AL_ISABAH_PUBLIC_CORPUS_URI` when rebuilding legacy research material. It must
+not overwrite the active pointer or any immutable prefix.
 
 The summary, index, section, item, and aggregate-review endpoints are public.
 The Worker is the only R2 origin client and returns cacheable reader responses;

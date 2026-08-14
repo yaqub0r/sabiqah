@@ -71,13 +71,14 @@ class PublicCorpusTests(unittest.TestCase):
             ],
         )
 
-    def test_worker_and_exporter_pin_the_same_public_corpus(self):
+    def test_worker_retains_the_verified_legacy_corpus_as_pointer_fallback(self):
         runtime = (ROOT / "workers" / "platform" / "src" / "corpus.ts").read_text(
             encoding="utf-8"
         )
-        match = re.search(r'export const CORPUS_ID = "([^"]+)";', runtime)
+        match = re.search(r'export const LEGACY_CORPUS_ID = "([^"]+)";', runtime)
         self.assertIsNotNone(match)
         self.assertEqual(match.group(1), REBUILD.CORPUS_ID)
+        self.assertIn('CORPUS_POINTER_KEY = "public-corpora/al-isabah/current.json"', runtime)
 
     def test_entry_title_profile_is_pinned_and_covers_the_reported_entries(self):
         decisions = REBUILD.load_entry_title_profile()

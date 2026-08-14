@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CORPUS_ID, corpusObjectKey } from "./corpus";
+import { LEGACY_CORPUS_CONTEXT, corpusObjectKey } from "./corpus";
 import {
   createSelectionReport,
   parseSelectionReport,
 } from "./selectionReports";
 
 const item = {
-  corpusId: CORPUS_ID,
+  corpusId: LEGACY_CORPUS_CONTEXT.id,
   id: "isabah-entry-00011452",
   printedEntryNumber: 11452,
   title: { en: "A title", ar: "عنوان" },
@@ -22,7 +22,7 @@ const item = {
 };
 
 const valid = {
-  corpusId: CORPUS_ID,
+  corpusId: LEGACY_CORPUS_CONTEXT.id,
   itemId: item.id,
   segmentId: item.segments[0]!.id,
   field: "segment",
@@ -37,7 +37,7 @@ const valid = {
 function bucketFor(value: unknown): R2Bucket {
   return {
     get: vi.fn(async (key: string) => {
-      expect(key).toBe(corpusObjectKey("item", item.id));
+      expect(key).toBe(corpusObjectKey(LEGACY_CORPUS_CONTEXT, "item", item.id));
       return { json: async () => value };
     }),
   } as unknown as R2Bucket;
@@ -80,6 +80,7 @@ describe("selection reports", () => {
     );
     const result = await createSelectionReport(
       bucketFor(item),
+      LEGACY_CORPUS_CONTEXT,
       "server-secret",
       { github_login: "beta-reviewer" },
       { ...valid, comment: "Check <script>alert(1)</script>" },
@@ -118,6 +119,7 @@ describe("selection reports", () => {
     await expect(
       createSelectionReport(
         bucketFor(honorificItem),
+        LEGACY_CORPUS_CONTEXT,
         "server-secret",
         { github_login: "beta-reviewer" },
         {
@@ -149,6 +151,7 @@ describe("selection reports", () => {
       await expect(
         createSelectionReport(
           bucketFor(item),
+          LEGACY_CORPUS_CONTEXT,
           token,
           { github_login: "beta-reviewer" },
           payload,

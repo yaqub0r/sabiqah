@@ -7,6 +7,13 @@ consumes a small, versioned reader contract rather than taking ownership of the
 book's complete editorial model. A book-specific exporter may discard internal
 fields but must preserve stable IDs, provenance, uncertainty, and review state.
 
+Before canonical promotion, a book repository may also publish a validated,
+immutable `public-working` distribution for reading and review. This handoff is
+application-neutral and checksum-bound. Sabiqah independently validates and
+projects it; it does not inspect mutable working files or assign new scholarly
+identities. The Al-Isabah implementation is recorded in
+[`al-isabah-distribution-ingestion.md`](al-isabah-distribution-ingestion.md).
+
 The beta fixture contract lives in `packages/release-model`. It is versioned as
 `1.0.0` and requires:
 
@@ -66,7 +73,7 @@ reader, not silently repaired or dropped. Publicly readable means compliant and
 attributable; it does not mean human-reviewed or canonical.
 
 Validated public-working summaries, indexes, sections, and items live under an
-immutable R2 prefix. R2 remains a private origin: the Worker serves these
+immutable R2 prefix selected by a separately verified activation pointer. R2 remains a private origin: the Worker serves these
 objects anonymously with public cache headers, while the browser receives
 neither R2 credentials nor object keys. Short entries remain in book order
 inside substantial sections so the default experience reads like a book.

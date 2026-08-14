@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 from rebuild_al_isabah_public_corpus import (
-    CORPUS_ID,
     FORBIDDEN_PUBLIC_PATTERNS,
     HONORIFIC_BY_CHARACTER,
     HONORIFIC_ENTRIES,
@@ -83,8 +82,8 @@ def validate(root: Path) -> list[str]:
     corpus_id = corpus.get("id")
     if summary.get("schemaVersion") != SCHEMA_VERSION:
         errors.append("summary: unsupported schema version")
-    if corpus_id != CORPUS_ID:
-        errors.append("summary: corpus ID is not the pinned public corpus")
+    if not isinstance(corpus_id, str) or not ITEM_ID.fullmatch(corpus_id):
+        errors.append("summary: corpus ID is invalid")
     if corpus.get("publicationStatus") != "public-working":
         errors.append("summary: corpus must be explicitly public-working")
     if corpus.get("promotionStatus") != "blocked":
@@ -115,6 +114,9 @@ def validate(root: Path) -> list[str]:
     unresolved = 0
     needs_attention = 0
     translated = 0
+    entry_count = 0
+    passage_count = 0
+    human_reviewed = 0
     for position, item in enumerate(items):
         item_id = item.get("id") if isinstance(item, dict) else None
         if not isinstance(item_id, str) or not ITEM_ID.fullmatch(item_id):
@@ -134,8 +136,13 @@ def validate(root: Path) -> list[str]:
             errors.append(f"detail: inconsistent identity for {item_id}")
         if detail.get("schemaVersion") != SCHEMA_VERSION:
             errors.append(f"detail: wrong schema version for {item_id}")
-        if detail.get("kind") != "entry" or detail.get("publicEligibility") != "eligible":
-            errors.append(f"detail: {item_id} is not an eligible entry")
+        if detail.get("kind") not in {"entry", "passage"} or detail.get(
+            "publicEligibility"
+        ) != "eligible":
+            errors.append(f"detail: {item_id} is not an eligible public record")
+        entry_count += detail.get("kind") == "entry"
+        passage_count += detail.get("kind") == "passage"
+        human_reviewed += detail.get("humanReview") in {"reviewed", "verified"}
         source = detail.get("source", {})
         provenance = detail.get("provenance", {})
         if source.get("authorityId") != SOURCE_AUTHORITY_ID:
@@ -155,11 +162,14 @@ def validate(root: Path) -> list[str]:
             or provenance.get("sourceExactTextSha256") != exact_source_sha
         ):
             errors.append(f"detail: exact source text integrity is missing for {item_id}")
-        remediation = detail.get("remediation", {})
-        if remediation.get("sourceArabicReplaced") is not True:
-            errors.append(f"detail: source Arabic was not replaced for {item_id}")
-        if remediation.get("privateLocatorsRemoved") is not True:
-            errors.append(f"detail: private locators were not removed for {item_id}")
+        remediation = detail.get("remediation")
+        if remediation is not None:
+            if remediation.get("sourceArabicReplaced") is not True:
+                errors.append(f"detail: source Arabic was not replaced for {item_id}")
+            if remediation.get("privateLocatorsRemoved") is not True:
+                errors.append(f"detail: private locators were not removed for {item_id}")
+        elif source.get("alignment", {}).get("method") != "al-isabah-public-distribution-v1":
+            errors.append(f"detail: {item_id} has neither remediation nor direct distribution provenance")
         segments = detail.get("segments", [])
         source_entry_number = detail.get("sourceEntryNumber")
         title_decision = title_decisions.get(source_entry_number)
@@ -203,14 +213,20 @@ def validate(root: Path) -> list[str]:
             + [str(segment.get("english", "")) for segment in segments]
         )
         translation_state = detail.get("translationState")
-        exclusion_reasons = remediation.get("englishExclusionReasonCodes", [])
+        exclusion_reasons = (
+            remediation.get("englishExclusionReasonCodes", [])
+            if remediation is not None
+            else []
+        )
         if translation_state != "translated":
             errors.append(f"detail: {item_id} must expose public working English")
         if not displayed_english.strip() or detail.get("title", {}).get("en", "").startswith(
             "Entry "
         ):
             errors.append(f"detail: public working English is empty or generic for {item_id}")
-        if remediation.get("englishExcluded") is not False or exclusion_reasons:
+        if remediation is not None and (
+            remediation.get("englishExcluded") is not False or exclusion_reasons
+        ):
             errors.append(f"detail: public working English is marked excluded for {item_id}")
         if MISATTACHED_COMPACT_HONORIFIC.search(displayed_english):
             errors.append(
@@ -220,7 +236,9 @@ def validate(root: Path) -> list[str]:
             errors.append(f"detail: embedded legacy entry heading remains for {item_id}")
         if DANGLING_DASH_BOUNDARY.search(displayed_english):
             errors.append(f"detail: dangling dash crosses a paragraph boundary for {item_id}")
-        if STRUCTURAL_HEADING_IN_PROSE.search(displayed_english):
+        if detail.get("kind") == "entry" and STRUCTURAL_HEADING_IN_PROSE.search(
+            displayed_english
+        ):
             errors.append(f"detail: source structure is embedded in entry prose for {item_id}")
         if RAW_METER_LABEL.search(displayed_english):
             errors.append(f"detail: raw poetry meter label remains for {item_id}")
@@ -268,14 +286,14 @@ def validate(root: Path) -> list[str]:
         english_semantics = dict(sorted(semantic_counts["en"].items()))
         literal_differs = literal_counts["ar"] != literal_counts["en"]
         semantic_differs = source_semantics != english_semantics
-        if remediation.get("sourceHonorificSemantics") != source_semantics:
+        if remediation is not None and remediation.get("sourceHonorificSemantics") != source_semantics:
             errors.append(f"detail: source honorific semantics differ for {item_id}")
-        if remediation.get("englishHonorificSemantics") != english_semantics:
+        if remediation is not None and remediation.get("englishHonorificSemantics") != english_semantics:
             errors.append(f"detail: English honorific semantics differ for {item_id}")
-        if remediation.get("honorificLiteralInventoryDiffers") != literal_differs:
+        if remediation is not None and remediation.get("honorificLiteralInventoryDiffers") != literal_differs:
             errors.append(f"detail: honorific literal-difference flag is wrong for {item_id}")
         expected_review = "needs_attention" if semantic_differs else "passed"
-        if remediation.get("honorificSemanticReview") != expected_review:
+        if remediation is not None and remediation.get("honorificSemanticReview") != expected_review:
             errors.append(f"detail: honorific semantic review state is wrong for {item_id}")
         if semantic_differs and detail.get("machineAssessment") != "needs_attention":
             errors.append(f"detail: semantic honorific difference did not fail review for {item_id}")
@@ -374,12 +392,12 @@ def validate(root: Path) -> list[str]:
     counts = summary.get("counts", {})
     expected_counts = {
         "sourceInventory": source_inventory,
-        "entries": len(ids),
-        "passages": 0,
+        "entries": entry_count,
+        "passages": passage_count,
         "translated": translated,
         "needsAttention": needs_attention,
         "unresolvedItems": unresolved,
-        "humanReviewed": 0,
+        "humanReviewed": human_reviewed,
         "quarantined": len(quarantined_ids),
     }
     for key, expected in expected_counts.items():
@@ -406,13 +424,23 @@ def validate(root: Path) -> list[str]:
             "sections: Volume 8 pages 1-25 must contain entries 11426-11481 exactly once"
         )
     for volume in summary.get("volumes", []):
-        matching = {
+        matching_sections = {
             item.get("sectionId") for item in items if item.get("volume") == volume.get("number")
         }
-        if len(matching) != volume.get("sectionCount"):
+        matching_entries = [
+            item for item in items
+            if item.get("volume") == volume.get("number") and item.get("kind") == "entry"
+        ]
+        matching_passages = [
+            item for item in items
+            if item.get("volume") == volume.get("number") and item.get("kind") == "passage"
+        ]
+        if len(matching_sections) != volume.get("sectionCount"):
             errors.append(f"summary: section count differs for volume {volume.get('number')}")
-        if sum(item.get("volume") == volume.get("number") for item in items) != volume.get("itemCount"):
+        if len(matching_entries) != volume.get("itemCount"):
             errors.append(f"summary: item count differs for volume {volume.get('number')}")
+        if volume.get("passageCount", 0) != len(matching_passages):
+            errors.append(f"summary: passage count differs for volume {volume.get('number')}")
         source_item_count = volume.get("sourceItemCount")
         item_count = volume.get("itemCount")
         availability = volume.get("availability")
@@ -424,7 +452,7 @@ def validate(root: Path) -> list[str]:
             errors.append(f"summary: partial coverage is false for volume {volume.get('number')}")
         elif availability == "not_translated" and item_count != 0:
             errors.append(f"summary: untranslated coverage is false for volume {volume.get('number')}")
-        section_ids.update(value for value in matching if isinstance(value, str))
+        section_ids.update(value for value in matching_sections if isinstance(value, str))
     for section_id in sorted(section_ids):
         path = root / "sections" / f"{section_id}.json"
         if not path.is_file():
