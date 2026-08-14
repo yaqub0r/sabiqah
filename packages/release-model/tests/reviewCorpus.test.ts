@@ -17,6 +17,15 @@ const item = {
   printedEntryNumber: 10759,
   volume: 8,
   title: { en: "Asiya bint al-Harith", ar: "آسية بنت الحارث" },
+  headingsBefore: [
+    {
+      level: "section" as const,
+      en: "Section One",
+      ar: "القسم الأول",
+      context: "continued" as const,
+      contextSourceEntryNumber: 11425,
+    },
+  ],
   translationState: "translated" as const,
   machineAssessment: "passed" as const,
   humanReview: "unreviewed" as const,
@@ -151,6 +160,22 @@ describe("review reading contract", () => {
     ).toThrow();
   });
 
+  it("rejects continued structure without its original source location", () => {
+    expect(() =>
+      parseReviewCorpusItem({
+        ...item,
+        headingsBefore: [
+          {
+            level: "section",
+            en: "Section One",
+            ar: "القسم الأول",
+            context: "continued",
+          },
+        ],
+      }),
+    ).toThrow(/original source entry number/);
+  });
+
   it("parses index, detail, and continuous section records", () => {
     const sectionId = "volume-08-pages-0001-0025";
     const index = parseReviewCorpusIndex({
@@ -176,7 +201,9 @@ describe("review reading contract", () => {
       ],
     });
     expect(index.items[0]?.sectionId).toBe(sectionId);
-    expect(parseReviewCorpusItem(item).segments[0]?.english).toContain("Asiya");
+    const parsedItem = parseReviewCorpusItem(item);
+    expect(parsedItem.segments[0]?.english).toContain("Asiya");
+    expect(parsedItem.headingsBefore?.[0]?.context).toBe("continued");
 
     const section = parseReviewCorpusSection({
       schemaVersion: "2.0.0",

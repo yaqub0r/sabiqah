@@ -200,8 +200,32 @@ export const reviewCorpusItemSchema = z
             ar: z.string().min(1),
             noteEn: z.string().min(1).optional(),
             noteAr: z.string().min(1).optional(),
+            context: z.literal("continued").optional(),
+            contextSourceEntryNumber: z.number().int().positive().optional(),
           })
-          .strict(),
+          .strict()
+          .superRefine((heading, validation) => {
+            if (
+              heading.context === "continued" &&
+              heading.contextSourceEntryNumber === undefined
+            ) {
+              validation.addIssue({
+                code: "custom",
+                message:
+                  "continued source context requires its original source entry number",
+              });
+            }
+            if (
+              heading.context === undefined &&
+              heading.contextSourceEntryNumber !== undefined
+            ) {
+              validation.addIssue({
+                code: "custom",
+                message:
+                  "a context source entry number is valid only for continued context",
+              });
+            }
+          }),
       )
       .optional(),
     relationship: z.string().optional(),

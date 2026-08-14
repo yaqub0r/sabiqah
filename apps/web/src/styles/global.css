@@ -619,36 +619,79 @@ button {
 }
 
 .source-structure-heading {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: clamp(1rem, 4vw, 3rem);
   margin: 2.5rem 0 0;
-  padding: 1.5rem 0;
+  padding: 0.7rem 0;
   border-block: 1px solid var(--line);
 }
 
 .source-structure-heading h2,
-.source-structure-heading p {
+.source-structure-heading p,
+.source-structure-row {
   margin: 0;
 }
 
-.source-structure-heading > div {
-  min-width: 0;
-  padding-inline: 0.75rem;
+.source-structure-context {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.25rem, 5vw, 4rem);
+  padding: 0.25rem 0.75rem 0.65rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.source-structure-heading [lang="ar"] {
+.source-structure-context [lang="ar"] {
+  text-align: right;
+}
+
+.source-structure-sequence {
+  display: grid;
+}
+
+.source-structure-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(1.25rem, 5vw, 4rem);
+  padding: 0.8rem 0.75rem;
+}
+
+.source-structure-row + .source-structure-row {
+  border-top: 1px solid var(--line);
+}
+
+.source-structure-row > div {
+  min-width: 0;
+}
+
+.source-structure-row h2 {
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1.15;
+}
+
+.source-structure-row [lang="ar"] h2 {
   font:
-    1.65rem/1.7 "Noto Naskh Arabic Variable",
+    1.65rem/1.55 "Noto Naskh Arabic Variable",
     "Traditional Arabic",
     serif;
   text-align: right;
 }
+
 .source-structure-heading .source-structure-note {
-  margin-top: 0.4rem;
+  margin-top: 0.25rem;
   color: var(--muted);
-  font: inherit;
-  line-height: 1.5;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.source-structure-row [lang="ar"] .source-structure-note {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.source-structure-row.empty {
+  background: color-mix(in srgb, var(--paper) 72%, var(--line));
 }
 .reading-record {
   padding: clamp(2rem, 4vw, 3.5rem) 0;
@@ -1025,8 +1068,14 @@ footer p {
     max-height: none;
   }
   .reading-record > header > div,
-  .reading-bilingual {
+  .reading-bilingual,
+  .source-structure-context,
+  .source-structure-row {
     grid-template-columns: 1fr;
+  }
+  .source-structure-context,
+  .source-structure-row {
+    gap: 0.5rem;
   }
   .section-pagination {
     flex-wrap: wrap;

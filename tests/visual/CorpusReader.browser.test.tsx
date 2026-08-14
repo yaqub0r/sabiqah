@@ -68,6 +68,25 @@ const shortRecord = record(
   "ضباعة بنت عامر",
   "al-Tabari mentioned her among those concerning whom the following was revealed: “And do not marry those women whom your fathers married” [al-Nisa': 22].",
 );
+const contextualRecord = {
+  ...shortRecord,
+  headingsBefore: [
+    {
+      level: "letter",
+      en: "Letter Ḍād (ض)",
+      ar: "حرف الضاد المعجمة",
+      context: "continued",
+      contextSourceEntryNumber: 11425,
+    },
+    {
+      level: "section",
+      en: "Section One",
+      ar: "القسم الأول",
+      context: "continued",
+      contextSourceEntryNumber: 11425,
+    },
+  ],
+};
 const longRecord = record(
   "isabah-entry-00011443",
   11439,
@@ -87,7 +106,6 @@ const structuredRecord = {
     arabic: "نثر تمهيدي للقراءة:\nبيت أول من الشعر\nبيت ثان من الشعر",
   })),
   headingsBefore: [
-    { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
     {
       level: "section",
       en: "Sections Two and Three",
@@ -95,6 +113,7 @@ const structuredRecord = {
       noteEn: "No entries are recorded in either section.",
       noteAr: "لم يذكر فيهما أحد",
     },
+    { level: "section", en: "Section Four", ar: "الرابع" },
   ],
 };
 
@@ -205,7 +224,7 @@ beforeEach(() => {
         return response({
           schemaVersion: "2.0.0",
           corpusId,
-          items: [shortRecord, structuredRecord].map((item) => ({
+          items: [contextualRecord, structuredRecord].map((item) => ({
             id: item.id,
             kind: item.kind,
             sequence: item.sequence,
@@ -258,7 +277,7 @@ beforeEach(() => {
           printedPageEnd: 1,
           previousSectionId: null,
           nextSectionId: null,
-          items: [shortRecord, structuredRecord],
+          items: [contextualRecord, structuredRecord],
         });
       }
       return response({}, false);
@@ -389,33 +408,39 @@ describe("CorpusReader presentation quality", () => {
   it("keeps source-structure headings distinct and collision-free", async () => {
     root.render(<CorpusReader />);
     const deadline = Date.now() + 5_000;
-    let heading: HTMLElement | null = null;
+    let headings: HTMLElement[] = [];
     while (Date.now() < deadline) {
-      heading = document.querySelector<HTMLElement>(
-        ".source-structure-heading",
-      );
-      if (heading) break;
+      headings = [
+        ...document.querySelectorAll<HTMLElement>(".source-structure-heading"),
+      ];
+      if (headings.length === 2) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
 
-    expect(heading).not.toBeNull();
-    expect(heading?.textContent).toContain("Letter Ẓāʾ (ظ)");
-    expect(heading?.textContent).toContain("حرف الظاء المشالة");
-    expect(heading?.textContent).toContain(
+    expect(headings).toHaveLength(2);
+    expect(headings[0]?.textContent).toContain("Continued source context");
+    expect(headings[0]?.textContent).toContain("Letter Ḍād (ض)");
+    expect(headings[0]?.textContent).toContain("Section One");
+    expect(headings[1]?.textContent).toContain(
       "No entries are recorded in either section.",
     );
-    expect(heading?.scrollWidth).toBeLessThanOrEqual(heading!.clientWidth);
+    expect(headings[1]?.textContent).toContain("Section Four");
+    for (const heading of headings) {
+      expect(heading.scrollWidth).toBeLessThanOrEqual(heading.clientWidth);
+    }
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
       document.documentElement.clientWidth,
     );
-    const blocks = [...heading!.children].map((child) =>
-      child.getBoundingClientRect(),
-    );
-    if (blocks.length > 1 && blocks[0]!.top === blocks[1]!.top) {
-      expect(rectanglesOverlap(blocks[0]!, blocks[1]!)).toBe(false);
-    }
+    const rows = [
+      ...headings[1]!.querySelectorAll<HTMLElement>(".source-structure-row"),
+    ].map((child) => child.getBoundingClientRect());
+    expect(rectanglesOverlap(rows[0]!, rows[1]!)).toBe(false);
     await page.screenshot({
-      element: heading!,
+      element: headings[0]!,
+      path: `../../.runtime/visual-qa/source-context-${document.documentElement.clientWidth}.png`,
+    });
+    await page.screenshot({
+      element: headings[1]!,
       path: `../../.runtime/visual-qa/source-structure-${document.documentElement.clientWidth}.png`,
     });
   });
