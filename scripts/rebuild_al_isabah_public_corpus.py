@@ -27,7 +27,7 @@ from typing import Any
 
 
 SCHEMA_VERSION = "4.0.0"
-CORPUS_ID = "al-isabah-public-openiti-5835c18-v10"
+CORPUS_ID = "al-isabah-public-openiti-5835c18-v11"
 SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SOURCE_COMMIT = "5835c183b8bbf4ea454d5c1be2b168b669403771"
 SOURCE_SHA256 = "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
@@ -167,7 +167,11 @@ FORBIDDEN_PUBLIC_PATTERNS = (
     re.compile(r"canonical (?:Arabic|text) reads", re.I),
 )
 
-SOURCE_HEADINGS_BEFORE: dict[int, tuple[dict[str, str], ...]] = {
+SOURCE_HEADINGS_BEFORE: dict[int, tuple[dict[str, object], ...]] = {
+    11426: (
+        {"level": "letter", "ar": "حرف الضاد المعجمة", "en": "Letter Ḍād (ض)", "context": "continued", "contextSourceEntryNumber": 11425},
+        {"level": "section", "ar": "القسم الأول", "en": "Section One", "context": "continued", "contextSourceEntryNumber": 11425},
+    ),
     11431: (
         {"level": "section", "ar": "القسم الثاني والقسم الثالث", "en": "Sections Two and Three", "noteAr": "لم يذكر فيهما أحد", "noteEn": "No entries are recorded in either section."},
         {"level": "section", "ar": "الرابع", "en": "Section Four"},

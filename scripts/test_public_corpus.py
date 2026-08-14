@@ -288,7 +288,15 @@ class PublicCorpusTests(unittest.TestCase):
         )
 
     def test_volume_eight_opening_has_all_source_structure_transitions(self):
-        self.assertEqual(set(REBUILD.SOURCE_HEADINGS_BEFORE), {11431, 11433, 11438, 11441, 11445})
+        self.assertEqual(set(REBUILD.SOURCE_HEADINGS_BEFORE), {11426, 11431, 11433, 11438, 11441, 11445})
+        self.assertEqual(
+            [heading["context"] for heading in REBUILD.SOURCE_HEADINGS_BEFORE[11426]],
+            ["continued", "continued"],
+        )
+        self.assertEqual(
+            [heading["contextSourceEntryNumber"] for heading in REBUILD.SOURCE_HEADINGS_BEFORE[11426]],
+            [11425, 11425],
+        )
         self.assertEqual(
             REBUILD.SOURCE_HEADINGS_BEFORE[11445][0]["noteEn"],
             "No entries are recorded in these sections.",

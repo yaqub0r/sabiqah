@@ -258,7 +258,6 @@ describe("CorpusReader", () => {
     const headedItem = {
       ...firstItem,
       headingsBefore: [
-        { level: "letter", en: "Letter Ẓāʾ (ظ)", ar: "حرف الظاء المشالة" },
         {
           level: "section",
           en: "Sections Two and Three",
@@ -266,6 +265,7 @@ describe("CorpusReader", () => {
           noteEn: "No entries are recorded in either section.",
           noteAr: "لم يذكر فيهما أحد",
         },
+        { level: "section", en: "Section Four", ar: "الرابع" },
       ],
     };
     const responses = new Map<string, unknown>([
@@ -368,14 +368,22 @@ describe("CorpusReader", () => {
     render(<CorpusReader />);
 
     expect(
-      await screen.findByRole("heading", { name: "Letter Ẓāʾ (ظ)" }),
+      await screen.findByRole("heading", { name: "Sections Two and Three" }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole("heading", { name: "Sections Two and Three" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Section Four" })).toBeTruthy();
     expect(
       screen.getByText("No entries are recorded in either section."),
     ).toBeTruthy();
+    const rows = document.querySelectorAll(".source-structure-row");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.children[0]?.textContent).toContain(
+      "Sections Two and Three",
+    );
+    expect(rows[0]?.children[1]?.textContent).toContain(
+      "القسم الثاني والقسم الثالث",
+    );
+    expect(rows[1]?.children[0]?.textContent).toContain("Section Four");
+    expect(rows[1]?.children[1]?.textContent).toContain("الرابع");
     expect(
       document.querySelector(".source-structure-heading + .reading-record"),
     ).toBeTruthy();

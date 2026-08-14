@@ -262,6 +262,29 @@ must preserve headings, entry numbers, page or entry boundaries, notes,
 uncertainty signals, and links to the authoritative source. The presentation
 records the structured-English hash so drift is detectable.
 
+Source structure must remain intelligible when a reading surface exposes only
+a volume, page range, search result, or other slice of the work. A slice that
+begins after the source's governing letter, part, chapter, or numbered section
+heading must restate the active hierarchy before its first displayed unit. The
+restatement must be derived from the pinned source, explicitly marked as
+continued context, and kept distinct from a newly occurring source heading. A
+later numbered division must never appear without enough active context for a
+reader to understand what preceded it.
+
+Structural events remain in source order and must not be styled as biography or
+entry content. Consecutive events are presented sequentially rather than as
+competing peer cards. In a bilingual Arabic-English reader, each event pairs
+English on the left with Arabic on the right at widths that support columns and
+preserves that language order when stacked responsively. Empty divisions are
+retained when the source records them, but their notices remain compact and
+visually subordinate to populated divisions and entries.
+
+Deterministic validation must cover inherited slice context, the distinction
+between contextual restatement and source occurrence, numbered-division
+continuity, empty-division preservation, and responsive bilingual presentation.
+If the active hierarchy cannot be established from the pinned source, the
+affected slice is not presentation-ready.
+
 The ordinary reading presentation contains only public work products. Reviewer
 evidence packages remain separate from the presentation and may contain
 restricted evidence only as governed by `content-source-compliance`.

@@ -285,24 +285,42 @@ function ReadingRecord({
   return (
     <Fragment>
       {item.headingsBefore && item.headingsBefore.length > 0 && (
-        <header className="source-structure-heading">
-          {item.headingsBefore.map((heading) => (
-            <div key={`${heading.level}-${heading.ar}`}>
-              <p className="eyebrow">{heading.level}</p>
-              <h2>{heading.en}</h2>
-              <p lang="ar" dir="rtl">
-                {heading.ar}
-              </p>
-              {heading.noteEn && (
-                <p className="source-structure-note">{heading.noteEn}</p>
-              )}
-              {heading.noteAr && (
-                <p className="source-structure-note" lang="ar" dir="rtl">
-                  {heading.noteAr}
-                </p>
-              )}
-            </div>
-          ))}
+        <header
+          className={`source-structure-heading${item.headingsBefore.some((heading) => heading.context === "continued") ? " continued" : ""}`}
+          aria-label="Source structure"
+        >
+          {item.headingsBefore.some(
+            (heading) => heading.context === "continued",
+          ) && (
+            <p className="source-structure-context">
+              <span>Continued source context</span>
+              <span lang="ar" dir="rtl">
+                سياق المصدر المستمر
+              </span>
+            </p>
+          )}
+          <div className="source-structure-sequence">
+            {item.headingsBefore.map((heading) => (
+              <section
+                className={`source-structure-row${heading.noteEn || heading.noteAr ? " empty" : ""}`}
+                key={`${heading.level}-${heading.ar}`}
+              >
+                <div>
+                  <p className="eyebrow">{heading.level}</p>
+                  <h2>{heading.en}</h2>
+                  {heading.noteEn && (
+                    <p className="source-structure-note">{heading.noteEn}</p>
+                  )}
+                </div>
+                <div lang="ar" dir="rtl">
+                  <h2>{heading.ar}</h2>
+                  {heading.noteAr && (
+                    <p className="source-structure-note">{heading.noteAr}</p>
+                  )}
+                </div>
+              </section>
+            ))}
+          </div>
         </header>
       )}
       <article
