@@ -1,4 +1,4 @@
-import { CORPUS_ID, corpusObjectKey } from "./corpus";
+import { type CorpusContext, corpusObjectKey } from "./corpus";
 
 export interface TranslationReadState {
   readAt: number;
@@ -24,6 +24,7 @@ interface CorpusReadItem {
 export async function getTranslationReadSummary(
   db: D1Database,
   memberId: number,
+  corpusId: string,
 ): Promise<TranslationReadSummary> {
   const result = await db
     .prepare(
@@ -31,26 +32,27 @@ export async function getTranslationReadSummary(
        FROM translation_read_progress
        WHERE member_id = ? AND corpus_id = ?`,
     )
-    .bind(memberId, CORPUS_ID)
+    .bind(memberId, corpusId)
     .all<ReadRow>();
   const items = Object.fromEntries(
     result.results.map((row) => [row.item_id, { readAt: Number(row.read_at) }]),
   );
-  return { corpusId: CORPUS_ID, readItems: result.results.length, items };
+  return { corpusId, readItems: result.results.length, items };
 }
 
 export async function setTranslationReadState(
   db: D1Database,
   bucket: R2Bucket,
+  corpus: CorpusContext,
   memberId: number,
   itemId: string,
   read: boolean,
 ): Promise<{ found: boolean; state: TranslationReadState | null }> {
-  const object = await bucket.get(corpusObjectKey("item", itemId));
+  const object = await bucket.get(corpusObjectKey(corpus, "item", itemId));
   if (!object) return { found: false, state: null };
   const item = JSON.parse(await object.text()) as Partial<CorpusReadItem>;
   if (
-    item.corpusId !== CORPUS_ID ||
+    item.corpusId !== corpus.id ||
     item.id !== itemId ||
     !Array.isArray(item.segments) ||
     !item.segments.some(
@@ -67,7 +69,7 @@ export async function setTranslationReadState(
         `DELETE FROM translation_read_progress
          WHERE member_id = ? AND corpus_id = ? AND item_id = ?`,
       )
-      .bind(memberId, CORPUS_ID, itemId)
+      .bind(memberId, corpus.id, itemId)
       .run();
     return { found: true, state: null };
   }
@@ -81,7 +83,7 @@ export async function setTranslationReadState(
          read_at = excluded.read_at
        RETURNING read_at`,
     )
-    .bind(memberId, CORPUS_ID, itemId)
+    .bind(memberId, corpus.id, itemId)
     .first<{ read_at: number }>();
   if (!row) throw new Error("Reading progress was not saved");
   return { found: true, state: { readAt: Number(row.read_at) } };

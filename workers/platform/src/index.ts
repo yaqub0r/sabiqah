@@ -5,7 +5,12 @@ import {
   githubAuthorizationUrl,
 } from "./github";
 import { cookie, json, parseCookies, safeReturnTo } from "./http";
-import { canReviewCorpus, corpusJson, corpusObjectKey } from "./corpus";
+import {
+  canReviewCorpus,
+  corpusJson,
+  corpusObjectKey,
+  resolveCorpusContext,
+} from "./corpus";
 import {
   getTranslationReadSummary,
   setTranslationReadState,
@@ -86,27 +91,41 @@ export default {
       if (
         url.pathname === "/api/corpus/al-isabah/summary" &&
         request.method === "GET"
-      )
-        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("summary"));
+      ) {
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
+        return corpusJson(
+          env.REVIEW_CORPUS,
+          corpusObjectKey(corpus, "summary"),
+        );
+      }
       if (
         url.pathname === "/api/corpus/al-isabah/index" &&
         request.method === "GET"
-      )
-        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("index"));
+      ) {
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
+        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey(corpus, "index"));
+      }
       if (
         url.pathname === "/api/corpus/al-isabah/exclusions" &&
         request.method === "GET"
-      )
-        return corpusJson(env.REVIEW_CORPUS, corpusObjectKey("exclusions"));
+      ) {
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
+        return corpusJson(
+          env.REVIEW_CORPUS,
+          corpusObjectKey(corpus, "exclusions"),
+        );
+      }
       if (
         url.pathname === "/api/corpus/al-isabah/reviews" &&
         request.method === "GET"
       ) {
         const member = await authenticatedMember(request, env);
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
         return json(
           await getTranslationReviewSummary(
             env.DB,
             canReviewCorpus(member) ? member!.id : null,
+            corpus.id,
           ),
         );
       }
@@ -117,7 +136,10 @@ export default {
         const member = await authenticatedMember(request, env);
         if (!member)
           return json({ error: "Authentication required" }, { status: 401 });
-        return json(await getTranslationReadSummary(env.DB, member.id));
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
+        return json(
+          await getTranslationReadSummary(env.DB, member.id, corpus.id),
+        );
       }
       if (
         url.pathname === "/api/corpus/al-isabah/reports" &&
@@ -143,8 +165,10 @@ export default {
             { status: 429 },
           );
         try {
+          const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
           const issue = await createSelectionReport(
             env.REVIEW_CORPUS,
+            corpus,
             env.GITHUB_ISSUES_TOKEN,
             member!,
             await request.json().catch(() => null),
@@ -180,6 +204,7 @@ export default {
         const state = await recordTranslationReview(
           env.DB,
           env.REVIEW_CORPUS,
+          await resolveCorpusContext(env.REVIEW_CORPUS),
           member!.id,
           corpusReview[1],
           action,
@@ -206,6 +231,7 @@ export default {
         const result = await setTranslationReadState(
           env.DB,
           env.REVIEW_CORPUS,
+          await resolveCorpusContext(env.REVIEW_CORPUS),
           member.id,
           corpusProgress[1],
           request.method === "PUT",
@@ -218,18 +244,20 @@ export default {
         /^\/api\/corpus\/al-isabah\/items\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
       );
       if (corpusItem && request.method === "GET") {
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
         return corpusJson(
           env.REVIEW_CORPUS,
-          corpusObjectKey("item", corpusItem[1]),
+          corpusObjectKey(corpus, "item", corpusItem[1]),
         );
       }
       const corpusSection = url.pathname.match(
         /^\/api\/corpus\/al-isabah\/sections\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
       );
       if (corpusSection && request.method === "GET") {
+        const corpus = await resolveCorpusContext(env.REVIEW_CORPUS);
         return corpusJson(
           env.REVIEW_CORPUS,
-          corpusObjectKey("section", corpusSection[1]),
+          corpusObjectKey(corpus, "section", corpusSection[1]),
         );
       }
       if (url.pathname === "/api/logout" && request.method === "POST") {

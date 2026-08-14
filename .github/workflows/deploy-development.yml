@@ -70,7 +70,7 @@ jobs:
       - name: Validate the release candidate
         run: pnpm check
 
-      - name: Download and verify pinned public working corpus
+      - name: Download and verify active public working corpus
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -78,8 +78,22 @@ jobs:
         run: |
           set -euo pipefail
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          root_uri="${AL_ISABAH_PUBLIC_CORPUS_URI%/}"
+          root_uri="${root_uri%/*}"
+          if [[ "${root_uri}" != s3://*/public-corpora/al-isabah ]]; then
+            echo "::error::Unexpected Al-Isabah public-corpus root: ${root_uri}"
+            exit 1
+          fi
+          bucket_uri="${root_uri%%/public-corpora/*}"
+          pointer_uri="${root_uri}/current.json"
+          corpus_uri="${AL_ISABAH_PUBLIC_CORPUS_URI}"
+          if aws s3 cp "${pointer_uri}" .runtime/current.json \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors; then
+            active_prefix="$(python3 scripts/resolve_al_isabah_distribution.py .runtime/current.json)"
+            corpus_uri="${bucket_uri}/${active_prefix}/"
+          fi
           aws s3 cp \
-            "${AL_ISABAH_PUBLIC_CORPUS_URI}" \
+            "${corpus_uri}" \
             .runtime/al-isabah-public-corpus \
             --recursive \
             --endpoint-url "${endpoint}" \

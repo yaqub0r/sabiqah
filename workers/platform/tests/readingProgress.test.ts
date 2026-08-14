@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CORPUS_ID } from "../src/corpus";
+import { LEGACY_CORPUS_CONTEXT } from "../src/corpus";
 import {
   getTranslationReadSummary,
   setTranslationReadState,
 } from "../src/readingProgress";
 
 const itemId = "isabah-entry-00010759";
+const CORPUS_ID = LEGACY_CORPUS_CONTEXT.id;
 const serializedItem = JSON.stringify({
   corpusId: CORPUS_ID,
   id: itemId,
@@ -29,7 +30,7 @@ describe("translation reading progress", () => {
       })),
     } as unknown as D1Database;
 
-    await expect(getTranslationReadSummary(db, 7)).resolves.toEqual({
+    await expect(getTranslationReadSummary(db, 7, CORPUS_ID)).resolves.toEqual({
       corpusId: CORPUS_ID,
       readItems: 1,
       items: { [itemId]: { readAt: 1_765_000_000 } },
@@ -58,13 +59,27 @@ describe("translation reading progress", () => {
     } as unknown as R2Bucket;
 
     await expect(
-      setTranslationReadState(db, bucket, 7, itemId, true),
+      setTranslationReadState(
+        db,
+        bucket,
+        LEGACY_CORPUS_CONTEXT,
+        7,
+        itemId,
+        true,
+      ),
     ).resolves.toEqual({
       found: true,
       state: { readAt: 1_765_000_001 },
     });
     await expect(
-      setTranslationReadState(db, bucket, 7, itemId, false),
+      setTranslationReadState(
+        db,
+        bucket,
+        LEGACY_CORPUS_CONTEXT,
+        7,
+        itemId,
+        false,
+      ),
     ).resolves.toEqual({ found: true, state: null });
 
     expect(operations[0]?.sql).toContain("ON CONFLICT");
@@ -79,6 +94,7 @@ describe("translation reading progress", () => {
       setTranslationReadState(
         db,
         { get: async () => null } as unknown as R2Bucket,
+        LEGACY_CORPUS_CONTEXT,
         7,
         itemId,
         true,

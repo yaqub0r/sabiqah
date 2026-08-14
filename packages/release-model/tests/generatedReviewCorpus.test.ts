@@ -36,19 +36,29 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     expect(index.items).toHaveLength(
       summary.counts.entries + summary.counts.passages,
     );
-    expect(summary.counts.translated).toBe(summary.counts.entries);
+    expect(summary.counts.translated).toBe(
+      summary.counts.entries + summary.counts.passages,
+    );
     for (const listed of index.items) {
       const item = parseReviewCorpusItem(load(`items/${listed.id}.json`));
       expect(item.id).toBe(listed.id);
       expect(item.corpusId).toBe(index.corpusId);
       expect(item.publicEligibility).toBe("eligible");
       expect(item.source?.authorityId).toBe(summary.corpus.sourceAuthorityId);
-      expect(item.remediation?.sourceArabicReplaced).toBe(true);
-      expect(item.remediation?.privateLocatorsRemoved).toBe(true);
-      expect(item.remediation?.englishExcluded).toBe(false);
-      expect(
-        item.remediation?.sourcePresentationRepairs,
-      ).toBeGreaterThanOrEqual(0);
+      if (item.remediation) {
+        expect(item.remediation.sourceArabicReplaced).toBe(true);
+        expect(item.remediation.privateLocatorsRemoved).toBe(true);
+        expect(item.remediation.englishExcluded).toBe(false);
+      } else {
+        expect(item.source?.alignment.method).toBe(
+          "al-isabah-public-distribution-v1",
+        );
+      }
+      if (item.remediation?.sourcePresentationRepairs !== undefined) {
+        expect(
+          item.remediation.sourcePresentationRepairs,
+        ).toBeGreaterThanOrEqual(0);
+      }
       expect(item.honorificPolicyVersion).toBe("1.0.0");
       expect(item.honorifics).toBeDefined();
       expect(JSON.stringify(item).toLocaleLowerCase()).not.toContain("usul.ai");
@@ -79,7 +89,16 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
         "utf8",
       ),
     );
-    first.remediation.sourcePresentationRepairs = -1;
+    first.remediation = {
+      legacyAllocationNumber: 1,
+      sourceArabicReplaced: true,
+      privateLocatorsRemoved: true,
+      honorificInventory: {},
+      honorificTypeCorrections: 0,
+      removedApparatusParagraphs: 0,
+      removedEditorialNotes: 0,
+      sourcePresentationRepairs: -1,
+    };
     expect(() => parseReviewCorpusItem(first)).toThrow();
   });
 });

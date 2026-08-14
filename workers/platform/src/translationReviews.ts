@@ -1,4 +1,4 @@
-import { CORPUS_ID, corpusObjectKey } from "./corpus";
+import { type CorpusContext, corpusObjectKey } from "./corpus";
 
 export type TranslationReviewAction = "approve" | "withdraw";
 
@@ -70,10 +70,11 @@ export function parseTranslationReviewAction(
 export async function getTranslationReviewSummary(
   db: D1Database,
   reviewerMemberId: number | null,
+  corpusId: string,
 ): Promise<TranslationReviewSummary> {
   const result = await db
     .prepare(reviewStateQuery)
-    .bind(CORPUS_ID, reviewerMemberId ?? -1)
+    .bind(corpusId, reviewerMemberId ?? -1)
     .all<ReviewRow>();
   const items = Object.fromEntries(
     result.results.map((row) => [
@@ -89,7 +90,7 @@ export async function getTranslationReviewSummary(
     ]),
   );
   return {
-    corpusId: CORPUS_ID,
+    corpusId,
     reviewedItems: Object.values(items).filter(
       (state) => state.approvalCount > 0,
     ).length,
@@ -100,16 +101,17 @@ export async function getTranslationReviewSummary(
 export async function recordTranslationReview(
   db: D1Database,
   bucket: R2Bucket,
+  corpus: CorpusContext,
   reviewerMemberId: number,
   itemId: string,
   action: TranslationReviewAction,
 ): Promise<TranslationReviewState | null> {
-  const object = await bucket.get(corpusObjectKey("item", itemId));
+  const object = await bucket.get(corpusObjectKey(corpus, "item", itemId));
   if (!object) return null;
   const serialized = await object.text();
   const item = JSON.parse(serialized) as Partial<CorpusReviewItem>;
   if (
-    item.corpusId !== CORPUS_ID ||
+    item.corpusId !== corpus.id ||
     item.id !== itemId ||
     !Array.isArray(item.segments) ||
     !item.segments.some(
@@ -138,18 +140,22 @@ export async function recordTranslationReview(
     )
     .bind(
       reviewerMemberId,
-      CORPUS_ID,
+      corpus.id,
       itemId,
       action,
       digest,
-      CORPUS_ID,
+      corpus.id,
       itemId,
       reviewerMemberId,
       action,
     )
     .run();
 
-  const summary = await getTranslationReviewSummary(db, reviewerMemberId);
+  const summary = await getTranslationReviewSummary(
+    db,
+    reviewerMemberId,
+    corpus.id,
+  );
   return (
     summary.items[itemId] ?? {
       approvalCount: 0,

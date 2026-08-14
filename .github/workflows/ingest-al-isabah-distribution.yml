@@ -1,0 +1,137 @@
+name: Ingest Al-Isabah public distribution
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Optional immutable Al-Isabah public-working release tag
+        required: false
+        type: string
+  repository_dispatch:
+    types:
+      - al-isabah-public-distribution
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sabiqah-al-isabah-distribution-development
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    name: Validate, publish, verify, and activate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: development
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      AL_ISABAH_PUBLIC_CORPUS_URI: ${{ vars.AL_ISABAH_PUBLIC_CORPUS_URI }}
+
+    steps:
+      - name: Check out Sabiqah
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve and download immutable Al-Isabah bundle
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag || github.event.client_payload.release_tag }}
+        run: |
+          set -euo pipefail
+          tag="${REQUESTED_TAG}"
+          if [[ -z "${tag}" ]]; then
+            tag="$(gh release list --repo yaqub0r/al-isabah --limit 100 \
+              --json tagName,isPrerelease,publishedAt \
+              --jq '[.[] | select(.isPrerelease and (.tagName | startswith("public-working-")))] | sort_by(.publishedAt) | last | .tagName')"
+          fi
+          test -n "${tag}"
+          mkdir -p .runtime/distribution-download
+          gh release download "${tag}" --repo yaqub0r/al-isabah \
+            --pattern 'al-isabah-public-distribution-*.zip' \
+            --dir .runtime/distribution-download
+          archive="$(find .runtime/distribution-download -maxdepth 1 -type f -name 'al-isabah-public-distribution-*.zip' -print -quit)"
+          test -n "${archive}"
+          python3 scripts/extract_al_isabah_distribution.py \
+            "${archive}" .runtime/al-isabah-distribution
+
+      - name: Resolve active immutable base corpus
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_ACCOUNT_ID}"
+          test -n "${AL_ISABAH_PUBLIC_CORPUS_URI}"
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          root_uri="${AL_ISABAH_PUBLIC_CORPUS_URI%/}"
+          root_uri="${root_uri%/*}"
+          if [[ "${root_uri}" != s3://*/public-corpora/al-isabah ]]; then
+            echo "::error::Unexpected Al-Isabah public-corpus root: ${root_uri}"
+            exit 1
+          fi
+          bucket_uri="${root_uri%%/public-corpora/*}"
+          pointer_uri="${root_uri}/current.json"
+          base_uri="${AL_ISABAH_PUBLIC_CORPUS_URI}"
+          if aws s3 cp "${pointer_uri}" .runtime/current.json \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors; then
+            active_prefix="$(python3 scripts/resolve_al_isabah_distribution.py .runtime/current.json)"
+            base_uri="${bucket_uri}/${active_prefix}/"
+          fi
+          aws s3 cp "${base_uri}" .runtime/base-corpus --recursive \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+          echo "CORPUS_ROOT_URI=${root_uri}" >> "${GITHUB_ENV}"
+          echo "CORPUS_BUCKET_URI=${bucket_uri}" >> "${GITHUB_ENV}"
+
+      - name: Ingest and validate complete reader corpus
+        run: |
+          set -euo pipefail
+          activated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          python3 scripts/ingest_al_isabah_distribution.py \
+            --distribution .runtime/al-isabah-distribution \
+            --base-corpus .runtime/base-corpus \
+            --output .runtime/next-corpus \
+            --activated-at "${activated_at}"
+          python3 scripts/validate_public_corpus.py .runtime/next-corpus
+          corpus_id="$(python3 -c 'import json; print(json.load(open(".runtime/activation.json", encoding="utf-8"))["corpusId"])')"
+          echo "NEXT_CORPUS_URI=${CORPUS_ROOT_URI}/${corpus_id}/" >> "${GITHUB_ENV}"
+
+      - name: Upload or verify immutable R2 corpus
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          if aws s3 ls "${NEXT_CORPUS_URI}manifest.json" \
+            --endpoint-url "${endpoint}" --no-cli-pager >/dev/null 2>&1; then
+            aws s3 cp "${NEXT_CORPUS_URI}" .runtime/verified-corpus --recursive \
+              --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+            diff --recursive --brief .runtime/next-corpus .runtime/verified-corpus
+          else
+            aws s3 cp .runtime/next-corpus "${NEXT_CORPUS_URI}" --recursive \
+              --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+            aws s3 cp "${NEXT_CORPUS_URI}" .runtime/verified-corpus --recursive \
+              --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+            python3 scripts/validate_public_corpus.py .runtime/verified-corpus
+            diff --recursive --brief .runtime/next-corpus .runtime/verified-corpus
+          fi
+
+      - name: Activate only the verified corpus
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+          endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp .runtime/activation.json "${CORPUS_ROOT_URI}/current.json" \
+            --content-type application/json \
+            --cache-control 'no-store' \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+          aws s3 cp "${CORPUS_ROOT_URI}/current.json" .runtime/verified-activation.json \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+          diff --brief .runtime/activation.json .runtime/verified-activation.json

@@ -1,6 +1,10 @@
 import { expandHonorifics } from "@sabiqah/release-model";
 
-import { CORPUS_ID, corpusObjectKey } from "./corpus";
+import {
+  type CorpusContext,
+  LEGACY_CORPUS_CONTEXT,
+  corpusObjectKey,
+} from "./corpus";
 
 export const REPORT_CATEGORIES = [
   "formatting",
@@ -69,7 +73,10 @@ function collapsed(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-export function parseSelectionReport(value: unknown): ReportRequest | null {
+export function parseSelectionReport(
+  value: unknown,
+  corpusId = LEGACY_CORPUS_CONTEXT.id,
+): ReportRequest | null {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
   const itemId = boundedString(body.itemId, 200);
@@ -79,7 +86,7 @@ export function parseSelectionReport(value: unknown): ReportRequest | null {
   const comment = boundedString(body.comment, 1_000);
   const pageUrl = boundedString(body.pageUrl, 2_048);
   if (
-    body.corpusId !== CORPUS_ID ||
+    body.corpusId !== corpusId ||
     !itemId ||
     !ITEM_ID.test(itemId) ||
     !segmentId ||
@@ -95,7 +102,7 @@ export function parseSelectionReport(value: unknown): ReportRequest | null {
     return null;
   }
   return {
-    corpusId: CORPUS_ID,
+    corpusId,
     itemId,
     segmentId,
     field: body.field,
@@ -147,6 +154,7 @@ function canonicalText(item: CorpusItem, report: ReportRequest): string | null {
 
 export async function createSelectionReport(
   bucket: R2Bucket,
+  corpus: CorpusContext,
   githubToken: string | undefined,
   member: ReportMember,
   value: unknown,
@@ -158,13 +166,15 @@ export async function createSelectionReport(
       "Selection reporting is not configured",
       503,
     );
-  const report = parseSelectionReport(value);
+  const report = parseSelectionReport(value, corpus.id);
   if (!report) throw new SelectionReportError("Invalid report", 400);
 
-  const object = await bucket.get(corpusObjectKey("item", report.itemId));
+  const object = await bucket.get(
+    corpusObjectKey(corpus, "item", report.itemId),
+  );
   if (!object) throw new SelectionReportError("Corpus item not found", 404);
   const item = (await object.json()) as CorpusItem;
-  if (item.corpusId !== CORPUS_ID || item.id !== report.itemId)
+  if (item.corpusId !== corpus.id || item.id !== report.itemId)
     throw new SelectionReportError("Corpus item is inconsistent", 409);
 
   const sourceText = canonicalText(item, report);
@@ -194,7 +204,7 @@ export async function createSelectionReport(
     `- **Field:** ${report.field}`,
     `- **Record ID:** <code>${escapeHtml(report.itemId)}</code>`,
     `- **Segment ID:** <code>${escapeHtml(report.segmentId)}</code>`,
-    `- **Corpus:** <code>${escapeHtml(CORPUS_ID)}</code>`,
+    `- **Corpus:** <code>${escapeHtml(corpus.id)}</code>`,
     `- **Reporter:** @${escapeHtml(member.github_login)}`,
     `- **Reader URL:** ${escapeHtml(pageUrl)}`,
     "",

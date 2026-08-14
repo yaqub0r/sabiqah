@@ -11,6 +11,7 @@ on:
       - "scripts/validate_review_corpus.py"
       - "scripts/rebuild_al_isabah_public_corpus.py"
       - "scripts/validate_public_corpus.py"
+      - "scripts/*al_isabah_distribution.py"
       - "scripts/test_*corpus.py"
       - "scripts/acquisition/**"
       - "docs/attribution/**"
@@ -24,6 +25,7 @@ on:
       - "wrangler.jsonc"
       - ".github/workflows/application-validate.yml"
       - ".github/workflows/deploy-development.yml"
+      - ".github/workflows/ingest-al-isabah-distribution.yml"
       - ".github/workflows/preserve-al-isabah-research.yml"
   push:
     branches:
@@ -37,6 +39,7 @@ on:
       - "scripts/validate_review_corpus.py"
       - "scripts/rebuild_al_isabah_public_corpus.py"
       - "scripts/validate_public_corpus.py"
+      - "scripts/*al_isabah_distribution.py"
       - "scripts/test_*corpus.py"
       - "scripts/acquisition/**"
       - "docs/attribution/**"
@@ -50,6 +53,7 @@ on:
       - "wrangler.jsonc"
       - ".github/workflows/application-validate.yml"
       - ".github/workflows/deploy-development.yml"
+      - ".github/workflows/ingest-al-isabah-distribution.yml"
       - ".github/workflows/preserve-al-isabah-research.yml"
 
 permissions:
@@ -102,6 +106,9 @@ jobs:
 
       - name: Test corpus exporters and validators
         run: python3 -m unittest discover -s scripts -p "test_*corpus.py"
+
+      - name: Test Al-Isabah distribution ingestion
+        run: python3 -m unittest discover -s scripts -p "test_*distribution.py"
 
       - name: Test private evidence ingestion
         run: python3 -m unittest discover -s scripts/acquisition -p "test_*.py"

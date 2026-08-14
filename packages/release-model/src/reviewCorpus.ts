@@ -32,6 +32,7 @@ const volumeSchema = z
     availability: availabilitySchema,
     sourceItemCount: z.number().int().nonnegative().optional(),
     itemCount: z.number().int().nonnegative(),
+    passageCount: z.number().int().nonnegative().optional(),
     sectionCount: z.number().int().nonnegative(),
     firstPrintedPage: z.number().int().nonnegative().nullable(),
     lastPrintedPage: z.number().int().nonnegative().nullable(),
