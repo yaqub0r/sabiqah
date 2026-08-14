@@ -255,6 +255,9 @@ beforeEach(() => {
           },
         });
       }
+      if (path === "/api/corpus/al-isabah/progress") {
+        return response({ corpusId, readItems: 0, items: {} });
+      }
       if (path === "/api/corpus/al-isabah/reports") {
         return response({
           issue: {
@@ -370,6 +373,31 @@ describe("CorpusReader presentation quality", () => {
     await page.screenshot({
       element: document.querySelector<HTMLElement>(".book-reader")!,
       path: `../../.runtime/visual-qa/reader-volume-selector-${document.documentElement.clientWidth}.png`,
+    });
+  });
+
+  it("keeps translation actions compact and usable", async () => {
+    root.render(<CorpusReader />);
+    const deadline = Date.now() + 5_000;
+    let actionBar: HTMLElement | null = null;
+    while (Date.now() < deadline) {
+      actionBar = document.querySelector<HTMLElement>(".translation-approval");
+      if (actionBar?.querySelector("button:not([disabled])")) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(actionBar).not.toBeNull();
+    expect(actionBar?.textContent).not.toContain(
+      "Approval applies to this English translation",
+    );
+    expect(actionBar?.textContent).toContain("Mark as read");
+    expect(actionBar?.scrollWidth).toBeLessThanOrEqual(actionBar!.clientWidth);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    await page.screenshot({
+      element: actionBar!,
+      path: `../../.runtime/visual-qa/translation-actions-${document.documentElement.clientWidth}.png`,
     });
   });
 

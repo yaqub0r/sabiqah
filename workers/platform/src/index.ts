@@ -7,6 +7,10 @@ import {
 import { cookie, json, parseCookies, safeReturnTo } from "./http";
 import { canReviewCorpus, corpusJson, corpusObjectKey } from "./corpus";
 import {
+  getTranslationReadSummary,
+  setTranslationReadState,
+} from "./readingProgress";
+import {
   getTranslationReviewSummary,
   isSameOrigin,
   parseTranslationReviewAction,
@@ -107,6 +111,15 @@ export default {
         );
       }
       if (
+        url.pathname === "/api/corpus/al-isabah/progress" &&
+        request.method === "GET"
+      ) {
+        const member = await authenticatedMember(request, env);
+        if (!member)
+          return json({ error: "Authentication required" }, { status: 401 });
+        return json(await getTranslationReadSummary(env.DB, member.id));
+      }
+      if (
         url.pathname === "/api/corpus/al-isabah/reports" &&
         request.method === "POST"
       ) {
@@ -174,6 +187,32 @@ export default {
         if (!state)
           return json({ error: "Review item not found" }, { status: 404 });
         return json({ itemId: corpusReview[1], state });
+      }
+      const corpusProgress = url.pathname.match(
+        /^\/api\/corpus\/al-isabah\/progress\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
+      );
+      if (
+        corpusProgress &&
+        (request.method === "PUT" || request.method === "DELETE")
+      ) {
+        const member = await authenticatedMember(request, env);
+        if (!member)
+          return json({ error: "Authentication required" }, { status: 401 });
+        if (!isSameOrigin(request))
+          return json(
+            { error: "Same-origin request required" },
+            { status: 403 },
+          );
+        const result = await setTranslationReadState(
+          env.DB,
+          env.REVIEW_CORPUS,
+          member.id,
+          corpusProgress[1],
+          request.method === "PUT",
+        );
+        if (!result.found)
+          return json({ error: "Reading item not found" }, { status: 404 });
+        return json({ itemId: corpusProgress[1], state: result.state });
       }
       const corpusItem = url.pathname.match(
         /^\/api\/corpus\/al-isabah\/items\/([A-Za-z0-9][A-Za-z0-9._:-]{2,199})$/,
