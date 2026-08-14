@@ -90,4 +90,31 @@ describe("TranslationApproval", () => {
       action: "withdraw",
     });
   });
+
+  it("tracks reading separately from scholarly approval", async () => {
+    const onReadChange = vi.fn();
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ state: { readAt: 1_765_000_002 } }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <TranslationApproval
+        itemId="isabah-entry-00010759"
+        onChange={vi.fn()}
+        onReadChange={onReadChange}
+      />,
+    );
+    expect(
+      screen.queryByText(/Approval applies to this English translation/),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Mark as read" }));
+
+    await waitFor(() => expect(onReadChange).toHaveBeenCalledOnce());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/corpus/al-isabah/progress/isabah-entry-00010759",
+      expect.objectContaining({ method: "PUT" }),
+    );
+  });
 });

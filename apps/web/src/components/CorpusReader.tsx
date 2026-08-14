@@ -13,6 +13,8 @@ import { HonorificText } from "./HonorificText";
 import { SelectionReporter } from "./SelectionReporter";
 import {
   TranslationApproval,
+  type TranslationReadState,
+  type TranslationReadSummary,
   type TranslationReviewState,
   type TranslationReviewSummary,
 } from "./TranslationApproval";
@@ -261,12 +263,20 @@ function ReadingRecord({
   onReviewStateChange,
   reviewStateLoaded,
   canReview,
+  readState,
+  onReadStateChange,
+  readStateLoaded,
+  canTrackReading,
 }: {
   item: ReviewCorpusItem;
   reviewState?: TranslationReviewState;
   onReviewStateChange: (state: TranslationReviewState) => void;
   reviewStateLoaded: boolean;
   canReview: boolean;
+  readState?: TranslationReadState;
+  onReadStateChange: (state: TranslationReadState | null) => void;
+  readStateLoaded: boolean;
+  canTrackReading: boolean;
 }) {
   const pages = [
     ...new Set(
@@ -370,12 +380,16 @@ function ReadingRecord({
             </div>
           </section>
         ))}
-        {canReview && item.translationState === "translated" && (
+        {canTrackReading && item.translationState === "translated" && (
           <TranslationApproval
             itemId={item.id}
             state={reviewState}
             onChange={onReviewStateChange}
             ready={reviewStateLoaded}
+            canApprove={canReview}
+            readState={readState}
+            onReadChange={onReadStateChange}
+            readStateReady={readStateLoaded}
           />
         )}
         {canReview && item.translationState === "untranslated" && (
@@ -395,6 +409,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   const [section, setSection] = useState<ReviewCorpusSection>();
   const [reviewSummary, setReviewSummary] =
     useState<TranslationReviewSummary>();
+  const [readSummary, setReadSummary] = useState<TranslationReadSummary>();
   const [identity, setIdentity] = useState<SessionIdentity>();
   const [session, setSession] = useState<
     "loading" | "anonymous" | "active" | "limited"
@@ -405,12 +420,14 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   const [selectedSectionId, setSelectedSectionId] = useState("");
   const [pendingAnchor, setPendingAnchor] = useState("");
   const [hideReviewed, setHideReviewed] = useState(false);
+  const [hideRead, setHideRead] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const volume = Number(params.get("volume"));
     if (Number.isInteger(volume) && volume > 0) setSelectedVolume(volume);
     setHideReviewed(params.get("review") === "unreviewed");
+    setHideRead(params.get("reading") === "unread");
     setSelectedSectionId(params.get("section") ?? "");
     setPendingAnchor(window.location.hash.slice(1));
 
@@ -460,6 +477,24 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
       );
   }, [session]);
 
+  useEffect(() => {
+    if (session !== "active" && session !== "limited") return;
+    fetch("/api/corpus/al-isabah/progress", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error("Reading progress could not be loaded.");
+        return (await response.json()) as TranslationReadSummary;
+      })
+      .then(setReadSummary)
+      .catch((caught) =>
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Reading progress could not be loaded.",
+        ),
+      );
+  }, [session]);
+
   const links = useMemo(
     () => (index ? sectionLinks(index, selectedVolume) : []),
     [index, selectedVolume],
@@ -495,6 +530,11 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           "unreviewed"
         )
           params.set("review", "unreviewed");
+        if (
+          new URLSearchParams(window.location.search).get("reading") ===
+          "unread"
+        )
+          params.set("reading", "unread");
         window.history.replaceState(
           null,
           "",
@@ -535,12 +575,16 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
 
   const visibleItems = useMemo(
     () =>
-      section?.items.filter(
-        (item) =>
-          !hideReviewed ||
-          (reviewSummary?.items[item.id]?.approvalCount ?? 0) === 0,
-      ) ?? [],
-    [hideReviewed, reviewSummary, section],
+      section?.items
+        .filter(
+          (item) =>
+            !hideReviewed ||
+            (reviewSummary?.items[item.id]?.approvalCount ?? 0) === 0,
+        )
+        .filter(
+          (item) => !hideRead || readSummary?.items[item.id] === undefined,
+        ) ?? [],
+    [hideRead, hideReviewed, readSummary, reviewSummary, section],
   );
 
   const availableVolumes = useMemo(() => {
@@ -561,6 +605,23 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
           (nextReviewed ? 1 : 0) -
           (previousReviewed ? 1 : 0),
         items: { ...current?.items, [itemId]: state },
+      };
+    });
+  }
+
+  function updateReadState(itemId: string, state: TranslationReadState | null) {
+    setReadSummary((current) => {
+      const items = { ...current?.items };
+      const wasRead = items[itemId] !== undefined;
+      if (state) items[itemId] = state;
+      else delete items[itemId];
+      return {
+        corpusId: current?.corpusId ?? section?.corpusId ?? "",
+        readItems:
+          (current?.readItems ?? 0) +
+          (state && !wasRead ? 1 : 0) -
+          (!state && wasRead ? 1 : 0),
+        items,
       };
     });
   }
@@ -676,27 +737,52 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                   </p>
                 </header>
                 <div className="reader-review-filter">
-                  <label className="choice">
-                    <input
-                      type="checkbox"
-                      checked={hideReviewed}
-                      onChange={(event) => {
-                        const checked = event.target.checked;
-                        setHideReviewed(checked);
-                        const params = new URLSearchParams(
-                          window.location.search,
-                        );
-                        if (checked) params.set("review", "unreviewed");
-                        else params.delete("review");
-                        window.history.replaceState(
-                          null,
-                          "",
-                          `${window.location.pathname}?${params}${window.location.hash}`,
-                        );
-                      }}
-                    />
-                    Hide human-reviewed translations
-                  </label>
+                  <div className="reader-filter-choices">
+                    <label className="choice">
+                      <input
+                        type="checkbox"
+                        checked={hideReviewed}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setHideReviewed(checked);
+                          const params = new URLSearchParams(
+                            window.location.search,
+                          );
+                          if (checked) params.set("review", "unreviewed");
+                          else params.delete("review");
+                          window.history.replaceState(
+                            null,
+                            "",
+                            `${window.location.pathname}?${params}${window.location.hash}`,
+                          );
+                        }}
+                      />
+                      Hide human-reviewed translations
+                    </label>
+                    {(session === "active" || session === "limited") && (
+                      <label className="choice">
+                        <input
+                          type="checkbox"
+                          checked={hideRead}
+                          onChange={(event) => {
+                            const checked = event.target.checked;
+                            setHideRead(checked);
+                            const params = new URLSearchParams(
+                              window.location.search,
+                            );
+                            if (checked) params.set("reading", "unread");
+                            else params.delete("reading");
+                            window.history.replaceState(
+                              null,
+                              "",
+                              `${window.location.pathname}?${params}${window.location.hash}`,
+                            );
+                          }}
+                        />
+                        Hide translations I’ve read
+                      </label>
+                    )}
+                  </div>
                   <span>
                     Showing {visibleItems.length.toLocaleString()} of{" "}
                     {section.items.length.toLocaleString()} records in this
@@ -713,13 +799,21 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                       }
                       reviewStateLoaded={reviewSummary !== undefined}
                       canReview={session === "active"}
+                      readState={readSummary?.items[item.id]}
+                      onReadStateChange={(state) =>
+                        updateReadState(item.id, state)
+                      }
+                      readStateLoaded={readSummary !== undefined}
+                      canTrackReading={
+                        session === "active" || session === "limited"
+                      }
                       key={item.id}
                     />
                   ))}
                   {visibleItems.length === 0 && (
                     <p className="empty-reading-state">
-                      Every record in this section has a current human approval.
-                      Show reviewed translations to read them again.
+                      No records match these filters. Show reviewed or read
+                      translations to see them again.
                     </p>
                   )}
                 </div>

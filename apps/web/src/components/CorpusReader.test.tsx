@@ -431,6 +431,7 @@ describe("CorpusReader", () => {
           },
         },
       ],
+      ["/api/corpus/al-isabah/progress", { corpusId, readItems: 0, items: {} }],
       [
         "/api/corpus/al-isabah/index",
         {
@@ -492,6 +493,12 @@ describe("CorpusReader", () => {
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
         const path = typeof input === "string" ? input : input.toString();
+        if (path === `/api/corpus/al-isabah/progress/${firstItem.id}`) {
+          return {
+            ok: true,
+            json: async () => ({ state: { readAt: 1_765_000_002 } }),
+          };
+        }
         const body = responses.get(path);
         return { ok: body !== undefined, json: async () => body };
       }),
@@ -517,6 +524,17 @@ describe("CorpusReader", () => {
     expect(
       screen.getAllByRole("button", { name: "Approve this translation" }),
     ).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Mark as read" }));
+    expect(
+      await screen.findByRole("button", { name: "Mark unread" }),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Hide translations I’ve read" }),
+    );
+    expect(screen.queryByText("The first short translated record.")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Hide translations I’ve read" }),
+    );
     expect(screen.getAllByText("Review record")).toHaveLength(2);
     expect(
       screen.getByText("Human reviewed · 1 current approval"),
