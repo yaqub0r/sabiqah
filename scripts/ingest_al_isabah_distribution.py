@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -26,6 +27,7 @@ PUBLIC_SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
 SHA256 = re.compile(r"^[a-f0-9]{64}$")
 COMMIT = re.compile(r"^[a-f0-9]{40}$")
 IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
+UTC_TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
 
 
 class IngestionError(RuntimeError):
@@ -61,6 +63,13 @@ def validate_distribution(root: Path) -> tuple[dict[str, Any], list[dict[str, An
         raise IngestionError("distribution is not public-working")
     if manifest.get("canonicalPromotion") != "blocked":
         raise IngestionError("distribution incorrectly claims canonical promotion")
+    generated_at = manifest.get("generatedAt")
+    if not isinstance(generated_at, str) or not UTC_TIMESTAMP.fullmatch(generated_at):
+        raise IngestionError("distribution timestamp must use UTC Z form")
+    try:
+        datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise IngestionError("distribution timestamp is invalid") from error
     repository = manifest.get("repository", {})
     if repository.get("url") != "https://github.com/yaqub0r/al-isabah":
         raise IngestionError("distribution repository authority is not Al-Isabah")
