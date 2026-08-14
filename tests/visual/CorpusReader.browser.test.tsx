@@ -321,9 +321,7 @@ describe("CorpusReader presentation quality", () => {
     expect(cards[7]?.textContent).toContain("Review remaining translations");
     expect(
       cards[7]
-        ?.querySelector<HTMLAnchorElement>(
-          'a[href*="review=unreviewed"]',
-        )
+        ?.querySelector<HTMLAnchorElement>('a[href*="review=unreviewed"]')
         ?.getAttribute("href"),
     ).toBe("/works/al-isabah/?volume=8&review=unreviewed");
     expect(cards[0]?.textContent).toContain("Reading not available");
