@@ -23,8 +23,10 @@ comparison, pre-publication review, and promotion preparation. A canonical
 book repository owns only approved records, public provenance, stable
 identifiers, editorial history, validation, and versioned releases.
 
-FirstLight and other products consume checksum-pinned canonical releases. They
-do not own source corpora, translation candidates, or private review evidence.
+Private downstream products may consume checksum-pinned canonical releases.
+They do not own source corpora, translation candidates, or private review
+evidence, and public records must not expose their identities or implementation
+details.
 
 This contract works with `content-source-compliance` and
 `canonical-book-promotion`. It does not authorize redistribution, declare a

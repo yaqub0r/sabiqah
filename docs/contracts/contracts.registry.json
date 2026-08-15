@@ -9,6 +9,7 @@
       "paths": [
         "docs/contracts/**",
         "docs/architecture/content-governance.md",
+        "docs/templates/rights-matrix.md",
         "AGENTS.md",
         ".github/pull_request_template.md",
         ".github/workflows/contract-ack.yml",

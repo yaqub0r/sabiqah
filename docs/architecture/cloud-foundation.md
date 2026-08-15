@@ -10,9 +10,9 @@ Sabiqah begins as a Cloudflare-native application. Cloudflare will provide DNS,
 edge application hosting, server-side functions, and R2 object storage. AWS is
 not part of the initial architecture.
 
-This keeps storage and delivery inside one provider, reduces identity and
-billing boundaries, and matches the FirstLight design. AWS may be introduced
-later only when a concrete requirement outweighs the added operational cost.
+This keeps storage and delivery inside one provider and reduces identity and
+billing boundaries. AWS may be introduced later only when a concrete
+requirement outweighs the added operational cost.
 
 ## Initial topology
 

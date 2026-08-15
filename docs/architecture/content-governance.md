@@ -38,6 +38,22 @@ artifact must be assessed separately from its availability.
 
 ## Trust boundaries
 
+### Public licensing boundary
+
+The repository's licenses attach to material by authorship and rights basis,
+not merely by directory or delivery channel. Sabiqah-authored software and
+code-adjacent implementation materials use PolyForm Noncommercial 1.0.0.
+Sabiqah-authored translations and other intentionally published scholarly
+content use CC BY-NC-SA 4.0 unless a more specific notice applies. Third-party
+materials retain their existing terms and must carry their required
+attribution. Private evidence is neither published nor licensed.
+
+Every book or independently released content set must complete a rights matrix
+from [`docs/templates/rights-matrix.md`](../templates/rights-matrix.md). The
+matrix records each component's creator, role, rights basis, license or status,
+attribution, publication classification, exact scope, and unresolved limits.
+It supplements rather than replaces source-authority and promotion manifests.
+
 ### Private research evidence
 
 Restricted scans, OCR, modern translations, detailed comparison output,
@@ -51,6 +67,10 @@ provider landing-page links, source hashes, rights classifications, dates
 checked, and independently written editorial conclusions. They must not expose
 credentials, private storage locations, access instructions, or restricted
 expression.
+
+Public records may state that generic private downstream products consume
+pinned releases. They must not name or describe private systems or disclose
+their code, schemas, APIs, operations, access information, or evidence.
 
 ### Canonical book repositories
 
