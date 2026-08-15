@@ -48,8 +48,19 @@ pull requests.
   translating, promoting, or presenting scholarly content.
 - Treat public availability as provenance, not permission to reproduce, adapt,
   or redistribute an artifact.
+- Apply the repository licenses by material, not by file location alone:
+  Sabiqah software and code-adjacent implementation materials use PolyForm
+  Noncommercial 1.0.0; Sabiqah-authored translations and intentionally
+  published scholarly content use CC BY-NC-SA 4.0; third-party materials retain
+  their existing terms; private evidence is neither published nor licensed.
+- Consult `NOTICE.md`, `CONTENT-LICENSE.md`, and the applicable per-book rights
+  matrix before publishing content. Do not infer that a repository-level
+  license covers third-party material or private evidence.
 - Keep restricted research witnesses and private comparison evidence out of
   public repositories and deployment artifacts.
+- Describe private downstream products generically in public artifacts. Never
+  expose private system names, code, schemas, APIs, operational details, access
+  information, or private evidence.
 - Before storing workstation-only restricted evidence, read
   `docs/contracts/private-evidence-ingestion.md` and
   `docs/operations/private-evidence-ingestion.md`, then use the supported

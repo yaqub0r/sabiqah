@@ -8,8 +8,9 @@ Tracking issue: [#12](https://github.com/yaqub0r/sabiqah/issues/12)
 
 Sabiqah is the public reader and collaborative-review application. Al-Isabah
 and future book repositories own canonical scholarly data, evidence, pull
-requests, and versioned releases. FirstLight consumes pinned releases rather
-than Sabiqah's operational database.
+requests, and versioned releases. Private downstream products consume pinned
+releases rather than Sabiqah's operational database; public documentation does
+not identify or describe those private systems.
 
 The beta uses:
 

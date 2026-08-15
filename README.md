@@ -13,6 +13,15 @@ release remain outside public repositories and deployment artifacts. See the
 [content-governance operating model](docs/architecture/content-governance.md)
 for repository responsibilities and trust boundaries.
 
+## Licensing and public boundary
+
+Sabiqah software is licensed under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md). Sabiqah-authored
+translations and other intentionally published scholarly content are licensed
+under [CC BY-NC-SA 4.0](CONTENT-LICENSE.md). Third-party materials retain their
+existing terms, and private research evidence is neither published nor
+licensed. See [NOTICE.md](NOTICE.md) for the complete boundary.
+
 ## Repository status
 
 The Cloudflare foundation and R2 bootstrap are complete. The first development
@@ -42,7 +51,9 @@ production remains protected and undeployed.
   reader/editor application.
 - **Al-Isabah** owns its approved canonical scholarly dataset, book-specific
   provenance and editorial history, and versioned releases.
-- **FirstLight** consumes pinned scholarly releases as a downstream product.
+- Private downstream products may consume pinned scholarly releases without
+  becoming owners of Sabiqah workflows, private evidence, or canonical book
+  content.
 - Restricted research witnesses belong in governed private storage, never in a
   public Git repository or deployment artifact. Approved public facsimiles and
   page images belong in versioned object storage rather than Git.
