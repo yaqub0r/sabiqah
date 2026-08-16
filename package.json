@@ -13,6 +13,7 @@
     "cleanup:generated": "node tools/cleanup-generated.mjs",
     "cleanup:test": "node --test tools/cleanup-generated.node-test.mjs",
     "compatibility:al-isabah": "python scripts/verify_al_isabah_distribution.py",
+    "compatibility:al-isabah-legacy": "python scripts/verify_al_isabah_legacy_binding.py",
     "contracts:test": "node --test tools/contracts/check-contract-ack.node-test.mjs",
     "dev": "pnpm --filter @sabiqah/web dev",
     "dev:worker": "pnpm build && wrangler dev",

@@ -2,7 +2,8 @@
 
 - **Status:** Accepted
 - **Issues:** [#114](https://github.com/yaqub0r/sabiqah/issues/114),
-  [#123](https://github.com/yaqub0r/sabiqah/issues/123)
+  [#123](https://github.com/yaqub0r/sabiqah/issues/123), and
+  [#125](https://github.com/yaqub0r/sabiqah/issues/125)
 
 ## Decision
 
@@ -83,6 +84,33 @@ record's authority, artifact hash, attribution, license, rights matrix, review
 state, or promotion state. Legacy records are never assigned to the new
 distribution cohort.
 
+The deployed schema-4 corpus predates complete corpus-level rights metadata and
+therefore cannot use that generic path. Its only compatibility path is the
+versioned one-time attestation at
+`evidence/legacy-bindings/al-isabah-active-schema-4.v1.json`. The network-free
+verifier binds the exact active pointer, schema, six core-object hashes,
+complete manifest inventory, member count and ID/content digests, section
+inventory, source authority, activation run, legacy release/tag/asset digest,
+rights-policy blobs, approval identity, and one allowed schema-2 target release.
+It recomputes the corpus inventory and checks supplied GitHub metadata; a name
+or corpus-ID match alone has no authority.
+
+Existing alignment evidence divides the bound corpus into two legacy cohorts:
+the 1,565-record Sabiqah v11 remediation and the 1,731-record Al-Isabah af7
+distribution lineage. They retain separate producer and English-attribution
+claims while sharing the independently verified OpenITI Arabic authority and
+Arabic rights. All 3,296 records remain explicitly unreviewed, public-working,
+and promotion-blocked. The attestation does not make a legal conclusion,
+approve restricted evidence or modern apparatus, claim ACO/OpenITI edition or
+page identity, or transfer schema-2 provenance to legacy members.
+
+The binding is applicable only while the exact schema-4 pointer is active and
+only with `public-working-623e4d341e24b33496629036aa8bb1dd3a405f2c` as the
+schema-5 target. Repeating the same offline construction is deterministic, but
+using the binding with a changed pointer, member, object, claim, target, or a
+schema-5 base fails closed. The resulting corpus manifest and activation plan
+record the binding ID and file digest.
+
 A later approved correction may replace the same stable ID. The new cohort
 then records the superseded cohort and the exact count, sorted IDs, and hash;
 the earlier cohort and its immutable upstream corpus remain recorded even when
@@ -119,6 +147,14 @@ pnpm compatibility:al-isabah -- \
   --source-authority evidence/source-authorities/al-isabah.v1.json
 ```
 
+For the one-time schema-4 migration, run
+`scripts/verify_al_isabah_legacy_binding.py` with the exact pointer, base corpus,
+attestation, legacy release/tag metadata, rights matrix, approval issue,
+activation run, and target release/tag/manifest metadata. The ingestion command
+invokes this verifier again before it creates output. Compatibility checks are
+read-only and offline after those non-content metadata files and corpus objects
+have been supplied; they print no corpus content.
+
 This is a consumer compatibility check. It does not make Sabiqah the canonical
 book owner, publish a release, upload a corpus, or change an activation pointer.
 
@@ -140,3 +176,8 @@ book owner, publish a release, upload a corpus, or change an activation pointer.
   candidate, replace `current.json`, write D1, deploy, or promote content. Those
   remain separately approved operations; the ingestion and publication
   workflows may stay manually disabled while this contract is reviewed.
+- After a verified schema-5 pointer supersedes the bound schema-4 corpus, remove
+  the workflow's legacy-evidence fetch and arguments in a reviewed cleanup. Keep
+  the attestation in Git as historical migration evidence, preserve schema-4
+  read/rollback support, and never reuse the attestation to rebuild another
+  base or target.

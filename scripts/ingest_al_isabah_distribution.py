@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -16,6 +17,10 @@ from rebuild_al_isabah_public_corpus import (
     render_arabic_poetry,
 )
 from verify_al_isabah_distribution import CompatibilityError, verify_distribution
+from verify_al_isabah_legacy_binding import (
+    LegacyBindingError,
+    verify_legacy_binding,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +29,17 @@ HONORIFIC_REGISTRY = (
 )
 SCHEMA_VERSION = "5.0.0"
 LEGACY_SCHEMA_VERSION = "4.0.0"
+
+
+@dataclass(frozen=True)
+class LegacyBindingInputs:
+    binding: Path
+    pointer: Path
+    legacy_release_metadata: Path
+    legacy_tag_ref: Path
+    approval_issue: Path
+    approval_comment: Path
+    activation_run: Path
 
 
 class IngestionError(RuntimeError):
@@ -542,12 +558,55 @@ def migrate_legacy_cohort(
     }]
 
 
+def migrate_attested_legacy_cohorts(
+    items: list[dict[str, Any]], cohorts: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_member: dict[str, dict[str, Any]] = {}
+    for cohort in cohorts:
+        for item_id in cohort["membership"]["itemIds"]:
+            if item_id in by_member:
+                raise IngestionError("legacy binding cohort membership overlaps")
+            by_member[item_id] = cohort
+    if set(by_member) != {item["id"] for item in items}:
+        raise IngestionError("legacy binding leaves records unassigned or unknown")
+    for item in items:
+        cohort = by_member[item["id"]]
+        source_binding = cohort["source"]
+        rights = cohort["rights"]
+        source = item.setdefault("source", {})
+        provenance = item.setdefault("provenance", {})
+        item["schemaVersion"] = SCHEMA_VERSION
+        item["cohortId"] = cohort["id"]
+        source.update({
+            "authorityId": source_binding["authorityId"],
+            "producerAuthorityId": source_binding["producerAuthorityId"],
+            "sourceRepository": source_binding["repository"],
+            "sourceCommit": source_binding["commit"],
+            "sourceArtifactSha256": source_binding["artifactSha256"],
+            "license": rights["arabicSource"]["license"],
+            "attribution": rights["arabicSource"]["attribution"],
+            "englishRights": rights["englishTranslation"],
+            "rightsMatrix": rights["matrix"],
+        })
+        provenance.update({
+            "sourceAuthorityId": source_binding["authorityId"],
+            "producerAuthorityId": source_binding["producerAuthorityId"],
+            "sourceRepository": source_binding["repository"],
+            "sourceCommit": source_binding["commit"],
+            "sourceArtifactSha256": source_binding["artifactSha256"],
+        })
+    return json.loads(json.dumps(cohorts))
+
+
 def carried_cohorts(
     base_summary: dict[str, Any],
     items: list[dict[str, Any]],
+    attested_cohorts: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     version = str(base_summary.get("schemaVersion", ""))
     if version == LEGACY_SCHEMA_VERSION:
+        if attested_cohorts is not None:
+            return migrate_attested_legacy_cohorts(items, attested_cohorts)
         return migrate_legacy_cohort(base_summary, items)
     if version != SCHEMA_VERSION:
         raise IngestionError("base corpus has an unsupported major schema version")
@@ -637,6 +696,7 @@ def ingest(
     distribution: Path, base: Path, output: Path, activated_at: str,
     archive: Path, release_metadata: Path, tag_ref: Path,
     rights_matrix: Path, source_authority: Path,
+    legacy_binding: LegacyBindingInputs | None = None,
 ) -> dict[str, Any]:
     if output.exists():
         raise IngestionError(f"output already exists: {output}")
@@ -650,6 +710,33 @@ def ingest(
     base_index = load(base / "index.json")
     base_quarantine = load(base / "quarantine.json")
     base_exclusions = load(base / "exclusions.json")
+    attested_cohorts = None
+    legacy_binding_record = None
+    if base_summary.get("schemaVersion") != LEGACY_SCHEMA_VERSION and legacy_binding is not None:
+        raise IngestionError("legacy binding cannot be reused for this base schema")
+    if base_summary.get("schemaVersion") == LEGACY_SCHEMA_VERSION and legacy_binding is not None:
+        try:
+            attested_cohorts, legacy_binding_record = verify_legacy_binding(
+                legacy_binding.binding,
+                base,
+                legacy_binding.pointer,
+                legacy_binding.legacy_release_metadata,
+                legacy_binding.legacy_tag_ref,
+                rights_matrix,
+                source_authority,
+                ROOT / "CONTENT-LICENSE.md",
+                ROOT / "NOTICE.md",
+                ROOT / "docs" / "attribution" / "al-isabah.md",
+                legacy_binding.approval_issue,
+                legacy_binding.approval_comment,
+                legacy_binding.activation_run,
+                distribution / "manifest.json",
+                release_metadata,
+                tag_ref,
+                SCHEMA_VERSION,
+            )
+        except LegacyBindingError as error:
+            raise IngestionError(str(error)) from error
     distribution_commit = manifest["repository"]["commit"]
     corpus_id = "pending-content-addressed-corpus"
     incoming_ids = {record["id"] for record in records}
@@ -658,7 +745,7 @@ def ingest(
         item = load(base / "items" / f"{listed['id']}.json")
         item["corpusId"] = corpus_id
         items.append(item)
-    cohorts = carried_cohorts(base_summary, items)
+    cohorts = carried_cohorts(base_summary, items, attested_cohorts)
     replaced_members: dict[str, list[str]] = defaultdict(list)
     for item in items:
         if item["id"] in incoming_ids:
@@ -699,6 +786,7 @@ def ingest(
     candidate_fingerprint = digest_bytes(canonical_json({
         "schemaVersion": SCHEMA_VERSION,
         "distributionManifestSha256": digest_file(distribution / "manifest.json"),
+        "legacyBinding": legacy_binding_record,
         "cohorts": cohorts,
         "items": fingerprint_items,
     }))
@@ -796,6 +884,8 @@ def ingest(
         "objectCount": len(files),
         "files": files,
     }
+    if legacy_binding_record is not None:
+        corpus_manifest["legacyBindings"] = [legacy_binding_record]
     write_json(output / "manifest.json", corpus_manifest)
     activation = {
         "schemaVersion": "1.0.0",
@@ -811,6 +901,8 @@ def ingest(
             "previousPrefix": f"public-corpora/al-isabah/{base_summary['corpus']['id']}",
         },
     }
+    if legacy_binding_record is not None:
+        activation["legacyBinding"] = legacy_binding_record
     write_json(output.parent / "activation.json", activation)
     return activation
 
@@ -826,7 +918,24 @@ def main() -> int:
     parser.add_argument("--tag-ref", required=True, type=Path)
     parser.add_argument("--rights-matrix", required=True, type=Path)
     parser.add_argument("--source-authority", required=True, type=Path)
+    parser.add_argument("--legacy-binding", type=Path)
+    parser.add_argument("--legacy-pointer", type=Path)
+    parser.add_argument("--legacy-release-metadata", type=Path)
+    parser.add_argument("--legacy-tag-ref", type=Path)
+    parser.add_argument("--legacy-approval-issue", type=Path)
+    parser.add_argument("--legacy-approval-comment", type=Path)
+    parser.add_argument("--legacy-activation-run", type=Path)
     args = parser.parse_args()
+    legacy_values = [
+        args.legacy_binding, args.legacy_pointer, args.legacy_release_metadata,
+        args.legacy_tag_ref, args.legacy_approval_issue, args.legacy_approval_comment,
+        args.legacy_activation_run,
+    ]
+    if any(legacy_values) and not all(legacy_values):
+        parser.error("all legacy binding evidence arguments are required together")
+    legacy_binding = LegacyBindingInputs(*(
+        value.resolve() for value in legacy_values
+    )) if all(legacy_values) else None
     activation = ingest(
         args.distribution.resolve(),
         args.base_corpus.resolve(),
@@ -837,6 +946,7 @@ def main() -> int:
         args.tag_ref.resolve(),
         args.rights_matrix.resolve(),
         args.source_authority.resolve(),
+        legacy_binding,
     )
     print(f"Built {activation['corpusId']} from {activation['distributionId']}.")
     return 0

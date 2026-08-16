@@ -1,0 +1,268 @@
+{
+  "schema": "sabiqah.al-isabah-legacy-provenance-binding.v1",
+  "bindingId": "al-isabah-active-schema-4-2026-08-16",
+  "status": "approved-one-time",
+  "base": {
+    "pointer": {
+      "activatedAt": "2026-08-15T21:58:25Z",
+      "corpusId": "al-isabah-public-openiti-5835c18-book-af7e16223f7a",
+      "distributionCommit": "af7e16223f7a2793101aa9f13e45c74c57ea0744",
+      "distributionId": "al-isabah-public-working-af7e16223f7a",
+      "distributionManifestSha256": "c947bf7a2c16ed20adf8c0045eb92fbe28375fc04548a50c7cfa2d23608c4981",
+      "prefix": "public-corpora/al-isabah/al-isabah-public-openiti-5835c18-book-af7e16223f7a",
+      "schemaVersion": "1.0.0"
+    },
+    "pointerSha256": "6e1c3a46b3ffac8669d942eb3b8410614f790b95e7b91b9414fc209428987bd5",
+    "corpusSchemaVersion": "4.0.0",
+    "coreObjects": {
+      "exclusions.json": "db90dfce9954a438420c915a43ca48c5eb7fc59e8e89d908cc6c9efcecaab3e1",
+      "index.json": "4634a78dd7be68dc64bb0d61493285a11e6065a17073bc4bf28a0a3adcfc66cc",
+      "quarantine.json": "f4a14e02c98807f96c20c5bf8ac13dfa299ba6e380cc7ee1005ab350673b8993",
+      "summary.json": "87bfd9308208de0872bc85050e818536e5376f0ecc85945c19b728a128797d3b"
+    },
+    "manifestSha256": "3d50280c0c73f2a8bbf8c5caae2fbe90077f71c3381c8446a5f437bc655efb8b",
+    "objectCount": 3363,
+    "objectInventorySha256": "0691c676a5daa910898c5a480b75450c293d3ddd9465bd4e7f538bf73e1a5cc5",
+    "membership": {
+      "itemCount": 3296,
+      "itemIdsSha256": "3b8fbb2992e57dd2f8b960b595ffb31529ab3acb6396511c61beeebac5f6881b",
+      "itemObjectsSha256": "7ee149b2d6a9d74b98a872dd0d2e44a5080c4e2a915ac8c96c7f2eb0be26f4df"
+    },
+    "sectionCount": 63,
+    "sectionObjectsSha256": "c0b130350a2ba152d86896976109e7b221168655610e660a706ed169245d55e8",
+    "counts": {
+      "entries": 3102,
+      "humanReviewed": 0,
+      "needsAttention": 1070,
+      "passages": 194,
+      "quarantined": 14,
+      "sourceInventory": 3310,
+      "translated": 3296,
+      "unresolvedItems": 1271
+    },
+    "state": {
+      "publicationStatus": "public-working",
+      "promotionStatus": "blocked"
+    }
+  },
+  "source": {
+    "authorityId": "al-isabah-openiti-5835c18-aco-v1",
+    "repository": "https://github.com/OpenITI/0875AH",
+    "commit": "5835c183b8bbf4ea454d5c1be2b168b669403771",
+    "artifactSha256": "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea",
+    "arabicRights": {
+      "license": {
+        "spdx": "CC-BY-NC-SA-4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "attribution": "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's al-Isabah fi Tamyiz al-Sahabah, commit 5835c183b8bbf4ea454d5c1be2b168b669403771"
+    }
+  },
+  "cohorts": [
+    {
+      "id": "legacy:sabiqah-v11",
+      "selector": {
+        "field": "source.alignment.method",
+        "equals": "stable-sequence-map-and-normalized-body-comparison-v1"
+      },
+      "membership": {
+        "itemCount": 1565,
+        "itemIdsSha256": "bad5701ed42ae0937091a58f550e5222ec85bc9bb196a650391e46cd88c4f2bf",
+        "itemObjectsSha256": "c89b269fee9f4f644a722e2db4430d34d79044573857c91d29ba4859265a73d5"
+      },
+      "source": {
+        "producerAuthorityId": "sabiqah-remediation-v11"
+      },
+      "rights": {
+        "arabicSource": {
+          "license": {
+            "spdx": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+          },
+          "attribution": "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's al-Isabah fi Tamyiz al-Sahabah, commit 5835c183b8bbf4ea454d5c1be2b168b669403771"
+        },
+        "englishTranslation": {
+          "license": {
+            "spdx": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+          },
+          "attribution": "Sabiqah contributors"
+        },
+        "matrix": {
+          "id": "al-isabah-rights-2026-08-15",
+          "schema": "al-isabah.book-rights-matrix.v1",
+          "decision": "approved-under-cc-by-nc-sa-4.0",
+          "reviewedOn": "2026-08-15",
+          "followUp": "required-on-change"
+        },
+        "excludedMaterial": [
+          "restricted or reference-only scans, OCR, witness translations, and comparison evidence",
+          "modern introductions, apparatus, annotations, indices, and private evidence",
+          "canonical promotion and human scholarly approval"
+        ]
+      },
+      "state": {
+        "publicationStatus": "public-working",
+        "promotionStatus": "blocked",
+        "completeness": "carried-forward"
+      },
+      "evidenceKind": "sabiqah-authored"
+    },
+    {
+      "id": "legacy:al-isabah-af7e16223f7a",
+      "selector": {
+        "field": "source.alignment.method",
+        "equals": "al-isabah-public-distribution-v1"
+      },
+      "membership": {
+        "itemCount": 1731,
+        "itemIdsSha256": "22aa3b8b7165e87278a201057e0895fc6be6eef444da34fcc2bbd59e5299af59",
+        "itemObjectsSha256": "02d27608a3e821700f66bc0e9e6cf9dd051043c28da26da972c957336ea1cf07"
+      },
+      "source": {
+        "producerAuthorityId": "al-isabah-public-working-af7e16223f7a"
+      },
+      "rights": {
+        "arabicSource": {
+          "license": {
+            "spdx": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+          },
+          "attribution": "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's al-Isabah fi Tamyiz al-Sahabah, commit 5835c183b8bbf4ea454d5c1be2b168b669403771"
+        },
+        "englishTranslation": {
+          "license": {
+            "spdx": "CC-BY-NC-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+          },
+          "attribution": "Al-Isabah project, al-Isabah fi Tamyiz al-Sahabah public scholarly content"
+        },
+        "matrix": {
+          "id": "al-isabah-rights-2026-08-15",
+          "schema": "al-isabah.book-rights-matrix.v1",
+          "decision": "approved-under-cc-by-nc-sa-4.0",
+          "reviewedOn": "2026-08-15",
+          "followUp": "required-on-change"
+        },
+        "excludedMaterial": [
+          "restricted or reference-only scans, OCR, witness translations, and comparison evidence",
+          "modern introductions, apparatus, annotations, indices, and private evidence",
+          "canonical promotion and human scholarly approval"
+        ]
+      },
+      "state": {
+        "publicationStatus": "public-working",
+        "promotionStatus": "blocked",
+        "completeness": "carried-forward"
+      },
+      "evidenceKind": "al-isabah-project-authored"
+    }
+  ],
+  "evidence": {
+    "sourceAuthority": {
+      "repository": "https://github.com/yaqub0r/sabiqah",
+      "commit": "780436da5620a66db6a89d65105c953510c1c02f",
+      "path": "evidence/source-authorities/al-isabah.v1.json",
+      "gitBlobSha1": "c2250db9d49f8f006bc137060ba455789c6578e6",
+      "sha256": "2c80e4017055dceb73e1779f5730e31fbcebff29263be963bd1574d240815b19"
+    },
+    "contentLicense": {
+      "repository": "https://github.com/yaqub0r/sabiqah",
+      "commit": "abd8e97540e4c6d63c33da1869cfcea41299ed75",
+      "path": "CONTENT-LICENSE.md",
+      "gitBlobSha1": "e95be7d664ddd4d907c819c7d1c3cf44c684c962",
+      "sha256": "87d63520cd6ccaa59eba5f3671d40cfefe73df5e18b59eb58dce725a9326b8f1"
+    },
+    "notice": {
+      "repository": "https://github.com/yaqub0r/sabiqah",
+      "commit": "abd8e97540e4c6d63c33da1869cfcea41299ed75",
+      "path": "NOTICE.md",
+      "gitBlobSha1": "ade842ea4ee8e22e52310c1579ec1686d8654339",
+      "sha256": "4eed865c5c2da3ac0f733252c78bb4c9a6472e403ffe3aec53dba1c6ae6fe9fb"
+    },
+    "attribution": {
+      "repository": "https://github.com/yaqub0r/sabiqah",
+      "commit": "abd8e97540e4c6d63c33da1869cfcea41299ed75",
+      "path": "docs/attribution/al-isabah.md",
+      "gitBlobSha1": "a2c344e3609045293cea21142ecf947bdf56ab93",
+      "sha256": "aeb2a6a0a23e301f3c2f09a9299134794af875ed8fcc6d5681a321aa95145448"
+    },
+    "rightsMatrix": {
+      "repository": "https://github.com/yaqub0r/al-isabah",
+      "commit": "623e4d341e24b33496629036aa8bb1dd3a405f2c",
+      "path": "compliance/rights-matrix.al-isabah.v1.json",
+      "gitBlobSha1": "8ff0204185137d0eccd54b307ca48aff02515f0f",
+      "sha256": "f79d79853bd7b4ff1c82fa8e032c2075f45a7e405348cfcad140c51951f6b3f9"
+    },
+    "legacyRelease": {
+      "repository": "https://github.com/yaqub0r/al-isabah",
+      "releaseId": 370745975,
+      "tag": "public-working-af7e16223f7a2793101aa9f13e45c74c57ea0744",
+      "commit": "af7e16223f7a2793101aa9f13e45c74c57ea0744",
+      "assetId": 514742854,
+      "assetName": "al-isabah-public-distribution-af7e16223f7a2793101aa9f13e45c74c57ea0744.zip",
+      "assetBytes": 1346787,
+      "assetSha256": "8166b3514f69947fa6aa18fba0ceaf268dc8c2328c2f2af1baa7acf1e2526cf2"
+    },
+    "activationRun": {
+      "id": 31910853487,
+      "node_id": "WFR_kwLOT0otss8AAAAHbgj7bw",
+      "workflow_id": 334525419,
+      "head_sha": "442866459b4c8ce60929a6002ed41fab68992e18",
+      "event": "schedule",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-08-15T21:57:36Z",
+      "run_started_at": "2026-08-15T21:57:36Z",
+      "updated_at": "2026-08-15T21:59:12Z"
+    }
+  },
+  "approval": {
+    "repository": "https://github.com/yaqub0r/sabiqah",
+    "issueNumber": 125,
+    "nodeId": "I_kwDOT0otss8AAAABM7Sx-A",
+    "actor": {
+      "login": "yaqub0r",
+      "id": 18100406,
+      "authority": "repository-owner"
+    },
+    "recordedAt": "2026-08-16T02:58:47Z",
+    "decision": "approved-one-time-compatibility-migration",
+    "bodySha256": "85ca68b161630ede945a560df3c377f657bb1cd2f1e207f6c7a71a6688abca4d",
+    "scopeSha256": "7b8d1bc9571a25f971969df9713ef202800f7812e41d2839dd277295907857da",
+    "comment": {
+      "id": 5305522508,
+      "nodeId": "IC_kwDOT0otss8AAAABPDvZTA",
+      "createdAt": "2026-08-16T03:25:25Z",
+      "bodySha256": "e29521bdd1736f6e4b4860408461226faf8518ee9594a21c8fa075a4a70f46cc"
+    }
+  },
+  "allowedMigration": {
+    "schemaVersion": "5.0.0",
+    "release": {
+      "repository": "https://github.com/yaqub0r/al-isabah",
+      "releaseId": 371171802,
+      "tag": "public-working-623e4d341e24b33496629036aa8bb1dd3a405f2c",
+      "commit": "623e4d341e24b33496629036aa8bb1dd3a405f2c",
+      "assetId": 516135794,
+      "assetName": "al-isabah-public-distribution-623e4d341e24b33496629036aa8bb1dd3a405f2c.zip",
+      "assetBytes": 1294248,
+      "assetSha256": "926bca92532031bcbd67676bb46d5ab01f2dad99709ac99e86bda6d8e8ab38d5"
+    },
+    "oneTime": true,
+    "reusePolicy": "exact-active-schema-4-pointer-only"
+  },
+  "nonClaims": [
+    "This binding does not claim human scholarly review or verification of any member.",
+    "This binding does not authorize canonical promotion or production rollout.",
+    "This binding is an operational provenance and rights decision, not legal advice.",
+    "This binding does not approve restricted witnesses, private evidence, modern apparatus, OCR, or comparison expression.",
+    "This binding does not claim that the independent ACO witness is edition- or page-identical to the OpenITI transcription.",
+    "This binding does not claim that the mutable GitHub release record is immutable; it binds the tag target, asset identity, byte count, and GitHub-computed digest and fails if they change.",
+    "This binding does not transfer schema-v2 producer provenance or rights to legacy members."
+  ],
+  "retirement": {
+    "condition": "Retire this binding and its workflow evidence fetch after the bound schema-4 pointer is superseded by a verified schema-5 corpus and rollback no longer requires rebuilding schema 4.",
+    "preserve": "Keep the attestation in Git as migration evidence; never reuse it for another pointer, base corpus, target release, or schema."
+  }
+}
