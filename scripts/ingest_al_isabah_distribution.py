@@ -22,7 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 HONORIFIC_REGISTRY = (
     ROOT / "packages" / "release-model" / "src" / "honorifics.registry.json"
 )
-SCHEMA_VERSION = "4.0.0"
+SCHEMA_VERSION = "5.0.0"
+LEGACY_SCHEMA_VERSION = "4.0.0"
 
 
 class IngestionError(RuntimeError):
@@ -41,6 +42,15 @@ def digest_bytes(value: bytes) -> str:
 
 def digest_file(path: Path) -> str:
     return digest_bytes(path.read_bytes())
+
+
+def membership(item_ids: Iterable[str]) -> dict[str, Any]:
+    ordered = sorted(item_ids)
+    return {
+        "itemCount": len(ordered),
+        "itemIdsSha256": digest_bytes(canonical_json(ordered)),
+        "itemIds": ordered,
+    }
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -193,6 +203,9 @@ def source_metadata(
     metadata = {
         "authorityId": binding["sourceAuthorityId"],
         "producerAuthorityId": binding["producerAuthorityId"],
+        "sourceRepository": binding["sourceRepository"],
+        "sourceCommit": binding["sourceCommit"],
+        "sourceArtifactSha256": source["artifactSha256"],
         "entryNumber": entry_number,
         "pages": [],
         "sourceTextSha256": display_hash,
@@ -214,6 +227,8 @@ def source_metadata(
     provenance = {
         "sourceAuthorityId": binding["sourceAuthorityId"],
         "producerAuthorityId": binding["producerAuthorityId"],
+        "sourceRepository": binding["sourceRepository"],
+        "sourceCommit": binding["sourceCommit"],
         "sourceArtifactSha256": source["artifactSha256"],
         "sourceTextSha256": display_hash,
         "sourceExactTextSha256": source["exactTextSha256"],
@@ -238,6 +253,7 @@ def direct_item(
     by_character: dict[str, dict[str, Any]],
     by_expanded: dict[str, dict[str, Any]],
     binding: dict[str, Any],
+    cohort_id: str,
 ) -> list[dict[str, Any]]:
     formulas_by_record: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for formula in record.get("formulas", []):
@@ -270,6 +286,7 @@ def direct_item(
             {
                 "schemaVersion": SCHEMA_VERSION,
                 "corpusId": corpus_id,
+                "cohortId": cohort_id,
                 "id": passage["id"],
                 "kind": "passage",
                 "sequence": record["sourceOrdinal"] * 100 - len(preceding) + offset,
@@ -321,6 +338,7 @@ def direct_item(
         {
             "schemaVersion": SCHEMA_VERSION,
             "corpusId": corpus_id,
+            "cohortId": cohort_id,
             "id": record["id"],
             "kind": "entry",
             "sequence": record["sourceOrdinal"] * 100,
@@ -381,6 +399,7 @@ def item_page(item: dict[str, Any]) -> int | None:
 def list_item(item: dict[str, Any], section_id: str, page: int | None) -> dict[str, Any]:
     result = {
         "id": item["id"],
+        "cohortId": item["cohortId"],
         "kind": item["kind"],
         "sequence": item["sequence"],
         "printedEntryNumber": item["printedEntryNumber"],
@@ -407,6 +426,168 @@ def list_item(item: dict[str, Any], section_id: str, page: int | None) -> dict[s
             ]
         )
     )
+    return result
+
+
+def cohort_from_binding(
+    cohort_id: str,
+    binding: dict[str, Any],
+    item_ids: Iterable[str],
+    manifest: dict[str, Any],
+    supersedes: list[dict[str, Any]],
+) -> dict[str, Any]:
+    cohort = {
+        "id": cohort_id,
+        "kind": "distribution-v2",
+        "source": {
+            "authorityId": binding["sourceAuthorityId"],
+            "producerAuthorityId": binding["producerAuthorityId"],
+            "repository": binding["sourceRepository"],
+            "commit": binding["sourceCommit"],
+            "artifactSha256": binding["sourceArtifactSha256"],
+        },
+        "rights": {
+            "arabicSource": {
+                "license": binding["sourceLicense"],
+                "attribution": binding["sourceAttribution"],
+            },
+            "englishTranslation": {
+                "license": binding["englishLicense"],
+                "attribution": binding["englishAttribution"],
+            },
+            "matrix": binding["rightsMatrix"],
+            "excludedMaterial": binding["excludedMaterial"],
+        },
+        "state": {
+            "publicationStatus": "public-working",
+            "promotionStatus": "blocked",
+            "completeness": "partial-release",
+        },
+        "membership": membership(item_ids),
+        "upstream": {
+            "distributionId": manifest["distributionId"],
+            "releaseTag": binding["tag"],
+            "assetName": binding["asset"],
+            "assetSha256": binding["sha256"],
+        },
+    }
+    if supersedes:
+        cohort["supersedes"] = supersedes
+    return cohort
+
+
+def migrate_legacy_cohort(
+    base_summary: dict[str, Any],
+    items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    corpus = base_summary.get("corpus", {})
+    rights = corpus.get("rights")
+    required = (
+        corpus.get("id"), corpus.get("sourceAuthorityId"),
+        corpus.get("sourceRepository"), corpus.get("sourceCommit"),
+        corpus.get("sourceArtifactSha256"), rights,
+    )
+    if any(value in (None, "", {}) for value in required):
+        raise IngestionError("legacy corpus lacks verified source or rights metadata")
+    cohort_id = f"legacy:{corpus['id']}"
+    producer_authorities = {
+        item.get("source", {}).get("producerAuthorityId") for item in items
+        if item.get("source", {}).get("producerAuthorityId")
+    }
+    if len(producer_authorities) > 1:
+        raise IngestionError("legacy corpus has contradictory producer authorities")
+    for item in items:
+        source = item.get("source", {})
+        provenance = item.get("provenance", {})
+        if (
+            source.get("authorityId") != corpus["sourceAuthorityId"]
+            or source.get("license") != corpus.get("license")
+            or source.get("attribution") != rights.get("arabicSource", {}).get("attribution")
+            or source.get("englishRights") != rights.get("englishTranslation")
+            or source.get("rightsMatrix") != rights.get("matrix")
+            or provenance.get("sourceArtifactSha256") != corpus["sourceArtifactSha256"]
+        ):
+            raise IngestionError("legacy record cannot be rebound to corpus metadata")
+        item["schemaVersion"] = SCHEMA_VERSION
+        item["cohortId"] = cohort_id
+        source.update({
+            "sourceRepository": corpus["sourceRepository"],
+            "sourceCommit": corpus["sourceCommit"],
+            "sourceArtifactSha256": corpus["sourceArtifactSha256"],
+        })
+        provenance.update({
+            "sourceRepository": corpus["sourceRepository"],
+            "sourceCommit": corpus["sourceCommit"],
+        })
+    source = {
+        "authorityId": corpus["sourceAuthorityId"],
+        "repository": corpus["sourceRepository"],
+        "commit": corpus["sourceCommit"],
+        "artifactSha256": corpus["sourceArtifactSha256"],
+    }
+    if producer_authorities:
+        source["producerAuthorityId"] = next(iter(producer_authorities))
+    return [{
+        "id": cohort_id,
+        "kind": "legacy-schema-4",
+        "source": source,
+        "rights": rights,
+        "state": {
+            "publicationStatus": corpus.get("publicationStatus", "public-working"),
+            "promotionStatus": corpus.get("promotionStatus"),
+            "completeness": "carried-forward",
+        },
+        "membership": membership(item["id"] for item in items),
+        "upstream": {"corpusId": corpus["id"], "schemaVersion": LEGACY_SCHEMA_VERSION},
+    }]
+
+
+def carried_cohorts(
+    base_summary: dict[str, Any],
+    items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    version = str(base_summary.get("schemaVersion", ""))
+    if version == LEGACY_SCHEMA_VERSION:
+        return migrate_legacy_cohort(base_summary, items)
+    if version != SCHEMA_VERSION:
+        raise IngestionError("base corpus has an unsupported major schema version")
+    cohorts = base_summary.get("corpus", {}).get("cohorts")
+    if not isinstance(cohorts, list) or not cohorts:
+        raise IngestionError("base corpus cohort metadata is missing")
+    by_id = {cohort.get("id"): cohort for cohort in cohorts if isinstance(cohort, dict)}
+    members: dict[str, list[str]] = defaultdict(list)
+    for item in items:
+        cohort_id = item.get("cohortId")
+        if cohort_id not in by_id:
+            raise IngestionError("base corpus contains an unknown item cohort")
+        cohort = by_id[cohort_id]
+        source_binding = cohort.get("source", {})
+        rights_binding = cohort.get("rights", {})
+        source = item.get("source", {})
+        provenance = item.get("provenance", {})
+        if (
+            source.get("authorityId") != source_binding.get("authorityId")
+            or source.get("producerAuthorityId") != source_binding.get("producerAuthorityId")
+            or source.get("sourceRepository") != source_binding.get("repository")
+            or source.get("sourceCommit") != source_binding.get("commit")
+            or source.get("sourceArtifactSha256") != source_binding.get("artifactSha256")
+            or provenance.get("sourceRepository") != source_binding.get("repository")
+            or provenance.get("sourceCommit") != source_binding.get("commit")
+            or provenance.get("sourceArtifactSha256") != source_binding.get("artifactSha256")
+            or source.get("license") != rights_binding.get("arabicSource", {}).get("license")
+            or source.get("attribution") != rights_binding.get("arabicSource", {}).get("attribution")
+            or source.get("englishRights") != rights_binding.get("englishTranslation")
+            or source.get("rightsMatrix") != rights_binding.get("matrix")
+        ):
+            raise IngestionError("base record cannot be rebound to cohort metadata")
+        members[cohort_id].append(item["id"])
+    result = []
+    for cohort_id, cohort_value in sorted(by_id.items()):
+        if not isinstance(cohort_id, str):
+            raise IngestionError("base corpus contains an invalid cohort ID")
+        cohort = json.loads(json.dumps(cohort_value))
+        cohort["membership"] = membership(members.get(cohort_id, []))
+        result.append(cohort)
     return result
 
 
@@ -470,21 +651,60 @@ def ingest(
     base_quarantine = load(base / "quarantine.json")
     base_exclusions = load(base / "exclusions.json")
     distribution_commit = manifest["repository"]["commit"]
-    corpus_id = f"al-isabah-public-openiti-5835c18-book-{distribution_commit[:12]}"
-    replaced_volumes = {int(record["volume"]) for record in records}
+    corpus_id = "pending-content-addressed-corpus"
+    incoming_ids = {record["id"] for record in records}
     items = []
     for listed in base_index.get("items", []):
-        if int(listed["volume"]) in replaced_volumes:
-            continue
         item = load(base / "items" / f"{listed['id']}.json")
         item["corpusId"] = corpus_id
         items.append(item)
+    cohorts = carried_cohorts(base_summary, items)
+    replaced_members: dict[str, list[str]] = defaultdict(list)
+    for item in items:
+        if item["id"] in incoming_ids:
+            replaced_members[item["cohortId"]].append(item["id"])
+    items = [item for item in items if item["id"] not in incoming_ids]
+    remaining_by_cohort: dict[str, list[str]] = defaultdict(list)
+    for item in items:
+        remaining_by_cohort[item["cohortId"]].append(item["id"])
+    for cohort in cohorts:
+        cohort["membership"] = membership(remaining_by_cohort.get(cohort["id"], []))
+    new_cohort_id = f"distribution:{distribution_commit[:12]}"
+    prior_current_cohort = next(
+        (cohort for cohort in cohorts if cohort["id"] == new_cohort_id), None
+    )
+    cohorts = [cohort for cohort in cohorts if cohort["id"] != new_cohort_id]
     by_character, by_expanded = registry_indexes()
     for record in records:
-        items.extend(direct_item(record, corpus_id, by_character, by_expanded, binding))
+        items.extend(direct_item(record, corpus_id, by_character, by_expanded, binding, new_cohort_id))
+    new_item_ids = [item["id"] for item in items if item["cohortId"] == new_cohort_id]
+    supersedes = [
+        {"cohortId": cohort_id, **membership(item_ids)}
+        for cohort_id, item_ids in sorted(replaced_members.items())
+        if cohort_id != new_cohort_id
+    ]
+    for supersession in (prior_current_cohort or {}).get("supersedes", []):
+        if supersession not in supersedes:
+            supersedes.append(supersession)
+    supersedes.sort(key=lambda value: (value["cohortId"], value["itemIdsSha256"]))
+    cohorts.append(cohort_from_binding(new_cohort_id, binding, new_item_ids, manifest, supersedes))
     ids = [item["id"] for item in items]
     if len(ids) != len(set(ids)):
         raise IngestionError("combined corpus contains duplicate stable item IDs")
+    fingerprint_items = []
+    for item in sorted(items, key=lambda value: value["id"]):
+        fingerprint_item = json.loads(json.dumps(item))
+        fingerprint_item.pop("corpusId", None)
+        fingerprint_items.append(fingerprint_item)
+    candidate_fingerprint = digest_bytes(canonical_json({
+        "schemaVersion": SCHEMA_VERSION,
+        "distributionManifestSha256": digest_file(distribution / "manifest.json"),
+        "cohorts": cohorts,
+        "items": fingerprint_items,
+    }))
+    corpus_id = f"al-isabah-public-openiti-mixed-{candidate_fingerprint}"
+    for item in items:
+        item["corpusId"] = corpus_id
     sections, index_items = build_sections(items, corpus_id)
     details = {item["id"]: item for item in items}
     for item in items:
@@ -499,10 +719,10 @@ def ingest(
         matching_passages = [item for item in matching if item["kind"] == "passage"]
         section_count = len({item["sectionId"] for item in matching})
         pages = [item["printedPageStart"] for item in matching if item["printedPageStart"] is not None]
-        if volume_number in replaced_volumes:
-            source_count = len(matching_entries)
-        else:
-            source_count = int(base_volume[volume_number].get("sourceItemCount", len(matching_entries)))
+        source_count = max(
+            len(matching_entries),
+            int(base_volume.get(volume_number, {}).get("sourceItemCount", 0)),
+        )
         if not matching_entries:
             availability = "not_translated"
         elif len(matching_entries) >= source_count:
@@ -539,20 +759,10 @@ def ingest(
         "work": base_summary["work"],
         "corpus": {
             "id": corpus_id,
-            "sourceRepository": binding["sourceRepository"],
-            "sourceCommit": binding["sourceCommit"],
             "generatedAt": manifest["generatedAt"],
             "promotionStatus": "blocked",
-            "sourceAuthorityId": binding["sourceAuthorityId"],
-            "sourceArtifactSha256": binding["sourceArtifactSha256"],
             "publicationStatus": "public-working",
-            "license": binding["sourceLicense"],
-            "rights": {
-                "arabicSource": {"license": binding["sourceLicense"], "attribution": binding["sourceAttribution"]},
-                "englishTranslation": {"license": binding["englishLicense"], "attribution": binding["englishAttribution"]},
-                "matrix": binding["rightsMatrix"],
-                "excludedMaterial": binding["excludedMaterial"],
-            },
+            "cohorts": cohorts,
         },
         "counts": counts,
         "exclusions": base_exclusions["counts"],
@@ -572,7 +782,7 @@ def ingest(
     corpus_manifest = {
         "schemaVersion": SCHEMA_VERSION,
         "corpusId": corpus_id,
-        "sourceAuthorityId": binding["sourceAuthorityId"],
+        "cohorts": [{"id": cohort["id"], **cohort["membership"]} for cohort in cohorts],
         "distribution": {
             "id": manifest["distributionId"],
             "repository": manifest["repository"]["url"],

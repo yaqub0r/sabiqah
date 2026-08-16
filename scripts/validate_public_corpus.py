@@ -35,6 +35,7 @@ from rebuild_al_isabah_public_corpus import (
 
 ITEM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
 SHA256 = re.compile(r"^[a-f0-9]{64}$")
+COHORT_SCHEMA_VERSION = "5.0.0"
 HONORIFIC_CODEPOINT_RANGES = re.compile(
     r"[\uFBC3-\uFBD2\uFD40-\uFD4F\uFDC8-\uFDCF\uFDFD-\uFDFF\U00010ED1-\U00010ED8]"
 )
@@ -70,6 +71,142 @@ def load(path: Path) -> dict[str, Any]:
     return value
 
 
+def canonical_ids_hash(item_ids: list[str]) -> str:
+    encoded = (json.dumps(sorted(item_ids), ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def validate_membership(value: Any, label: str, errors: list[str]) -> list[str]:
+    if not isinstance(value, dict) or set(value) != {"itemCount", "itemIdsSha256", "itemIds"}:
+        errors.append(f"{label}: membership metadata is missing or unknown")
+        return []
+    item_ids = value.get("itemIds")
+    if not isinstance(item_ids, list) or any(
+        not isinstance(item_id, str) or not ITEM_ID.fullmatch(item_id) for item_id in item_ids
+    ):
+        errors.append(f"{label}: membership item IDs are invalid")
+        return []
+    if item_ids != sorted(item_ids) or len(item_ids) != len(set(item_ids)):
+        errors.append(f"{label}: membership item IDs must be sorted and unique")
+    if value.get("itemCount") != len(item_ids):
+        errors.append(f"{label}: membership count mismatch")
+    if value.get("itemIdsSha256") != canonical_ids_hash(item_ids):
+        errors.append(f"{label}: membership hash mismatch")
+    return item_ids
+
+
+def cohort_map(summary: dict[str, Any], errors: list[str]) -> dict[str, dict[str, Any]]:
+    corpus = summary.get("corpus", {})
+    forbidden_global = {
+        "sourceRepository", "sourceCommit", "sourceAuthorityId",
+        "sourceArtifactSha256", "license", "rights",
+    }
+    if forbidden_global & set(corpus):
+        errors.append("summary: schema 5 corpus makes a false corpus-wide source or rights claim")
+    cohorts = corpus.get("cohorts")
+    if not isinstance(cohorts, list) or not cohorts:
+        errors.append("summary: cohort metadata is missing")
+        return {}
+    result: dict[str, dict[str, Any]] = {}
+    assigned: set[str] = set()
+    for position, cohort in enumerate(cohorts):
+        label = f"summary.corpus.cohorts[{position}]"
+        if not isinstance(cohort, dict):
+            errors.append(f"{label}: cohort must be an object")
+            continue
+        expected = {"id", "kind", "source", "rights", "state", "membership", "upstream"}
+        if "supersedes" in cohort:
+            expected.add("supersedes")
+        if set(cohort) != expected:
+            errors.append(f"{label}: cohort contains missing or unknown metadata")
+        cohort_id = cohort.get("id")
+        if not isinstance(cohort_id, str) or not ITEM_ID.fullmatch(cohort_id) or cohort_id in result:
+            errors.append(f"{label}: cohort ID is invalid or duplicated")
+            continue
+        if cohort.get("kind") not in {"legacy-schema-4", "distribution-v2"}:
+            errors.append(f"{label}: cohort kind is unknown")
+        source = cohort.get("source")
+        source_required = {"authorityId", "repository", "commit", "artifactSha256"}
+        if isinstance(source, dict) and "producerAuthorityId" in source:
+            source_required.add("producerAuthorityId")
+        if not isinstance(source, dict) or set(source) != source_required:
+            errors.append(f"{label}: source binding is incomplete or unknown")
+        elif (
+            not ITEM_ID.fullmatch(str(source.get("authorityId", "")))
+            or not re.fullmatch(r"https://[^\s]+", str(source.get("repository", "")))
+            or not re.fullmatch(r"[a-f0-9]{40}", str(source.get("commit", "")))
+            or not SHA256.fullmatch(str(source.get("artifactSha256", "")))
+        ):
+            errors.append(f"{label}: source binding is invalid")
+        elif source.get("producerAuthorityId") is not None and not ITEM_ID.fullmatch(
+            str(source.get("producerAuthorityId"))
+        ):
+            errors.append(f"{label}: producer authority is invalid")
+        rights = cohort.get("rights")
+        if not isinstance(rights, dict) or set(rights) != {
+            "arabicSource", "englishTranslation", "matrix", "excludedMaterial"
+        }:
+            errors.append(f"{label}: rights binding is incomplete or unknown")
+        else:
+            arabic_value = rights.get("arabicSource", {})
+            english_value = rights.get("englishTranslation", {})
+            arabic = arabic_value if isinstance(arabic_value, dict) else {}
+            english = english_value if isinstance(english_value, dict) else {}
+            if set(arabic) != {"license", "attribution"} or not arabic.get("attribution"):
+                errors.append(f"{label}: Arabic rights are incomplete")
+            if set(english) != {"license", "attribution"} or not english.get("attribution"):
+                errors.append(f"{label}: English rights are incomplete")
+            if arabic.get("attribution") == english.get("attribution"):
+                errors.append(f"{label}: Arabic and English rights are collapsed")
+            if not rights.get("excludedMaterial"):
+                errors.append(f"{label}: rights exclusions are missing")
+            for language, value in (("Arabic", arabic), ("English", english)):
+                license_value = value.get("license", {}) if isinstance(value, dict) else {}
+                if not isinstance(license_value, dict) or set(license_value) != {"spdx", "url"} or not all(license_value.values()):
+                    errors.append(f"{label}: {language} license is incomplete or unknown")
+            matrix = rights.get("matrix", {})
+            if not isinstance(matrix, dict) or set(matrix) != {
+                "id", "schema", "decision", "reviewedOn", "followUp"
+            } or matrix.get("schema") != "al-isabah.book-rights-matrix.v1" or matrix.get("decision") != "approved-under-cc-by-nc-sa-4.0" or matrix.get("followUp") != "required-on-change":
+                errors.append(f"{label}: rights matrix is incomplete, unknown, or unsafe")
+        state = cohort.get("state")
+        if not isinstance(state, dict) or set(state) != {
+            "publicationStatus", "promotionStatus", "completeness"
+        } or state.get("publicationStatus") != "public-working" or state.get("promotionStatus") != "blocked" or state.get("completeness") not in {"carried-forward", "partial-release"}:
+            errors.append(f"{label}: publication, completeness, or promotion state is unsafe")
+        member_ids = validate_membership(cohort.get("membership"), label, errors)
+        overlap = assigned.intersection(member_ids)
+        if overlap:
+            errors.append(f"{label}: cohort membership overlaps another cohort")
+        assigned.update(member_ids)
+        supersedes = cohort.get("supersedes", [])
+        if not isinstance(supersedes, list):
+            errors.append(f"{label}: supersession metadata is invalid")
+        else:
+            for supersession in supersedes:
+                if not isinstance(supersession, dict) or set(supersession) != {
+                    "cohortId", "itemCount", "itemIdsSha256", "itemIds"
+                }:
+                    errors.append(f"{label}: supersession metadata is incomplete or unknown")
+                    continue
+                validate_membership(
+                    {key: supersession[key] for key in ("itemCount", "itemIdsSha256", "itemIds")},
+                    f"{label}.supersedes",
+                    errors,
+                )
+        upstream = cohort.get("upstream")
+        if cohort.get("kind") == "legacy-schema-4":
+            if not isinstance(upstream, dict) or set(upstream) != {"corpusId", "schemaVersion"} or upstream.get("schemaVersion") != SCHEMA_VERSION:
+                errors.append(f"{label}: legacy upstream binding is incomplete or unknown")
+        elif cohort.get("kind") == "distribution-v2":
+            if not isinstance(upstream, dict) or set(upstream) != {
+                "distributionId", "releaseTag", "assetName", "assetSha256"
+            } or not all(upstream.values()) or not SHA256.fullmatch(str(upstream.get("assetSha256", ""))):
+                errors.append(f"{label}: distribution upstream binding is incomplete or unknown")
+        result[cohort_id] = cohort
+    return result
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     title_decisions = load_entry_title_profile()
@@ -82,28 +219,53 @@ def validate(root: Path) -> list[str]:
     distribution_v2 = bool(distribution.get("releaseTag"))
     corpus = summary.get("corpus", {})
     corpus_id = corpus.get("id")
-    if summary.get("schemaVersion") != SCHEMA_VERSION:
+    schema_version = summary.get("schemaVersion")
+    if schema_version not in {SCHEMA_VERSION, COHORT_SCHEMA_VERSION}:
         errors.append("summary: unsupported schema version")
+    if index.get("schemaVersion") != schema_version:
+        errors.append("index: schema version differs from summary")
+    if manifest.get("schemaVersion") != schema_version:
+        errors.append("manifest: schema version differs from summary")
     if not isinstance(corpus_id, str) or not ITEM_ID.fullmatch(corpus_id):
         errors.append("summary: corpus ID is invalid")
     if corpus.get("publicationStatus") != "public-working":
         errors.append("summary: corpus must be explicitly public-working")
     if corpus.get("promotionStatus") != "blocked":
         errors.append("summary: canonical promotion must remain blocked")
-    if corpus.get("sourceAuthorityId") != SOURCE_AUTHORITY_ID:
-        errors.append("summary: wrong source authority")
-    if corpus.get("sourceRepository") != SOURCE_REPOSITORY:
-        errors.append("summary: wrong source repository")
-    if corpus.get("sourceCommit") != SOURCE_COMMIT:
-        errors.append("summary: wrong source commit")
-    if corpus.get("sourceArtifactSha256") != SOURCE_SHA256:
-        errors.append("summary: wrong source artifact hash")
-    if corpus.get("license", {}).get("spdx") != LICENSE_SPDX:
-        errors.append("summary: source license is missing or incorrect")
-    if corpus.get("license", {}).get("url") != LICENSE_URL:
-        errors.append("summary: source license URL is missing or incorrect")
+    cohorts = cohort_map(summary, errors) if schema_version == COHORT_SCHEMA_VERSION else {}
+    if schema_version == COHORT_SCHEMA_VERSION:
+        current_distribution_cohorts = [
+            cohort for cohort in cohorts.values()
+            if cohort.get("kind") == "distribution-v2"
+            and cohort.get("upstream", {}).get("distributionId") == distribution.get("id")
+        ]
+        if len(current_distribution_cohorts) != 1:
+            errors.append("summary: current verified distribution cohort is missing or ambiguous")
+        else:
+            current = current_distribution_cohorts[0]
+            upstream = current["upstream"]
+            if (
+                upstream.get("releaseTag") != distribution.get("releaseTag")
+                or upstream.get("assetName") != distribution.get("assetName")
+                or upstream.get("assetSha256") != distribution.get("assetSha256")
+                or current.get("rights", {}).get("matrix") != distribution.get("rightsMatrix")
+            ):
+                errors.append("summary: distribution cohort differs from verified manifest binding")
+    if schema_version == SCHEMA_VERSION:
+        if corpus.get("sourceAuthorityId") != SOURCE_AUTHORITY_ID:
+            errors.append("summary: wrong source authority")
+        if corpus.get("sourceRepository") != SOURCE_REPOSITORY:
+            errors.append("summary: wrong source repository")
+        if corpus.get("sourceCommit") != SOURCE_COMMIT:
+            errors.append("summary: wrong source commit")
+        if corpus.get("sourceArtifactSha256") != SOURCE_SHA256:
+            errors.append("summary: wrong source artifact hash")
+        if corpus.get("license", {}).get("spdx") != LICENSE_SPDX:
+            errors.append("summary: source license is missing or incorrect")
+        if corpus.get("license", {}).get("url") != LICENSE_URL:
+            errors.append("summary: source license URL is missing or incorrect")
     corpus_rights = corpus.get("rights", {})
-    if distribution_v2:
+    if distribution_v2 and schema_version == SCHEMA_VERSION:
         arabic_rights = corpus_rights.get("arabicSource", {})
         english_rights = corpus_rights.get("englishTranslation", {})
         if arabic_rights.get("license") != corpus.get("license") or not arabic_rights.get("attribution"):
@@ -150,7 +312,7 @@ def validate(root: Path) -> list[str]:
         detail = load(detail_path)
         if detail.get("id") != item_id or detail.get("corpusId") != corpus_id:
             errors.append(f"detail: inconsistent identity for {item_id}")
-        if detail.get("schemaVersion") != SCHEMA_VERSION:
+        if detail.get("schemaVersion") != schema_version:
             errors.append(f"detail: wrong schema version for {item_id}")
         if detail.get("kind") not in {"entry", "passage"} or detail.get(
             "publicEligibility"
@@ -161,16 +323,42 @@ def validate(root: Path) -> list[str]:
         human_reviewed += detail.get("humanReview") in {"reviewed", "verified"}
         source = detail.get("source", {})
         provenance = detail.get("provenance", {})
-        if source.get("authorityId") != SOURCE_AUTHORITY_ID:
-            errors.append(f"detail: wrong source authority for {item_id}")
-        if source.get("sourceUrl") != SOURCE_URL:
-            errors.append(f"detail: wrong source URL for {item_id}")
-        if source.get("license", {}).get("spdx") != LICENSE_SPDX:
-            errors.append(f"detail: wrong source license for {item_id}")
-        if source.get("license", {}).get("url") != LICENSE_URL:
-            errors.append(f"detail: wrong source license URL for {item_id}")
-        if provenance.get("sourceArtifactSha256") != SOURCE_SHA256:
-            errors.append(f"detail: wrong source artifact hash for {item_id}")
+        cohort = None
+        if schema_version == COHORT_SCHEMA_VERSION:
+            cohort_id = detail.get("cohortId")
+            if item.get("cohortId") != cohort_id or cohort_id not in cohorts:
+                errors.append(f"detail: unknown or contradictory cohort for {item_id}")
+            else:
+                cohort = cohorts[cohort_id]
+                binding = cohort.get("source", {})
+                rights = cohort.get("rights", {})
+                if source.get("authorityId") != binding.get("authorityId"):
+                    errors.append(f"detail: source authority differs from cohort for {item_id}")
+                if source.get("producerAuthorityId") != binding.get("producerAuthorityId"):
+                    errors.append(f"detail: producer authority differs from cohort for {item_id}")
+                if source.get("sourceRepository") != binding.get("repository") or provenance.get("sourceRepository") != binding.get("repository"):
+                    errors.append(f"detail: source repository differs from cohort for {item_id}")
+                if source.get("sourceCommit") != binding.get("commit") or provenance.get("sourceCommit") != binding.get("commit"):
+                    errors.append(f"detail: source commit differs from cohort for {item_id}")
+                if source.get("sourceArtifactSha256") != binding.get("artifactSha256") or provenance.get("sourceArtifactSha256") != binding.get("artifactSha256"):
+                    errors.append(f"detail: source artifact differs from cohort for {item_id}")
+                if source.get("license") != rights.get("arabicSource", {}).get("license") or source.get("attribution") != rights.get("arabicSource", {}).get("attribution"):
+                    errors.append(f"detail: Arabic rights differ from cohort for {item_id}")
+                if source.get("englishRights") != rights.get("englishTranslation"):
+                    errors.append(f"detail: English rights differ from cohort for {item_id}")
+                if source.get("rightsMatrix") != rights.get("matrix"):
+                    errors.append(f"detail: rights matrix differs from cohort for {item_id}")
+        else:
+            if source.get("authorityId") != SOURCE_AUTHORITY_ID:
+                errors.append(f"detail: wrong source authority for {item_id}")
+            if source.get("sourceUrl") != SOURCE_URL:
+                errors.append(f"detail: wrong source URL for {item_id}")
+            if source.get("license", {}).get("spdx") != LICENSE_SPDX:
+                errors.append(f"detail: wrong source license for {item_id}")
+            if source.get("license", {}).get("url") != LICENSE_URL:
+                errors.append(f"detail: wrong source license URL for {item_id}")
+            if provenance.get("sourceArtifactSha256") != SOURCE_SHA256:
+                errors.append(f"detail: wrong source artifact hash for {item_id}")
         exact_source_sha = source.get("sourceExactTextSha256")
         if (
             not isinstance(exact_source_sha, str)
@@ -185,10 +373,12 @@ def validate(root: Path) -> list[str]:
             if remediation.get("privateLocatorsRemoved") is not True:
                 errors.append(f"detail: private locators were not removed for {item_id}")
         elif source.get("alignment", {}).get("method") != (
-            "al-isabah-public-distribution-v2" if distribution_v2 else "al-isabah-public-distribution-v1"
+            "al-isabah-public-distribution-v2"
+            if (cohort and cohort.get("kind") == "distribution-v2") or (distribution_v2 and schema_version == SCHEMA_VERSION)
+            else "al-isabah-public-distribution-v1"
         ):
             errors.append(f"detail: {item_id} has neither remediation nor direct distribution provenance")
-        if distribution_v2:
+        if distribution_v2 and schema_version == SCHEMA_VERSION:
             if not source.get("producerAuthorityId"):
                 errors.append(f"detail: producer authority is missing for {item_id}")
             if source.get("rightsMatrix") != corpus_rights.get("matrix"):
@@ -354,6 +544,15 @@ def validate(root: Path) -> list[str]:
         needs_attention += item.get("machineAssessment") == "needs_attention"
         translated += item.get("translationState") == "translated"
 
+    if schema_version == COHORT_SCHEMA_VERSION:
+        assigned = {
+            item_id
+            for cohort in cohorts.values()
+            for item_id in cohort.get("membership", {}).get("itemIds", [])
+        }
+        if assigned != ids:
+            errors.append("summary: cohort membership leaves records unassigned or unknown")
+
     quarantined_records = quarantine.get("records")
     if not isinstance(quarantined_records, list):
         errors.append("quarantine: records must be a list")
@@ -488,6 +687,8 @@ def validate(root: Path) -> list[str]:
         section = load(path)
         if section.get("id") != section_id or section.get("corpusId") != corpus_id:
             errors.append(f"section: inconsistent identity for {section_id}")
+        if section.get("schemaVersion") != schema_version:
+            errors.append(f"section: wrong schema version for {section_id}")
         for section_item in section.get("items", []):
             if not isinstance(section_item, dict) or not isinstance(
                 section_item.get("id"), str
@@ -533,6 +734,14 @@ def validate(root: Path) -> list[str]:
         errors.append("manifest: file set differs from public corpus")
     if manifest.get("objectCount") != len(manifest_paths):
         errors.append("manifest: object count differs from file set")
+    if schema_version == COHORT_SCHEMA_VERSION:
+        expected_manifest_cohorts = [
+            {"id": cohort["id"], **cohort["membership"]}
+            for cohort in corpus.get("cohorts", [])
+            if isinstance(cohort, dict) and isinstance(cohort.get("membership"), dict)
+        ]
+        if manifest.get("cohorts") != expected_manifest_cohorts:
+            errors.append("manifest: cohort coverage differs from summary")
     return errors
 
 

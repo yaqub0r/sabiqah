@@ -1,7 +1,8 @@
 # Al-Isabah distribution ingestion
 
 - **Status:** Accepted
-- **Issue:** [#114](https://github.com/yaqub0r/sabiqah/issues/114)
+- **Issues:** [#114](https://github.com/yaqub0r/sabiqah/issues/114),
+  [#123](https://github.com/yaqub0r/sabiqah/issues/123)
 
 ## Decision
 
@@ -60,6 +61,48 @@ The projected corpus keeps Arabic-source rights, independently authored English
 rights, and the rights-matrix identity as separate fields. It does not reduce
 them to a repository-wide license string.
 
+## Mixed provenance and rights cohorts
+
+Reader-corpus schema `5.0.0` represents a combined corpus as an ordered set of
+provenance and rights cohorts. Each item and index entry carries exactly one
+`cohortId`. Each cohort records its stable ID, source authority, producer
+authority when applicable, repository, commit, artifact hash, Arabic rights,
+English authorship and rights, rights-matrix decision, publication and
+promotion state, completeness state, and upstream release or legacy-corpus
+identity. Its sorted item-ID inventory is bound by an exact count and SHA-256.
+The corpus object deliberately has no global source, license, attribution, or
+rights-matrix field.
+
+When a schema-2 Al-Isabah distribution is partial, ingestion replaces only
+records with matching stable IDs. Other records are carried forward in their
+existing cohorts. The first schema-5 construction migrates the active
+schema-4 corpus into a `legacy-schema-4` cohort only after every carried record
+matches that corpus's already verified source and rights metadata. It adds the
+cohort reference and explicit repository/commit binding without changing the
+record's authority, artifact hash, attribution, license, rights matrix, review
+state, or promotion state. Legacy records are never assigned to the new
+distribution cohort.
+
+A later approved correction may replace the same stable ID. The new cohort
+then records the superseded cohort and the exact count, sorted IDs, and hash;
+the earlier cohort and its immutable upstream corpus remain recorded even when
+its current membership becomes empty. Rerunning the same distribution against
+its own schema-5 candidate produces the same corpus artifacts.
+
+The immutable candidate ID includes a SHA-256 of the verified distribution
+manifest, complete cohort metadata, and every projected item except its derived
+corpus ID. The same partial distribution combined with a different base
+therefore cannot collide at one R2 prefix, while an identical rebuild remains
+idempotent.
+
+Schema-5 validation fails before upload when cohort metadata is missing,
+unknown, contradictory, overlapping, unassigned, count- or hash-mismatched;
+when a record differs from its cohort's source or rights bindings; when legacy
+metadata is rebound; or when the corpus makes a global source or rights claim.
+Readers resolve and display the cohort ID and the item-bound Arabic, English,
+and rights-matrix metadata. Schema `4.0.0` remains readable and valid for the
+current active corpus and rollback. Unknown major versions fail closed.
+
 ## Offline compatibility gate
 
 Al-Isabah or another release-preparation environment can run the same
@@ -93,3 +136,7 @@ book owner, publish a release, upload a corpus, or change an activation pointer.
   the previously active corpus ID and prefix as explicit rollback metadata.
 - The initial automation targets only the protected `development` environment.
   Production promotion remains a separate approval-controlled operation.
+- Building or merging schema-5 support does not dispatch ingestion, upload a
+  candidate, replace `current.json`, write D1, deploy, or promote content. Those
+  remain separately approved operations; the ingestion and publication
+  workflows may stay manually disabled while this contract is reviewed.

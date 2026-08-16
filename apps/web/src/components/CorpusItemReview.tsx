@@ -260,6 +260,11 @@ export function CorpusItemReview({ siteKey }: { siteKey?: string }) {
       </section>
       <section className="source-list">
         <h2>Provenance</h2>
+        {item.cohortId && (
+          <p>
+            Provenance and rights cohort: <code>{item.cohortId}</code>
+          </p>
+        )}
         <p>
           Source authority:{" "}
           {"sourceArtifactId" in item.provenance ? (
