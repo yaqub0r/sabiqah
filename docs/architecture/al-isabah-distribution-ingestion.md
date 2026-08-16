@@ -3,8 +3,9 @@
 - **Status:** Accepted
 - **Issues:** [#114](https://github.com/yaqub0r/sabiqah/issues/114),
   [#123](https://github.com/yaqub0r/sabiqah/issues/123),
-  [#125](https://github.com/yaqub0r/sabiqah/issues/125), and
-  [#129](https://github.com/yaqub0r/sabiqah/issues/129)
+  [#125](https://github.com/yaqub0r/sabiqah/issues/125),
+  [#129](https://github.com/yaqub0r/sabiqah/issues/129), and
+  [#131](https://github.com/yaqub0r/sabiqah/issues/131)
 
 ## Decision
 
@@ -195,9 +196,10 @@ commit but remained queued without a job after its workflow was disabled. That
 immutable snapshot reads the legacy `AL_ISABAH_PUBLIC_CORPUS_URI` DEVELOPMENT
 variable and validates its root before any R2 access. While the run exists, the
 legacy variable is intentionally set to a non-URI fence value so that the old
-snapshot cannot upload or activate if GitHub later schedules it. Current code
-uses the separate `AL_ISABAH_PUBLIC_CORPUS_ROOT_URI` variable, fixed to the
-exact DEVELOPMENT corpus root.
+snapshot cannot upload or activate if GitHub later schedules it. Current
+ingestion and deployment code use the separate
+`AL_ISABAH_PUBLIC_CORPUS_ROOT_URI` variable, fixed to the exact DEVELOPMENT
+corpus root.
 
 Do not restore or reuse the legacy variable while run `31925000582` exists.
 After GitHub reports the run terminal and it has been deleted through the
