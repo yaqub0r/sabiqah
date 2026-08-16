@@ -4,8 +4,9 @@
 - **Issues:** [#114](https://github.com/yaqub0r/sabiqah/issues/114),
   [#123](https://github.com/yaqub0r/sabiqah/issues/123),
   [#125](https://github.com/yaqub0r/sabiqah/issues/125),
-  [#129](https://github.com/yaqub0r/sabiqah/issues/129), and
-  [#131](https://github.com/yaqub0r/sabiqah/issues/131)
+  [#129](https://github.com/yaqub0r/sabiqah/issues/129),
+  [#131](https://github.com/yaqub0r/sabiqah/issues/131), and
+  [#133](https://github.com/yaqub0r/sabiqah/issues/133)
 
 ## Decision
 
@@ -76,15 +77,17 @@ identity. Its sorted item-ID inventory is bound by an exact count and SHA-256.
 The corpus object deliberately has no global source, license, attribution, or
 rights-matrix field.
 
-When a schema-2 Al-Isabah distribution is partial, ingestion replaces only
-records with matching stable IDs. Other records are carried forward in their
-existing cohorts. The first schema-5 construction migrates the active
-schema-4 corpus into a `legacy-schema-4` cohort only after every carried record
-matches that corpus's already verified source and rights metadata. It adds the
-cohort reference and explicit repository/commit binding without changing the
-record's authority, artifact hash, attribution, license, rights matrix, review
-state, or promotion state. Legacy records are never assigned to the new
-distribution cohort.
+When a schema-2 Al-Isabah distribution is partial, ingestion projects and
+validates the complete incoming stable-ID inventory before changing cohort
+membership. Incoming entries and structural passages replace carried items
+with the same stable IDs; duplicate IDs inside the incoming projection fail
+closed. Other records are carried forward in their existing cohorts. The first
+schema-5 construction migrates the active schema-4 corpus into a
+`legacy-schema-4` cohort only after every carried record matches that corpus's
+already verified source and rights metadata. It adds the cohort reference and
+explicit repository/commit binding without changing the record's authority,
+artifact hash, attribution, license, rights matrix, review state, or promotion
+state. Legacy records are never assigned to the new distribution cohort.
 
 The deployed schema-4 corpus predates complete corpus-level rights metadata and
 therefore cannot use that generic path. Its only compatibility path is the
