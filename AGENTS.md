@@ -6,6 +6,15 @@ Every repository change must be associated with a GitHub issue before work
 begins. Keep work within the issue scope and reference the issue in commits and
 pull requests.
 
+## Realtime voice pronunciation
+
+The ordinary human-facing project name remains **Sabiqah**; Arabic **سَابِقَة**.
+In realtime voice, pronounce it naturally as _sābiqah_, approximately
+/saː.bi.qa/ in careful Modern Standard Arabic. Keep **سَا** clearly long with
+alif/ā, keep **بِ** short as _bi_, and pronounce **ق** as qāf, not kāf. The
+macron and phonetic spelling are explanatory only and do not replace the
+ordinary Latin spelling.
+
 ## Worktree and filesystem safety
 
 - Read `docs/development/worktree-lifecycle.md` before creating or removing a
