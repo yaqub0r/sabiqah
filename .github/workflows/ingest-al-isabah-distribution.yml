@@ -47,14 +47,31 @@ jobs:
               --jq '[.[] | select(.isPrerelease and (.tagName | startswith("public-working-")))] | sort_by(.publishedAt) | last | .tagName')"
           fi
           test -n "${tag}"
+          if [[ ! "${tag}" =~ ^public-working-[a-f0-9]{40}$ ]]; then
+            echo "::error::Release tag does not identify an immutable public-working commit."
+            exit 1
+          fi
           mkdir -p .runtime/distribution-download
+          gh api "repos/yaqub0r/al-isabah/releases/tags/${tag}" > .runtime/release-metadata.json
+          gh api "repos/yaqub0r/al-isabah/git/ref/tags/${tag}" > .runtime/tag-ref.json
+          commit="${tag#public-working-}"
+          gh api -H 'Accept: application/vnd.github.raw+json' \
+            "repos/yaqub0r/al-isabah/contents/compliance/rights-matrix.al-isabah.v1.json?ref=${commit}" \
+            > .runtime/rights-matrix.json
           gh release download "${tag}" --repo yaqub0r/al-isabah \
-            --pattern 'al-isabah-public-distribution-*.zip' \
+            --pattern "al-isabah-public-distribution-${commit}.zip" \
             --dir .runtime/distribution-download
-          archive="$(find .runtime/distribution-download -maxdepth 1 -type f -name 'al-isabah-public-distribution-*.zip' -print -quit)"
+          archive=".runtime/distribution-download/al-isabah-public-distribution-${commit}.zip"
           test -n "${archive}"
           python3 scripts/extract_al_isabah_distribution.py \
             "${archive}" .runtime/al-isabah-distribution
+          python3 scripts/verify_al_isabah_distribution.py \
+            --distribution .runtime/al-isabah-distribution \
+            --archive "${archive}" \
+            --release-metadata .runtime/release-metadata.json \
+            --tag-ref .runtime/tag-ref.json \
+            --rights-matrix .runtime/rights-matrix.json \
+            --source-authority evidence/source-authorities/al-isabah.v1.json
 
       - name: Resolve active immutable base corpus
         env:
@@ -88,12 +105,18 @@ jobs:
       - name: Ingest and validate complete reader corpus
         run: |
           set -euo pipefail
+          python3 scripts/validate_public_corpus.py .runtime/base-corpus
           activated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           python3 scripts/ingest_al_isabah_distribution.py \
             --distribution .runtime/al-isabah-distribution \
             --base-corpus .runtime/base-corpus \
             --output .runtime/next-corpus \
-            --activated-at "${activated_at}"
+            --activated-at "${activated_at}" \
+            --archive .runtime/distribution-download/al-isabah-public-distribution-*.zip \
+            --release-metadata .runtime/release-metadata.json \
+            --tag-ref .runtime/tag-ref.json \
+            --rights-matrix .runtime/rights-matrix.json \
+            --source-authority evidence/source-authorities/al-isabah.v1.json
           python3 scripts/validate_public_corpus.py .runtime/next-corpus
           corpus_id="$(python3 -c 'import json; print(json.load(open(".runtime/activation.json", encoding="utf-8"))["corpusId"])')"
           echo "NEXT_CORPUS_URI=${CORPUS_ROOT_URI}/${corpus_id}/" >> "${GITHUB_ENV}"

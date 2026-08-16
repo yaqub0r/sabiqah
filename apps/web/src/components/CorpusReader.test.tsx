@@ -67,6 +67,51 @@ const firstItem = item(
   "First short entry",
   "The first short translated record.",
 );
+const rightsBoundFirstItem = {
+  ...firstItem,
+  source: {
+    authorityId: "al-isabah-openiti-5835c18-aco-v1",
+    producerAuthorityId: "openiti-cleaned-arabic-comparison",
+    entryNumber: 10759,
+    pages: ["V08P003"],
+    sourceTextSha256:
+      "f12585cea28d7c7b318728f74b1a95a0d8b2812cb25d6e70f1b9e7b0b9422a3f",
+    sourceUrl:
+      "https://github.com/OpenITI/0875AH/blob/5835c183b8bbf4ea454d5c1be2b168b669403771/data/source.mARkdown",
+    license: {
+      spdx: "CC-BY-NC-SA-4.0",
+      url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    },
+    attribution: "OpenITI synthetic fixture",
+    englishRights: {
+      license: {
+        spdx: "CC-BY-NC-SA-4.0",
+        url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      },
+      attribution: "Al-Isabah project synthetic English content",
+    },
+    rightsMatrix: {
+      id: "al-isabah-rights-synthetic",
+      schema: "al-isabah.book-rights-matrix.v1" as const,
+      decision: "approved-under-cc-by-nc-sa-4.0" as const,
+      reviewedOn: "2026-08-15",
+      followUp: "required-on-change" as const,
+    },
+    alignment: {
+      method: "al-isabah-public-distribution-v2",
+      titleScore: 1,
+      bodyScore: 1,
+    },
+  },
+  provenance: {
+    sourceAuthorityId: "al-isabah-openiti-5835c18-aco-v1",
+    producerAuthorityId: "openiti-cleaned-arabic-comparison",
+    sourceArtifactSha256:
+      "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea",
+    sourceTextSha256:
+      "f12585cea28d7c7b318728f74b1a95a0d8b2812cb25d6e70f1b9e7b0b9422a3f",
+  },
+};
 const secondItem = item(
   "isabah-entry-00010760",
   10760,
@@ -210,7 +255,7 @@ describe("CorpusReader", () => {
           printedPageEnd: 3,
           previousSectionId: null,
           nextSectionId: null,
-          items: [firstItem, secondItem],
+          items: [rightsBoundFirstItem, secondItem],
         },
       ],
     ]);
@@ -237,6 +282,10 @@ describe("CorpusReader", () => {
     expect(
       await screen.findByText("The first short translated record."),
     ).toBeTruthy();
+    expect(
+      await screen.findByText(/Independently authored English:/),
+    ).toBeTruthy();
+    expect(screen.getByText("al-isabah-rights-synthetic")).toBeTruthy();
     expect(
       await screen.findByText(
         "Have an invitation to review or correct the text?",

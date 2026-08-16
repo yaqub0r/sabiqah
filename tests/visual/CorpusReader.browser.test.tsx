@@ -54,9 +54,43 @@ function record(
         summary: "Deterministic visual fixture.",
       },
     ],
+    source: {
+      authorityId: "al-isabah-openiti-5835c18-aco-v1",
+      producerAuthorityId: "openiti-cleaned-arabic-comparison",
+      entryNumber: number,
+      pages: ["V08P001"],
+      sourceTextSha256: "b".repeat(64),
+      sourceUrl: "https://github.com/OpenITI/0875AH",
+      license: {
+        spdx: "CC-BY-NC-SA-4.0",
+        url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      },
+      attribution: "OpenITI synthetic visual fixture",
+      englishRights: {
+        license: {
+          spdx: "CC-BY-NC-SA-4.0",
+          url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        },
+        attribution: "Al-Isabah synthetic English visual fixture",
+      },
+      rightsMatrix: {
+        id: "al-isabah-rights-synthetic",
+        schema: "al-isabah.book-rights-matrix.v1",
+        decision: "approved-under-cc-by-nc-sa-4.0",
+        reviewedOn: "2026-08-15",
+        followUp: "required-on-change",
+      },
+      alignment: {
+        method: "al-isabah-public-distribution-v2",
+        titleScore: 1,
+        bodyScore: 1,
+      },
+    },
     provenance: {
-      sourceArtifactId: `visual:${number}`,
+      sourceAuthorityId: "al-isabah-openiti-5835c18-aco-v1",
+      producerAuthorityId: "openiti-cleaned-arabic-comparison",
       sourceArtifactSha256: "a".repeat(64),
+      sourceTextSha256: "b".repeat(64),
     },
   };
 }
@@ -470,6 +504,37 @@ describe("CorpusReader presentation quality", () => {
     await page.screenshot({
       element: headings[1]!,
       path: `../../.runtime/visual-qa/source-structure-${document.documentElement.clientWidth}.png`,
+    });
+  });
+
+  it("keeps separate Arabic and English rights readable", async () => {
+    root.render(<CorpusReader />);
+    const deadline = Date.now() + 5_000;
+    let provenance: HTMLElement | null = null;
+    while (Date.now() < deadline) {
+      provenance = document.querySelector<HTMLElement>(".provenance-line");
+      if (provenance?.textContent?.includes("Independently authored English"))
+        break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(provenance).not.toBeNull();
+    expect(provenance?.textContent).toContain("Arabic source:");
+    expect(provenance?.textContent).toContain(
+      "Independently authored English:",
+    );
+    expect(provenance?.textContent).toContain("al-isabah-rights-synthetic");
+    provenance!.closest("details")!.open = true;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(provenance?.scrollWidth).toBeLessThanOrEqual(
+      provenance!.clientWidth,
+    );
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth,
+    );
+    await page.screenshot({
+      element: provenance!,
+      path: `../../.runtime/visual-qa/rights-provenance-${document.documentElement.clientWidth}.png`,
     });
   });
 

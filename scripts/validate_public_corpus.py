@@ -78,6 +78,8 @@ def validate(root: Path) -> list[str]:
     quarantine = load(root / "quarantine.json")
     exclusions = load(root / "exclusions.json")
     manifest = load(root / "manifest.json")
+    distribution = manifest.get("distribution", {})
+    distribution_v2 = bool(distribution.get("releaseTag"))
     corpus = summary.get("corpus", {})
     corpus_id = corpus.get("id")
     if summary.get("schemaVersion") != SCHEMA_VERSION:
@@ -100,6 +102,20 @@ def validate(root: Path) -> list[str]:
         errors.append("summary: source license is missing or incorrect")
     if corpus.get("license", {}).get("url") != LICENSE_URL:
         errors.append("summary: source license URL is missing or incorrect")
+    corpus_rights = corpus.get("rights", {})
+    if distribution_v2:
+        arabic_rights = corpus_rights.get("arabicSource", {})
+        english_rights = corpus_rights.get("englishTranslation", {})
+        if arabic_rights.get("license") != corpus.get("license") or not arabic_rights.get("attribution"):
+            errors.append("summary: Arabic source rights are incomplete")
+        if english_rights.get("license") != corpus.get("license") or not english_rights.get("attribution"):
+            errors.append("summary: independently authored English rights are incomplete")
+        if arabic_rights.get("attribution") == english_rights.get("attribution"):
+            errors.append("summary: Arabic and English attribution were collapsed")
+        if corpus_rights.get("matrix") != distribution.get("rightsMatrix"):
+            errors.append("summary: rights matrix differs from the verified distribution")
+        if not corpus_rights.get("excludedMaterial"):
+            errors.append("summary: rights exclusions are missing")
     if any(
         value.get("corpusId") != corpus_id
         for value in (index, quarantine, exclusions, manifest)
@@ -168,8 +184,19 @@ def validate(root: Path) -> list[str]:
                 errors.append(f"detail: source Arabic was not replaced for {item_id}")
             if remediation.get("privateLocatorsRemoved") is not True:
                 errors.append(f"detail: private locators were not removed for {item_id}")
-        elif source.get("alignment", {}).get("method") != "al-isabah-public-distribution-v1":
+        elif source.get("alignment", {}).get("method") != (
+            "al-isabah-public-distribution-v2" if distribution_v2 else "al-isabah-public-distribution-v1"
+        ):
             errors.append(f"detail: {item_id} has neither remediation nor direct distribution provenance")
+        if distribution_v2:
+            if not source.get("producerAuthorityId"):
+                errors.append(f"detail: producer authority is missing for {item_id}")
+            if source.get("rightsMatrix") != corpus_rights.get("matrix"):
+                errors.append(f"detail: rights matrix differs for {item_id}")
+            if source.get("englishRights") != corpus_rights.get("englishTranslation"):
+                errors.append(f"detail: English rights differ for {item_id}")
+            if source.get("attribution") != corpus_rights.get("arabicSource", {}).get("attribution"):
+                errors.append(f"detail: Arabic attribution differs for {item_id}")
         segments = detail.get("segments", [])
         source_entry_number = detail.get("sourceEntryNumber")
         title_decision = title_decisions.get(source_entry_number)
