@@ -2,8 +2,9 @@
 
 - **Status:** Accepted
 - **Issues:** [#114](https://github.com/yaqub0r/sabiqah/issues/114),
-  [#123](https://github.com/yaqub0r/sabiqah/issues/123), and
-  [#125](https://github.com/yaqub0r/sabiqah/issues/125)
+  [#123](https://github.com/yaqub0r/sabiqah/issues/123),
+  [#125](https://github.com/yaqub0r/sabiqah/issues/125), and
+  [#129](https://github.com/yaqub0r/sabiqah/issues/129)
 
 ## Decision
 
@@ -167,6 +168,11 @@ book owner, publish a release, upload a corpus, or change an activation pointer.
   content, credentials, paths from the distribution, or rejected values.
 - Existing immutable prefixes are never overwritten with different bytes.
 - Activation occurs only after an R2 download-and-validate round trip.
+- The workflow captures the exact active pointer before candidate construction
+  and re-reads it immediately before activation. A changed or missing pointer
+  fails closed. If the intended immutable corpus is already active, the
+  workflow preserves the first activation and rollback pointer byte-for-byte
+  instead of replacing it with a later self-referential rollback.
 - Rollback changes the pointer to a previously verified immutable prefix; it
   does not delete or rewrite corpus objects. Each planned activation records
   the previously active corpus ID and prefix as explicit rollback metadata.
@@ -181,3 +187,21 @@ book owner, publish a release, upload a corpus, or change an activation pointer.
   the attestation in Git as historical migration evidence, preserve schema-4
   read/rollback support, and never reuse the attestation to rebuild another
   base or target.
+
+### Inert-run recovery fence
+
+GitHub Actions run `31925000582` was created from the schema-5 compatibility
+commit but remained queued without a job after its workflow was disabled. That
+immutable snapshot reads the legacy `AL_ISABAH_PUBLIC_CORPUS_URI` DEVELOPMENT
+variable and validates its root before any R2 access. While the run exists, the
+legacy variable is intentionally set to a non-URI fence value so that the old
+snapshot cannot upload or activate if GitHub later schedules it. Current code
+uses the separate `AL_ISABAH_PUBLIC_CORPUS_ROOT_URI` variable, fixed to the
+exact DEVELOPMENT corpus root.
+
+Do not restore or reuse the legacy variable while run `31925000582` exists.
+After GitHub reports the run terminal and it has been deleted through the
+supported API, verify the active pointer, health, D1 digest, and both workflow
+states before removing the legacy variable in a reviewed cleanup. The new root
+variable and activation preflight are durable controls and are not retired with
+the incident fence.

@@ -31,7 +31,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-      AL_ISABAH_PUBLIC_CORPUS_URI: ${{ vars.AL_ISABAH_PUBLIC_CORPUS_URI }}
+      AL_ISABAH_PUBLIC_CORPUS_ROOT_URI: ${{ vars.AL_ISABAH_PUBLIC_CORPUS_ROOT_URI }}
 
     steps:
       - name: Check out Sabiqah
@@ -83,22 +83,19 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${CLOUDFLARE_ACCOUNT_ID}"
-          test -n "${AL_ISABAH_PUBLIC_CORPUS_URI}"
+          test -n "${AL_ISABAH_PUBLIC_CORPUS_ROOT_URI}"
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          root_uri="${AL_ISABAH_PUBLIC_CORPUS_URI%/}"
-          root_uri="${root_uri%/*}"
-          if [[ "${root_uri}" != s3://*/public-corpora/al-isabah ]]; then
+          root_uri="${AL_ISABAH_PUBLIC_CORPUS_ROOT_URI%/}"
+          if [[ "${root_uri}" != "s3://sabiqah-assets-dev/public-corpora/al-isabah" ]]; then
             echo "::error::Unexpected Al-Isabah public-corpus root: ${root_uri}"
             exit 1
           fi
           bucket_uri="${root_uri%%/public-corpora/*}"
           pointer_uri="${root_uri}/current.json"
-          base_uri="${AL_ISABAH_PUBLIC_CORPUS_URI}"
-          if aws s3 cp "${pointer_uri}" .runtime/current.json \
-            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors; then
-            active_prefix="$(python3 scripts/resolve_al_isabah_distribution.py .runtime/current.json)"
-            base_uri="${bucket_uri}/${active_prefix}/"
-          fi
+          aws s3 cp "${pointer_uri}" .runtime/current.json \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+          active_prefix="$(python3 scripts/resolve_al_isabah_distribution.py .runtime/current.json)"
+          base_uri="${bucket_uri}/${active_prefix}/"
           aws s3 cp "${base_uri}" .runtime/base-corpus --recursive \
             --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
           echo "CORPUS_ROOT_URI=${root_uri}" >> "${GITHUB_ENV}"
@@ -187,6 +184,20 @@ jobs:
         run: |
           set -euo pipefail
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp "${CORPUS_ROOT_URI}/current.json" .runtime/pre-activation-current.json \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+          activation_action="$(python3 scripts/prepare_al_isabah_activation.py \
+            --expected-current .runtime/current.json \
+            --observed-current .runtime/pre-activation-current.json \
+            --proposed-activation .runtime/activation.json)"
+          if [[ "${activation_action}" == "preserve" ]]; then
+            echo "The intended immutable corpus is already active; preserving its activation and rollback pointer."
+            exit 0
+          fi
+          if [[ "${activation_action}" != "activate" ]]; then
+            echo "::error::Unknown activation action."
+            exit 1
+          fi
           aws s3 cp .runtime/activation.json "${CORPUS_ROOT_URI}/current.json" \
             --content-type application/json \
             --cache-control 'no-store' \
