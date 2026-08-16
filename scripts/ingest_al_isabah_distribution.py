@@ -29,6 +29,7 @@ HONORIFIC_REGISTRY = (
 )
 SCHEMA_VERSION = "5.0.0"
 LEGACY_SCHEMA_VERSION = "4.0.0"
+STABLE_ITEM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
 
 
 @dataclass(frozen=True)
@@ -739,7 +740,32 @@ def ingest(
             raise IngestionError(str(error)) from error
     distribution_commit = manifest["repository"]["commit"]
     corpus_id = "pending-content-addressed-corpus"
-    incoming_ids = {record["id"] for record in records}
+    new_cohort_id = f"distribution:{distribution_commit[:12]}"
+    by_character, by_expanded = registry_indexes()
+    incoming_items: list[dict[str, Any]] = []
+    for record in records:
+        incoming_items.extend(
+            direct_item(
+                record,
+                corpus_id,
+                by_character,
+                by_expanded,
+                binding,
+                new_cohort_id,
+            )
+        )
+    incoming_item_ids = [item.get("id") for item in incoming_items]
+    if (
+        any(
+            not isinstance(item_id, str) or not STABLE_ITEM_ID.fullmatch(item_id)
+            for item_id in incoming_item_ids
+        )
+        or len(incoming_item_ids) != len(set(incoming_item_ids))
+    ):
+        raise IngestionError(
+            "incoming projection contains invalid or duplicate stable item IDs"
+        )
+    incoming_ids = set(incoming_item_ids)
     items = []
     for listed in base_index.get("items", []):
         item = load(base / "items" / f"{listed['id']}.json")
@@ -756,14 +782,11 @@ def ingest(
         remaining_by_cohort[item["cohortId"]].append(item["id"])
     for cohort in cohorts:
         cohort["membership"] = membership(remaining_by_cohort.get(cohort["id"], []))
-    new_cohort_id = f"distribution:{distribution_commit[:12]}"
     prior_current_cohort = next(
         (cohort for cohort in cohorts if cohort["id"] == new_cohort_id), None
     )
     cohorts = [cohort for cohort in cohorts if cohort["id"] != new_cohort_id]
-    by_character, by_expanded = registry_indexes()
-    for record in records:
-        items.extend(direct_item(record, corpus_id, by_character, by_expanded, binding, new_cohort_id))
+    items.extend(incoming_items)
     new_item_ids = [item["id"] for item in items if item["cohortId"] == new_cohort_id]
     supersedes = [
         {"cohortId": cohort_id, **membership(item_ids)}

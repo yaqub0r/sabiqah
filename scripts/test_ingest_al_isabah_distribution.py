@@ -259,6 +259,63 @@ def base_corpus(root: Path) -> Path:
     return base
 
 
+def add_base_passage(base: Path, passage_id: str) -> None:
+    entry_path = base / "items" / "synthetic-legacy-entry-0002.json"
+    passage = json.loads(entry_path.read_text(encoding="utf-8"))
+    passage.update(
+        id=passage_id,
+        kind="passage",
+        sequence=99,
+        printedEntryNumber=None,
+        sourceEntryNumber=1,
+        volume=1,
+        relationship="Synthetic structure before entry 1",
+    )
+    passage["segments"][0]["id"] = f"{passage_id}-body"
+    write(base / "items" / f"{passage_id}.json", passage)
+    index_path = base / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index["items"].append(
+        {
+            "id": passage_id,
+            "kind": "passage",
+            "sequence": 99,
+            "printedEntryNumber": None,
+            "sourceEntryNumber": 1,
+            "volume": 1,
+            "printedPageStart": 1,
+            "printedPageEnd": 1,
+            "sectionId": "volume-01-pages-0001-0025",
+            "titleEn": passage["title"]["en"],
+            "titleAr": passage["title"]["ar"],
+            "translationState": "translated",
+            "machineAssessment": "passed",
+            "humanReview": "unreviewed",
+            "unresolvedCount": 0,
+            "publicEligibility": "eligible",
+            "relationship": passage["relationship"],
+        }
+    )
+    write(index_path, index)
+
+
+def synthetic_preceding_material(passage_id: str) -> dict:
+    return {
+        "id": passage_id,
+        "kind": "front_matter",
+        "arabic": "نص تمهيدي تجريبي",
+        "english": "Synthetic structural passage.",
+        "heading": {
+            "arabic": "تمهيد تجريبي",
+            "english": "Synthetic front matter",
+        },
+        "sourceSha256": "8" * 64,
+        "pages": [{"volume": 1, "page": 1}],
+        "unresolved": [],
+        "humanReview": "unreviewed",
+    }
+
+
 class AlIsabahDistributionVerificationTests(unittest.TestCase):
     def test_valid_v2_binds_release_source_rights_and_counts(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -486,6 +543,80 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
                 (output / "summary.json").read_bytes(),
                 (second / "summary.json").read_bytes(),
             )
+
+    def test_projected_passage_replaces_carried_member_by_stable_id(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            passage_id = "synthetic-structural-passage-0001"
+            case.update_record(
+                lambda record: record["precedingMaterial"].append(
+                    synthetic_preceding_material(passage_id)
+                )
+            )
+            case.finalize()
+            base = base_corpus(root)
+            add_base_passage(base, passage_id)
+            output = root / "output"
+            ingest(
+                case.distribution,
+                base,
+                output,
+                "2026-08-15T18:00:00Z",
+                case.archive,
+                case.release,
+                case.tag_ref,
+                case.rights,
+                case.authority,
+            )
+            summary = json.loads(
+                (output / "summary.json").read_text(encoding="utf-8")
+            )
+            item = json.loads(
+                (output / "items" / f"{passage_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            cohorts = {
+                cohort["kind"]: cohort
+                for cohort in summary["corpus"]["cohorts"]
+            }
+            self.assertEqual(item["cohortId"], cohorts["distribution-v2"]["id"])
+            self.assertNotIn(
+                passage_id, cohorts["legacy-schema-4"]["membership"]["itemIds"]
+            )
+            self.assertIn(
+                passage_id,
+                cohorts["distribution-v2"]["supersedes"][0]["itemIds"],
+            )
+            self.assertEqual(validate_public_corpus(output), [])
+
+    def test_duplicate_incoming_projection_ids_fail_before_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            case.update_record(
+                lambda record: record["precedingMaterial"].append(
+                    synthetic_preceding_material(record["id"])
+                )
+            )
+            case.finalize()
+            with self.assertRaisesRegex(
+                IngestionError, "incoming projection contains invalid or duplicate"
+            ):
+                ingest(
+                    case.distribution,
+                    base_corpus(root),
+                    root / "output",
+                    "2026-08-15T18:00:00Z",
+                    case.archive,
+                    case.release,
+                    case.tag_ref,
+                    case.rights,
+                    case.authority,
+                )
+            self.assertFalse((root / "output").exists())
+            self.assertFalse((root / "activation.json").exists())
 
     def test_unknown_base_major_fails_before_candidate_write(self):
         with tempfile.TemporaryDirectory() as temp:
