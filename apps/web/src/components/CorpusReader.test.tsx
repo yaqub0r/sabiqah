@@ -69,6 +69,7 @@ const firstItem = item(
 );
 const rightsBoundFirstItem = {
   ...firstItem,
+  cohortId: "distribution:synthetic-v2",
   source: {
     authorityId: "al-isabah-openiti-5835c18-aco-v1",
     producerAuthorityId: "openiti-cleaned-arabic-comparison",
@@ -286,6 +287,7 @@ describe("CorpusReader", () => {
       await screen.findByText(/Independently authored English:/),
     ).toBeTruthy();
     expect(screen.getByText("al-isabah-rights-synthetic")).toBeTruthy();
+    expect(screen.getByText("distribution:synthetic-v2")).toBeTruthy();
     expect(
       await screen.findByText(
         "Have an invitation to review or correct the text?",

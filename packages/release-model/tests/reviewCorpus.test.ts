@@ -72,6 +72,123 @@ const item = {
 };
 
 describe("review reading contract", () => {
+  it("parses mixed-cohort metadata without a corpus-wide rights claim", () => {
+    const license = {
+      spdx: "CC-BY-NC-SA-4.0",
+      url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    };
+    const summary = parseReviewCorpusSummary({
+      schemaVersion: "5.0.0",
+      work: {
+        slug: "al-isabah",
+        titleAr: "Ø§Ù„Ø¥ØµØ§Ø¨Ø©",
+        titleEn: "Al-Isabah",
+      },
+      corpus: {
+        id: "mixed-corpus",
+        generatedAt: "2026-08-16T00:00:00Z",
+        promotionStatus: "blocked",
+        publicationStatus: "public-working",
+        cohorts: [
+          {
+            id: "legacy:synthetic",
+            kind: "legacy-schema-4",
+            source: {
+              authorityId: "legacy-authority",
+              repository: "https://example.test/legacy",
+              commit: "a".repeat(40),
+              artifactSha256: "b".repeat(64),
+            },
+            rights: {
+              arabicSource: { license, attribution: "Synthetic Arabic source" },
+              englishTranslation: {
+                license,
+                attribution: "Synthetic English author",
+              },
+              matrix: {
+                id: "legacy-rights",
+                schema: "al-isabah.book-rights-matrix.v1",
+                decision: "approved-under-cc-by-nc-sa-4.0",
+                reviewedOn: "2026-08-16",
+                followUp: "required-on-change",
+              },
+              excludedMaterial: ["Synthetic excluded material"],
+            },
+            state: {
+              publicationStatus: "public-working",
+              promotionStatus: "blocked",
+              completeness: "carried-forward",
+            },
+            membership: {
+              itemCount: 1,
+              itemIdsSha256: "c".repeat(64),
+              itemIds: ["synthetic-item"],
+            },
+            upstream: { corpusId: "legacy-corpus", schemaVersion: "4.0.0" },
+          },
+        ],
+      },
+      counts: {
+        entries: 1,
+        passages: 0,
+        translated: 1,
+        needsAttention: 0,
+        unresolvedItems: 0,
+        humanReviewed: 0,
+      },
+      volumes: [
+        {
+          id: "volume-01",
+          number: 1,
+          label: "Volume 1",
+          availability: "complete_translation",
+          itemCount: 1,
+          sectionCount: 1,
+          firstPrintedPage: 1,
+          lastPrintedPage: 1,
+          description: "Synthetic coverage.",
+        },
+      ],
+    });
+    expect("rights" in summary.corpus).toBe(false);
+    expect("cohorts" in summary.corpus && summary.corpus.cohorts[0]?.id).toBe(
+      "legacy:synthetic",
+    );
+  });
+
+  it("fails closed for unknown majors and schema-5 global rights claims", () => {
+    expect(() =>
+      parseReviewCorpusSummary({ schemaVersion: "6.0.0" }),
+    ).toThrow();
+    expect(() =>
+      parseReviewCorpusSummary({
+        schemaVersion: "5.0.0",
+        work: {
+          slug: "al-isabah",
+          titleAr: "Ø§Ù„Ø¥ØµØ§Ø¨Ø©",
+          titleEn: "Al-Isabah",
+        },
+        corpus: {
+          id: "mixed-corpus",
+          sourceRepository: "https://example.test/false-global-claim",
+          generatedAt: "2026-08-16T00:00:00Z",
+          promotionStatus: "blocked",
+          publicationStatus: "public-working",
+          cohorts: [],
+        },
+        counts: {
+          entries: 0,
+          passages: 0,
+          translated: 0,
+          needsAttention: 0,
+          unresolvedItems: 0,
+          humanReviewed: 0,
+        },
+        volumes: [],
+      }),
+    ).toThrow();
+  });
+
   it("organizes a blocked corpus by book volumes", () => {
     const summary = parseReviewCorpusSummary({
       schemaVersion: "2.0.0",

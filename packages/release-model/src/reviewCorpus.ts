@@ -38,6 +38,89 @@ const rightsMatrixSchema = z
   })
   .strict();
 
+const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
+
+const cohortMembershipBaseSchema = z
+  .object({
+    itemCount: z.number().int().nonnegative(),
+    itemIdsSha256: sha256Schema,
+    itemIds: z.array(identifier),
+  })
+  .strict();
+
+const cohortMembershipSchema = cohortMembershipBaseSchema.superRefine(
+  (membership, context) => {
+    if (
+      membership.itemIds.length !== membership.itemCount ||
+      new Set(membership.itemIds).size !== membership.itemIds.length
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Cohort membership must be unique and count-bound.",
+      });
+    }
+  },
+);
+
+const corpusRightsSchema = z
+  .object({
+    arabicSource: z
+      .object({ license: licenseSchema, attribution: z.string().min(1) })
+      .strict(),
+    englishTranslation: z
+      .object({ license: licenseSchema, attribution: z.string().min(1) })
+      .strict(),
+    matrix: rightsMatrixSchema,
+    excludedMaterial: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+export const corpusCohortSchema = z
+  .object({
+    id: identifier,
+    kind: z.enum(["legacy-schema-4", "distribution-v2"]),
+    source: z
+      .object({
+        authorityId: identifier,
+        producerAuthorityId: identifier.optional(),
+        repository: z.url(),
+        commit: z.string().regex(/^[a-f0-9]{40}$/),
+        artifactSha256: sha256Schema,
+      })
+      .strict(),
+    rights: corpusRightsSchema,
+    state: z
+      .object({
+        publicationStatus: z.literal("public-working"),
+        promotionStatus: z.literal("blocked"),
+        completeness: z.enum(["carried-forward", "partial-release"]),
+      })
+      .strict(),
+    membership: cohortMembershipSchema,
+    upstream: z.union([
+      z
+        .object({
+          corpusId: identifier,
+          schemaVersion: z.literal("4.0.0"),
+        })
+        .strict(),
+      z
+        .object({
+          distributionId: identifier,
+          releaseTag: z.string().min(1),
+          assetName: z.string().min(1),
+          assetSha256: sha256Schema,
+        })
+        .strict(),
+    ]),
+    supersedes: z
+      .array(
+        z.object({ cohortId: identifier }).merge(cohortMembershipBaseSchema),
+      )
+      .optional(),
+  })
+  .strict();
+
 const volumeSchema = z
   .object({
     id: identifier,
@@ -56,7 +139,7 @@ const volumeSchema = z
 
 export const reviewCorpusSummarySchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0", "5.0.0"]),
     work: z
       .object({
         slug: z.literal("al-isabah"),
@@ -64,41 +147,34 @@ export const reviewCorpusSummarySchema = z
         titleEn: z.string().min(1),
       })
       .strict(),
-    corpus: z
-      .object({
-        id: identifier,
-        sourceRepository: z.url(),
-        sourceCommit: z.string().regex(/^[a-f0-9]{40}$/),
-        generatedAt: z.iso.datetime(),
-        promotionStatus: z.literal("blocked"),
-        sourceAuthorityId: identifier.optional(),
-        sourceArtifactSha256: z
-          .string()
-          .regex(/^[a-f0-9]{64}$/)
-          .optional(),
-        publicationStatus: z.literal("public-working").optional(),
-        license: licenseSchema.optional(),
-        rights: z
-          .object({
-            arabicSource: z
-              .object({
-                license: licenseSchema,
-                attribution: z.string().min(1),
-              })
-              .strict(),
-            englishTranslation: z
-              .object({
-                license: licenseSchema,
-                attribution: z.string().min(1),
-              })
-              .strict(),
-            matrix: rightsMatrixSchema,
-            excludedMaterial: z.array(z.string().min(1)).min(1),
-          })
-          .strict()
-          .optional(),
-      })
-      .strict(),
+    corpus: z.union([
+      z
+        .object({
+          id: identifier,
+          sourceRepository: z.url(),
+          sourceCommit: z.string().regex(/^[a-f0-9]{40}$/),
+          generatedAt: z.iso.datetime(),
+          promotionStatus: z.literal("blocked"),
+          sourceAuthorityId: identifier.optional(),
+          sourceArtifactSha256: z
+            .string()
+            .regex(/^[a-f0-9]{64}$/)
+            .optional(),
+          publicationStatus: z.literal("public-working").optional(),
+          license: licenseSchema.optional(),
+          rights: corpusRightsSchema.optional(),
+        })
+        .strict(),
+      z
+        .object({
+          id: identifier,
+          generatedAt: z.iso.datetime(),
+          promotionStatus: z.literal("blocked"),
+          publicationStatus: z.literal("public-working"),
+          cohorts: z.array(corpusCohortSchema).min(1),
+        })
+        .strict(),
+    ]),
     counts: z
       .object({
         entries: z.number().int().nonnegative(),
@@ -123,11 +199,22 @@ export const reviewCorpusSummarySchema = z
       .optional(),
     volumes: z.array(volumeSchema).min(1),
   })
-  .strict();
+  .strict()
+  .superRefine((summary, context) => {
+    const hasCohorts = "cohorts" in summary.corpus;
+    if ((summary.schemaVersion === "5.0.0") !== hasCohorts) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Schema 5.0.0 requires cohort corpus metadata and older schemas forbid it.",
+      });
+    }
+  });
 
 export const reviewCorpusListItemSchema = z
   .object({
     id: identifier,
+    cohortId: identifier.optional(),
     kind: z.enum(["entry", "passage"]),
     sequence: z.number().int().nonnegative(),
     printedEntryNumber: z.number().int().positive().nullable(),
@@ -150,11 +237,22 @@ export const reviewCorpusListItemSchema = z
 
 export const reviewCorpusIndexSchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0", "5.0.0"]),
     corpusId: identifier,
     items: z.array(reviewCorpusListItemSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((index, context) => {
+    if (
+      index.schemaVersion === "5.0.0" &&
+      index.items.some((item) => !item.cohortId)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Schema 5.0.0 index items require cohort IDs.",
+      });
+    }
+  });
 
 const corpusNameSchema = z
   .object({
@@ -213,8 +311,9 @@ const honorificOccurrenceSchema = z
 
 export const reviewCorpusItemSchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0", "5.0.0"]),
     corpusId: identifier,
+    cohortId: identifier.optional(),
     id: identifier,
     kind: z.enum(["entry", "passage"]),
     sequence: z.number().int().nonnegative(),
@@ -343,6 +442,12 @@ export const reviewCorpusItemSchema = z
       .object({
         authorityId: identifier,
         producerAuthorityId: identifier.optional(),
+        sourceRepository: z.url().optional(),
+        sourceCommit: z
+          .string()
+          .regex(/^[a-f0-9]{40}$/)
+          .optional(),
+        sourceArtifactSha256: sha256Schema.optional(),
         entryNumber: z.number().int().positive(),
         pages: z.array(z.string().regex(/^V\d{2}P\d{3}$/)),
         sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -408,6 +513,11 @@ export const reviewCorpusItemSchema = z
         .object({
           sourceAuthorityId: identifier,
           producerAuthorityId: identifier.optional(),
+          sourceRepository: z.url().optional(),
+          sourceCommit: z
+            .string()
+            .regex(/^[a-f0-9]{40}$/)
+            .optional(),
           sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
           sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
           sourceExactTextSha256: z
@@ -437,11 +547,29 @@ export const reviewCorpusItemSchema = z
         message: "Schema 4.0.0 items require exact-source integrity metadata.",
       });
     }
+  })
+  .superRefine((item, context) => {
+    if (item.schemaVersion !== "5.0.0") return;
+    if (
+      !item.cohortId ||
+      !item.source?.sourceRepository ||
+      !item.source.sourceCommit ||
+      !item.source.sourceArtifactSha256 ||
+      !("sourceRepository" in item.provenance) ||
+      !item.provenance.sourceRepository ||
+      !item.provenance.sourceCommit
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Schema 5.0.0 items require cohort and complete source binding metadata.",
+      });
+    }
   });
 
 export const reviewCorpusSectionSchema = z
   .object({
-    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0"]),
+    schemaVersion: z.enum(["2.0.0", "3.0.0", "4.0.0", "5.0.0"]),
     corpusId: identifier,
     id: identifier,
     volume: z.number().int().positive(),

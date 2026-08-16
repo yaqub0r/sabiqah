@@ -73,6 +73,31 @@ describe("public working corpus", () => {
     );
   });
 
+  it("accepts rollback to a prior immutable prefix and rejects unknown pointer majors", async () => {
+    const rollback = {
+      schemaVersion: "1.0.0",
+      corpusId: "al-isabah-public-openiti-5835c18-v11",
+      prefix: "public-corpora/al-isabah/al-isabah-public-openiti-5835c18-v11",
+    };
+    const rollbackBucket = {
+      get: async () => ({ text: async () => JSON.stringify(rollback) }),
+    } as unknown as R2Bucket;
+    await expect(resolveCorpusContext(rollbackBucket)).resolves.toEqual({
+      id: rollback.corpusId,
+      prefix: rollback.prefix,
+    });
+
+    const unknownBucket = {
+      get: async () => ({
+        text: async () =>
+          JSON.stringify({ ...rollback, schemaVersion: "2.0.0" }),
+      }),
+    } as unknown as R2Bucket;
+    await expect(resolveCorpusContext(unknownBucket)).rejects.toThrow(
+      "Active corpus pointer is inconsistent",
+    );
+  });
+
   it("returns public corpus JSON with bounded shared caching", async () => {
     const bucket = {
       get: async () => ({ body: JSON.stringify({ ok: true }) }),

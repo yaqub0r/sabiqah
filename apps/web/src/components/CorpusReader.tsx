@@ -242,6 +242,11 @@ function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
             <code>{item.source.sourceTextSha256}</code>
             {item.source.englishRights && item.source.rightsMatrix && (
               <span className="rights-boundary">
+                {item.cohortId && (
+                  <span>
+                    Provenance and rights cohort <code>{item.cohortId}</code>
+                  </span>
+                )}
                 <span>
                   Arabic source: {item.source.attribution} (
                   {item.source.license.spdx})

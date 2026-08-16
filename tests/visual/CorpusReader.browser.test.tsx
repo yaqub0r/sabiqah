@@ -20,6 +20,7 @@ function record(
   return {
     schemaVersion: "2.0.0",
     corpusId,
+    cohortId: "distribution:synthetic-v2",
     id,
     kind: "entry",
     sequence: number,
@@ -524,6 +525,7 @@ describe("CorpusReader presentation quality", () => {
       "Independently authored English:",
     );
     expect(provenance?.textContent).toContain("al-isabah-rights-synthetic");
+    expect(provenance?.textContent).toContain("distribution:synthetic-v2");
     provenance!.closest("details")!.open = true;
     await new Promise((resolve) => requestAnimationFrame(resolve));
     expect(provenance?.scrollWidth).toBeLessThanOrEqual(
