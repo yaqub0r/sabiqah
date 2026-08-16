@@ -1,0 +1,33 @@
+{
+  "schema": "al-isabah.book-rights-matrix.v1",
+  "matrix_id": "al-isabah-rights-synthetic",
+  "source_editions": [
+    {
+      "source_id": "openiti-cleaned-arabic-comparison",
+      "publication_role": "arabic-publication-base",
+      "source_revision": "5835c183b8bbf4ea454d5c1be2b168b669403771",
+      "sha256": "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea"
+    }
+  ],
+  "public_content_license": {
+    "spdx": "CC-BY-NC-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "software_license_granted": false
+  },
+  "attribution": [
+    "Al-Isabah project synthetic English scholarly content",
+    "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's al-Isabah fi Tamyiz al-Sahabah, commit 5835c183b8bbf4ea454d5c1be2b168b669403771"
+  ],
+  "exclusions": ["restricted witnesses and internal workflow evidence"],
+  "publication_decision": {
+    "public_reading": "approved-noncommercial-with-attribution-and-share-alike",
+    "public_reuse": "approved-under-cc-by-nc-sa-4.0",
+    "canonical_promotion": "separately-gated"
+  },
+  "reviewed_on": "2026-08-15",
+  "follow_up_review": {
+    "status": "required-on-change",
+    "due_on": null,
+    "triggers": ["source or rights change"]
+  }
+}

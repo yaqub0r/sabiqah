@@ -240,6 +240,23 @@ function ReviewEvidence({ item }: { item: ReviewCorpusItem }) {
             </a>{" "}
             · {item.source.license.spdx} · integrity{" "}
             <code>{item.source.sourceTextSha256}</code>
+            {item.source.englishRights && item.source.rightsMatrix && (
+              <span className="rights-boundary">
+                <span>
+                  Arabic source: {item.source.attribution} (
+                  {item.source.license.spdx})
+                </span>
+                <span>
+                  Independently authored English:{" "}
+                  {item.source.englishRights.attribution} (
+                  {item.source.englishRights.license.spdx})
+                </span>
+                <span>
+                  Rights matrix <code>{item.source.rightsMatrix.id}</code> (
+                  {item.source.rightsMatrix.schema})
+                </span>
+              </span>
+            )}
           </>
         ) : (
           <>

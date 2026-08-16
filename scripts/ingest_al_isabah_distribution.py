@@ -8,7 +8,6 @@ import hashlib
 import json
 import re
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -16,6 +15,7 @@ from rebuild_al_isabah_public_corpus import (
     normalize_search_text,
     render_arabic_poetry,
 )
+from verify_al_isabah_distribution import CompatibilityError, verify_distribution
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,11 +23,6 @@ HONORIFIC_REGISTRY = (
     ROOT / "packages" / "release-model" / "src" / "honorifics.registry.json"
 )
 SCHEMA_VERSION = "4.0.0"
-PUBLIC_SOURCE_AUTHORITY_ID = "al-isabah-openiti-5835c18-aco-v1"
-SHA256 = re.compile(r"^[a-f0-9]{64}$")
-COMMIT = re.compile(r"^[a-f0-9]{40}$")
-IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
-UTC_TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
 
 
 class IngestionError(RuntimeError):
@@ -53,95 +48,6 @@ def load(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise IngestionError(f"{path}: top level must be an object")
     return value
-
-
-def validate_distribution(root: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    manifest = load(root / "manifest.json")
-    if manifest.get("schemaVersion") != "1.0.0":
-        raise IngestionError("unsupported Al-Isabah distribution schema")
-    if manifest.get("publicationStatus") != "public-working":
-        raise IngestionError("distribution is not public-working")
-    if manifest.get("canonicalPromotion") != "blocked":
-        raise IngestionError("distribution incorrectly claims canonical promotion")
-    generated_at = manifest.get("generatedAt")
-    if not isinstance(generated_at, str) or not UTC_TIMESTAMP.fullmatch(generated_at):
-        raise IngestionError("distribution timestamp must use UTC Z form")
-    try:
-        datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise IngestionError("distribution timestamp is invalid") from error
-    repository = manifest.get("repository", {})
-    if repository.get("url") != "https://github.com/yaqub0r/al-isabah":
-        raise IngestionError("distribution repository authority is not Al-Isabah")
-    if not COMMIT.fullmatch(str(repository.get("commit", ""))):
-        raise IngestionError("distribution repository commit is invalid")
-    authorities = {
-        item.get("sourceId"): item for item in manifest.get("authorities", [])
-    }
-    if not authorities:
-        raise IngestionError("distribution has no source authority")
-    for authority in authorities.values():
-        if authority.get("license", {}).get("spdx") != "CC-BY-NC-SA-4.0":
-            raise IngestionError("distribution source license is not approved")
-        if not SHA256.fullmatch(str(authority.get("sha256", ""))):
-            raise IngestionError("distribution source authority hash is invalid")
-    records: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    actual_paths = set()
-    for file in manifest.get("files", []):
-        relative = file.get("path")
-        if not isinstance(relative, str) or not re.fullmatch(
-            r"records/volume-\d{2}\.jsonl", relative
-        ):
-            raise IngestionError("distribution contains an unsafe shard path")
-        actual_paths.add(relative)
-        path = root / relative
-        if not path.is_file() or digest_file(path) != file.get("sha256"):
-            raise IngestionError(f"distribution shard failed checksum: {relative}")
-        if path.stat().st_size != file.get("bytes"):
-            raise IngestionError(f"distribution shard byte count differs: {relative}")
-        shard = [
-            json.loads(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line
-        ]
-        if len(shard) != file.get("recordCount"):
-            raise IngestionError(f"distribution shard record count differs: {relative}")
-        previous: tuple[int, str] | None = None
-        for record in shard:
-            record_id = record.get("id")
-            if not isinstance(record_id, str) or not IDENTIFIER.fullmatch(record_id):
-                raise IngestionError("distribution contains an invalid stable record ID")
-            if record_id in seen:
-                raise IngestionError(f"distribution repeats stable record ID {record_id}")
-            seen.add(record_id)
-            order = (int(record.get("sourceOrdinal", 0)), record_id)
-            if previous is not None and order <= previous:
-                raise IngestionError(f"distribution shard is not ordered: {relative}")
-            previous = order
-            if record.get("source", {}).get("authorityId") not in authorities:
-                raise IngestionError(f"{record_id}: source authority is not declared")
-            if not record.get("arabic") or not record.get("english"):
-                raise IngestionError(f"{record_id}: public bilingual body is incomplete")
-            records.append(record)
-    disk_paths = {
-        path.relative_to(root).as_posix() for path in root.glob("records/*.jsonl")
-    }
-    if disk_paths != actual_paths:
-        raise IngestionError("distribution shard inventory differs from manifest")
-    if len(records) != manifest.get("counts", {}).get("entries"):
-        raise IngestionError("distribution entry count differs from manifest")
-    duplicates: dict[int, list[str]] = defaultdict(list)
-    for record in records:
-        duplicates[int(record["printedEntryNumber"])].append(record["id"])
-    expected_duplicates = [
-        {"printedEntryNumber": number, "recordIds": ids}
-        for number, ids in sorted(duplicates.items())
-        if len(ids) > 1
-    ]
-    if expected_duplicates != manifest.get("duplicatePrintedEntryNumbers"):
-        raise IngestionError("duplicate printed-entry accounting differs")
-    return manifest, records
 
 
 def registry_indexes() -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
@@ -275,33 +181,39 @@ def workflow_stages(record: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def source_url(source: dict[str, Any]) -> str:
-    return f"{source['repository']}/blob/{source['commit']}/{source['path']}"
+def source_url(source: dict[str, Any], binding: dict[str, Any]) -> str:
+    return f"{binding['sourceRepository']}/blob/{binding['sourceCommit']}/{binding['sourcePath']}"
 
 
 def source_metadata(
-    source: dict[str, Any], entry_number: int, display_arabic: str, title_score: float
+    source: dict[str, Any], entry_number: int, display_arabic: str, title_score: float,
+    binding: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     display_hash = digest_bytes(" ".join(display_arabic.split()).encode("utf-8"))
     metadata = {
-        "authorityId": PUBLIC_SOURCE_AUTHORITY_ID,
+        "authorityId": binding["sourceAuthorityId"],
+        "producerAuthorityId": binding["producerAuthorityId"],
         "entryNumber": entry_number,
         "pages": [],
         "sourceTextSha256": display_hash,
         "sourceExactTextSha256": source["exactTextSha256"],
-        "sourceUrl": source_url(source),
-        "license": {
-            "spdx": source["license"]["spdx"],
-            "url": source["license"]["url"],
+        "sourceUrl": source_url(source, binding),
+        "license": binding["sourceLicense"],
+        "attribution": binding["sourceAttribution"],
+        "englishRights": {
+            "license": binding["englishLicense"],
+            "attribution": binding["englishAttribution"],
         },
+        "rightsMatrix": binding["rightsMatrix"],
         "alignment": {
-            "method": "al-isabah-public-distribution-v1",
+            "method": "al-isabah-public-distribution-v2",
             "titleScore": title_score,
             "bodyScore": 1.0,
         },
     }
     provenance = {
-        "sourceAuthorityId": PUBLIC_SOURCE_AUTHORITY_ID,
+        "sourceAuthorityId": binding["sourceAuthorityId"],
+        "producerAuthorityId": binding["producerAuthorityId"],
         "sourceArtifactSha256": source["artifactSha256"],
         "sourceTextSha256": display_hash,
         "sourceExactTextSha256": source["exactTextSha256"],
@@ -325,6 +237,7 @@ def direct_item(
     corpus_id: str,
     by_character: dict[str, dict[str, Any]],
     by_expanded: dict[str, dict[str, Any]],
+    binding: dict[str, Any],
 ) -> list[dict[str, Any]]:
     formulas_by_record: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for formula in record.get("formulas", []):
@@ -348,6 +261,7 @@ def direct_item(
             record["printedEntryNumber"],
             display_arabic,
             1.0 if heading.get("arabic") and heading.get("english") else 0.5,
+            binding,
         )
         source["pages"] = [
             f"V{page['volume']:02d}P{page['page']:03d}" for page in passage.get("pages", [])
@@ -375,7 +289,7 @@ def direct_item(
                     "id": segment_id,
                     "arabic": arabic,
                     "english": english,
-                    "pages": page_objects(passage.get("pages", []), source_url(record["source"])),
+                    "pages": page_objects(passage.get("pages", []), source_url(record["source"], binding)),
                     "machineState": "translated",
                 }],
                 "names": [],
@@ -398,6 +312,7 @@ def direct_item(
         record["printedEntryNumber"],
         display_arabic,
         1.0 if record["title"]["state"] == "ready" else 0.5,
+        binding,
     )
     source["pages"] = [
         f"V{page['volume']:02d}P{page['page']:03d}" for page in record.get("pages", [])
@@ -428,7 +343,7 @@ def direct_item(
                 "english": normalize_english_presentation(
                     record["english"], by_character
                 ),
-                "pages": page_objects(record.get("pages", []), source_url(record["source"])),
+                "pages": page_objects(record.get("pages", []), source_url(record["source"], binding)),
                 "machineState": "translated",
             }],
             "names": [
@@ -537,10 +452,19 @@ def build_sections(items: list[dict[str, Any]], corpus_id: str) -> tuple[list[di
     return sections, indexed
 
 
-def ingest(distribution: Path, base: Path, output: Path, activated_at: str) -> dict[str, Any]:
+def ingest(
+    distribution: Path, base: Path, output: Path, activated_at: str,
+    archive: Path, release_metadata: Path, tag_ref: Path,
+    rights_matrix: Path, source_authority: Path,
+) -> dict[str, Any]:
     if output.exists():
         raise IngestionError(f"output already exists: {output}")
-    manifest, records = validate_distribution(distribution)
+    try:
+        manifest, records, binding = verify_distribution(
+            distribution, archive, release_metadata, tag_ref, rights_matrix, source_authority
+        )
+    except CompatibilityError as error:
+        raise IngestionError(str(error)) from error
     base_summary = load(base / "summary.json")
     base_index = load(base / "index.json")
     base_quarantine = load(base / "quarantine.json")
@@ -557,7 +481,7 @@ def ingest(distribution: Path, base: Path, output: Path, activated_at: str) -> d
         items.append(item)
     by_character, by_expanded = registry_indexes()
     for record in records:
-        items.extend(direct_item(record, corpus_id, by_character, by_expanded))
+        items.extend(direct_item(record, corpus_id, by_character, by_expanded, binding))
     ids = [item["id"] for item in items]
     if len(ids) != len(set(ids)):
         raise IngestionError("combined corpus contains duplicate stable item IDs")
@@ -615,16 +539,19 @@ def ingest(distribution: Path, base: Path, output: Path, activated_at: str) -> d
         "work": base_summary["work"],
         "corpus": {
             "id": corpus_id,
-            "sourceRepository": records[0]["source"]["repository"],
-            "sourceCommit": records[0]["source"]["commit"],
+            "sourceRepository": binding["sourceRepository"],
+            "sourceCommit": binding["sourceCommit"],
             "generatedAt": manifest["generatedAt"],
             "promotionStatus": "blocked",
-            "sourceAuthorityId": PUBLIC_SOURCE_AUTHORITY_ID,
-            "sourceArtifactSha256": records[0]["source"]["artifactSha256"],
+            "sourceAuthorityId": binding["sourceAuthorityId"],
+            "sourceArtifactSha256": binding["sourceArtifactSha256"],
             "publicationStatus": "public-working",
-            "license": {
-                "spdx": records[0]["source"]["license"]["spdx"],
-                "url": records[0]["source"]["license"]["url"],
+            "license": binding["sourceLicense"],
+            "rights": {
+                "arabicSource": {"license": binding["sourceLicense"], "attribution": binding["sourceAttribution"]},
+                "englishTranslation": {"license": binding["englishLicense"], "attribution": binding["englishAttribution"]},
+                "matrix": binding["rightsMatrix"],
+                "excludedMaterial": binding["excludedMaterial"],
             },
         },
         "counts": counts,
@@ -645,12 +572,16 @@ def ingest(distribution: Path, base: Path, output: Path, activated_at: str) -> d
     corpus_manifest = {
         "schemaVersion": SCHEMA_VERSION,
         "corpusId": corpus_id,
-        "sourceAuthorityId": PUBLIC_SOURCE_AUTHORITY_ID,
+        "sourceAuthorityId": binding["sourceAuthorityId"],
         "distribution": {
             "id": manifest["distributionId"],
             "repository": manifest["repository"]["url"],
             "commit": distribution_commit,
             "manifestSha256": digest_file(distribution / "manifest.json"),
+            "releaseTag": binding["tag"],
+            "assetName": binding["asset"],
+            "assetSha256": binding["sha256"],
+            "rightsMatrix": binding["rightsMatrix"],
         },
         "objectCount": len(files),
         "files": files,
@@ -664,6 +595,11 @@ def ingest(distribution: Path, base: Path, output: Path, activated_at: str) -> d
         "distributionCommit": distribution_commit,
         "distributionManifestSha256": digest_file(distribution / "manifest.json"),
         "activatedAt": activated_at,
+        "rollback": {
+            "strategy": "restore-verified-pointer",
+            "previousCorpusId": base_summary["corpus"]["id"],
+            "previousPrefix": f"public-corpora/al-isabah/{base_summary['corpus']['id']}",
+        },
     }
     write_json(output.parent / "activation.json", activation)
     return activation
@@ -675,12 +611,22 @@ def main() -> int:
     parser.add_argument("--base-corpus", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--activated-at", required=True)
+    parser.add_argument("--archive", required=True, type=Path)
+    parser.add_argument("--release-metadata", required=True, type=Path)
+    parser.add_argument("--tag-ref", required=True, type=Path)
+    parser.add_argument("--rights-matrix", required=True, type=Path)
+    parser.add_argument("--source-authority", required=True, type=Path)
     args = parser.parse_args()
     activation = ingest(
         args.distribution.resolve(),
         args.base_corpus.resolve(),
         args.output.resolve(),
         args.activated_at,
+        args.archive.resolve(),
+        args.release_metadata.resolve(),
+        args.tag_ref.resolve(),
+        args.rights_matrix.resolve(),
+        args.source_authority.resolve(),
     )
     print(f"Built {activation['corpusId']} from {activation['distributionId']}.")
     return 0

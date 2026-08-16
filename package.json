@@ -12,6 +12,7 @@
     "check": "pnpm format:check && pnpm cleanup:test && pnpm contracts:test && pnpm evidence:test && pnpm typecheck && pnpm test && pnpm build && pnpm worker:dry-run",
     "cleanup:generated": "node tools/cleanup-generated.mjs",
     "cleanup:test": "node --test tools/cleanup-generated.node-test.mjs",
+    "compatibility:al-isabah": "python scripts/verify_al_isabah_distribution.py",
     "contracts:test": "node --test tools/contracts/check-contract-ack.node-test.mjs",
     "dev": "pnpm --filter @sabiqah/web dev",
     "dev:worker": "pnpm build && wrangler dev",

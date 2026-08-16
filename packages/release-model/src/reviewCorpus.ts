@@ -24,6 +24,20 @@ const availabilitySchema = z.enum([
   "not_translated",
 ]);
 
+const licenseSchema = z
+  .object({ spdx: z.string().min(1), url: z.url() })
+  .strict();
+
+const rightsMatrixSchema = z
+  .object({
+    id: z.string().min(1),
+    schema: z.literal("al-isabah.book-rights-matrix.v1"),
+    decision: z.literal("approved-under-cc-by-nc-sa-4.0"),
+    reviewedOn: z.iso.date(),
+    followUp: z.literal("required-on-change"),
+  })
+  .strict();
+
 const volumeSchema = z
   .object({
     id: identifier,
@@ -63,8 +77,24 @@ export const reviewCorpusSummarySchema = z
           .regex(/^[a-f0-9]{64}$/)
           .optional(),
         publicationStatus: z.literal("public-working").optional(),
-        license: z
-          .object({ spdx: z.string().min(1), url: z.url() })
+        license: licenseSchema.optional(),
+        rights: z
+          .object({
+            arabicSource: z
+              .object({
+                license: licenseSchema,
+                attribution: z.string().min(1),
+              })
+              .strict(),
+            englishTranslation: z
+              .object({
+                license: licenseSchema,
+                attribution: z.string().min(1),
+              })
+              .strict(),
+            matrix: rightsMatrixSchema,
+            excludedMaterial: z.array(z.string().min(1)).min(1),
+          })
           .strict()
           .optional(),
       })
@@ -312,6 +342,7 @@ export const reviewCorpusItemSchema = z
     source: z
       .object({
         authorityId: identifier,
+        producerAuthorityId: identifier.optional(),
         entryNumber: z.number().int().positive(),
         pages: z.array(z.string().regex(/^V\d{2}P\d{3}$/)),
         sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -320,7 +351,13 @@ export const reviewCorpusItemSchema = z
           .regex(/^[a-f0-9]{64}$/)
           .optional(),
         sourceUrl: z.url(),
-        license: z.object({ spdx: z.string().min(1), url: z.url() }).strict(),
+        license: licenseSchema,
+        attribution: z.string().min(1).optional(),
+        englishRights: z
+          .object({ license: licenseSchema, attribution: z.string().min(1) })
+          .strict()
+          .optional(),
+        rightsMatrix: rightsMatrixSchema.optional(),
         alignment: z
           .object({
             method: z.string().min(1),
@@ -370,6 +407,7 @@ export const reviewCorpusItemSchema = z
       z
         .object({
           sourceAuthorityId: identifier,
+          producerAuthorityId: identifier.optional(),
           sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
           sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
           sourceExactTextSha256: z

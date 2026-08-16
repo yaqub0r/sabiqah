@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "2.0.0",
+  "distributionId": "al-isabah-public-working-aaaaaaaaaaaa",
+  "publicationStatus": "public-working",
+  "canonicalPromotion": "blocked",
+  "work": {
+    "id": "ibn-hajar-al-isabah",
+    "titleArabic": "عنوان كتاب تجريبي",
+    "titleEnglish": "Synthetic book title"
+  },
+  "repository": {
+    "url": "https://github.com/yaqub0r/al-isabah",
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "generatedAt": "2026-08-15T12:00:00Z",
+  "rights": {
+    "matrixId": "al-isabah-rights-synthetic",
+    "license": {
+      "spdx": "CC-BY-NC-SA-4.0",
+      "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    },
+    "softwareLicenseGranted": false,
+    "attribution": [
+      "Al-Isabah project synthetic English scholarly content",
+      "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's al-Isabah fi Tamyiz al-Sahabah, commit 5835c183b8bbf4ea454d5c1be2b168b669403771"
+    ],
+    "excludedMaterial": ["restricted witnesses and internal workflow evidence"]
+  },
+  "packets": [
+    {
+      "packetId": "synthetic-packet-0001",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "entryCount": 1
+    }
+  ],
+  "authorities": [
+    {
+      "sourceId": "openiti-jk000533-5835c183",
+      "commit": "5835c183b8bbf4ea454d5c1be2b168b669403771",
+      "sha256": "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea",
+      "license": {
+        "spdx": "CC-BY-NC-SA-4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "attribution": "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's al-Isabah fi Tamyiz al-Sahabah"
+      }
+    }
+  ],
+  "counts": {
+    "entries": 1,
+    "machinePassed": 1,
+    "needsAttention": 0,
+    "humanReviewed": 0
+  },
+  "duplicatePrintedEntryNumbers": [],
+  "files": [
+    {
+      "path": "records/volume-01.jsonl",
+      "sha256": "d0ce70aeac5fe3524d693e2595d3dce324f0b84a9d437000af980f44c5ac7cea",
+      "bytes": 1130,
+      "recordCount": 1,
+      "volume": 1
+    }
+  ]
+}

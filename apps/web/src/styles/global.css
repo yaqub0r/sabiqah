@@ -956,6 +956,11 @@ button {
 .provenance-line code {
   overflow-wrap: anywhere;
 }
+.rights-boundary {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.6rem;
+}
 .section-pagination {
   display: flex;
   align-items: center;
