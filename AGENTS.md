@@ -6,6 +6,20 @@ Every repository change must be associated with a GitHub issue before work
 begins. Keep work within the issue scope and reference the issue in commits and
 pull requests.
 
+## Realtime voice pronunciation
+
+When conversation context indicates realtime voice, use original-language
+spelling and this local glossary. Preserve consonant distinctions and vowel
+length, pronounce names naturally, and apply user corrections consistently.
+The transliterations and macrons below are explanatory only; keep ordinary
+Latin spellings in prose.
+
+- **Sabiqah** — **سَابِقَة** — _sābiqah_ — approximately /saː.bi.qa/ in careful
+  Modern Standard Arabic. Keep the initial **سَا** clearly long with alif/ā,
+  keep **بِ** short as _bi_, and pronounce **ق** as qāf, not kāf.
+- **Al-Isabah** — **الإِصَابَة** — _al-iṣābah_ — approximately
+  /al.ʔi.sˤaː.ba/. Use emphatic ṣād **ص** and a long ā, not sīn.
+
 ## Worktree and filesystem safety
 
 - Read `docs/development/worktree-lifecycle.md` before creating or removing a
