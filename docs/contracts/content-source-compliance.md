@@ -6,9 +6,15 @@
 
 ## Purpose
 
-This contract governs how Sabiqah acquires, classifies, stores, compares,
-translates, and approves source material. It is an operational control, not a
-source-specific legal opinion or a substitute for qualified legal review.
+This contract governs how Sabiqah acquires, classifies, stores, compares, and
+presents source material and how it verifies consumer-side provenance and
+rights metadata. It is an operational control, not a source-specific legal
+opinion or a substitute for qualified legal review.
+
+Canonical book repositories own book-specific source and rights decisions,
+translation policy, scholarly approval, corrections, and releases. Sabiqah may
+preserve private evidence and reject an ineligible release, but it does not
+govern how Al-Isabah translations are executed.
 
 ## Required behavior
 
@@ -29,8 +35,8 @@ source-specific legal opinion or a substitute for qualified legal review.
 6. Identify the actual transcription or translation base separately from
    comparison witnesses. AI transformation, removal of visible notes, or
    independent reformatting does not change a source classification.
-7. Preserve lineage through OCR, normalization, segmentation, comparison,
-   translation, editorial correction, and migration.
+7. Preserve the supplied lineage through OCR, normalization, segmentation,
+   comparison, translation, editorial correction, ingestion, and migration.
 8. Stop public promotion when provenance or eligibility is unresolved. An
    authorized reviewer must approve any source-specific exception and record
    its scope without publishing restricted evidence.
@@ -52,6 +58,7 @@ base from material consulted only for comparison.
 
 ## Release condition
 
-Only `approved-for-publication` content may enter a public book release or be
-served from Sabiqah-controlled storage. The promotion manifest required by
-`canonical-book-promotion` must bind that status to the exact promoted content.
+Only `approved-for-publication` content may be served from Sabiqah-controlled
+storage. The canonical repository's release records and the consumer
+verification required by `canonical-book-promotion` must bind that status to
+the exact immutable content.

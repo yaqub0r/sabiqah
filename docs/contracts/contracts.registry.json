@@ -56,31 +56,6 @@
       ]
     },
     {
-      "id": "translation-quality-workflow",
-      "title": "Translation quality workflow contract",
-      "status": "active",
-      "contractPath": "docs/contracts/translation-quality-workflow.md",
-      "paths": [
-        "docs/contracts/**",
-        "docs/translation-profiles/**",
-        "docs/architecture/content-governance.md",
-        "AGENTS.md",
-        ".github/pull_request_template.md",
-        ".github/workflows/contract-ack.yml",
-        "evidence/**",
-        "fixtures/releases/**",
-        "packages/release-model/**",
-        "scripts/*review_corpus*.py",
-        "scripts/*translation*.py",
-        "scripts/translation/**",
-        "apps/web/src/components/Corpus*.tsx",
-        "apps/web/src/components/Translation*.tsx",
-        "workers/platform/**/*translation*",
-        "migrations/*translation*.sql",
-        "tools/contracts/**"
-      ]
-    },
-    {
       "id": "presentation-quality",
       "title": "Presentation quality contract",
       "status": "active",

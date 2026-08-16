@@ -25,6 +25,8 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
+from al_isabah_governance import HONORIFIC_ENTRIES, HONORIFIC_POLICY_VERSION
+
 
 SCHEMA_VERSION = "4.0.0"
 CORPUS_ID = "al-isabah-public-openiti-5835c18-v11"
@@ -64,24 +66,11 @@ ENTRY_TITLE_PROFILE_SOURCE = {
     "sha256": "818a0a1ad51fd898839f7f65374879afe18edde6bb47fcfd04ba536987c21898",
     "semanticSha256": "0e69aea83c096f9d9540d64d729c8d61879106b2ff73cb0ffb5ea4d6921d8ff3",
 }
-HONORIFIC_REGISTRY_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "packages"
-    / "release-model"
-    / "src"
-    / "honorifics.registry.json"
-)
-HONORIFIC_REGISTRY = json.loads(
-    HONORIFIC_REGISTRY_PATH.read_text(encoding="utf-8")
-)
-HONORIFIC_POLICY_VERSION = str(HONORIFIC_REGISTRY["schemaVersion"])
-HONORIFIC_ENTRIES: tuple[dict[str, Any], ...] = tuple(
-    HONORIFIC_REGISTRY["entries"]
-)
 HONORIFIC_BY_CHARACTER = {
     character: entry
     for entry in HONORIFIC_ENTRIES
     for character in (entry["compactCharacter"], *entry["alternateCharacters"])
+    if character
 }
 
 ENTRY_RE = re.compile(r"^### \$+\s+(\d+)\s+(.*)$")
@@ -381,7 +370,11 @@ def compact_registry_aliases(value: str, language: str) -> str:
         lookup = matched_alias.casefold() if language == "en" else matched_alias
         _alias, entry = aliases[lookup]
         replacement = honorific_display(entry, language)
-        if language == "en" and entry["semanticClass"] == "divine-exaltation":
+        if (
+            language == "en"
+            and str(entry["semanticClass"]).replace("_", "-")
+            == "divine-exaltation"
+        ):
             divine_name = re.match(r"^(Allah|God)\b", matched_alias, re.I)
             if divine_name:
                 replacement = f"{divine_name.group(1)} {replacement}"

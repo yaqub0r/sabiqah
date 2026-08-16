@@ -99,7 +99,7 @@
   "transformations": [
     "Remove OpenITI structural markup while retaining entry and PageVxxPxxx location markers as metadata.",
     "Join source line wraps without changing word order.",
-    "Render exact devotional formulas with the reversible typography map in docs/translation-profiles/al-isabah.md.",
+    "Render exact devotional formulas from the Al-Isabah governance reference pinned at https://github.com/yaqub0r/al-isabah/blob/eb4fec9b744c12fcb677d9a7c53c4a58628aaa41/docs/contracts/translation-governance-reference.v1.json.",
     "Bind each emitted Arabic record to the SHA-256 of its rendered public-source text."
   ],
   "restrictedWitnessRule": "The former Usul-aligned corpus may be used only as private comparison evidence. Its Arabic, notes, locators, and modern editorial expression may not be emitted into the public corpus."

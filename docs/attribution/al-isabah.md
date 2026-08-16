@@ -14,7 +14,8 @@ OpenITI distributes its text releases under
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 Sabiqah removes OpenITI markup, preserves its entry and page references as
 metadata, and applies only the reversible honorific typography documented in
-the Al-Isabah translation profile.
+the pinned
+[Al-Isabah governance reference](../architecture/al-isabah-governance-compatibility.md).
 
 The resulting Arabic-derived corpus must be attributed, used
 noncommercially, and shared under the same license. No broader permission for
@@ -53,11 +54,16 @@ result, but it has no approved OpenITI entry identity and includes apparatus
 that cannot be carried into the public working edition. The underlying research
 work remains preserved under Sabiqah's private-evidence rules. It may return to
 public reading only after its medieval text is aligned to an approved public
-source and the English is rebuilt under the public-output contract.
+source and the English is accepted under Al-Isabah's pinned policy and issued
+in a new immutable upstream release.
 
 Each visible record reports its machine and human-review state. Corrections and
 approvals are append-only review evidence; they do not alter the applicable
-source license or make a working record canonical by themselves.
+source license, change release class, update upstream per-record metadata, or
+make a working record canonical by themselves. Al-Isabah owns translation
+policy, scholarly review metadata, corrections, and release decisions;
+Sabiqah displays the pinned release plus its separate operational review
+overlay.
 
 Questions about attribution, source status, or removal should be raised in the
 [Sabiqah issue tracker](https://github.com/yaqub0r/sabiqah/issues).

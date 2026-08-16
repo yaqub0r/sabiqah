@@ -7,21 +7,21 @@
 
 ## Decision
 
-Sabiqah models an honorific as semantic data and treats its written form as a
-language- and book-profile realization. The model separates:
+Sabiqah consumes honorific semantics from each canonical book repository and
+adapts the supplied realization for accessible presentation. For Al-Isabah,
+the pinned
+[upstream formula registry](al-isabah-governance-compatibility.md) owns the
+semantic class, referent, agreement, source form, expansion, and target
+realization. The Sabiqah adapter separately tracks:
 
-- semantic class;
-- referent scope;
-- grammatical agreement;
-- exact observed source form;
-- expanded Arabic form;
-- target-language accessible expansion;
+- the upstream projection identity;
+- expanded Arabic and target-language accessibility text needed for fallback;
 - preferred compact Unicode character, when one exists; and
 - font-support and fallback state.
 
-The exact source remains hash-bound provenance. A translation profile may
-select an equivalent conventional formula, but it may not change the referent,
-agreement, family inclusion, or substantive meaning.
+The exact source and upstream registry remain hash-bound provenance. Sabiqah's
+font or fallback choices may not change the referent, agreement, family
+inclusion, or substantive meaning selected by the upstream profile.
 
 ## Formulaic versus substantive wording
 
@@ -33,9 +33,10 @@ review finding rather than a silent rewrite.
 
 ## Storage and rendering
 
-Public corpus text may contain the registry's preferred compact character.
-Every occurrence also resolves through the versioned registry to its expanded
-Arabic, English accessibility text, semantic class, and agreement.
+Public corpus text may contain the upstream registry's preferred compact
+character. Every occurrence resolves through the pinned consumer projection
+and Sabiqah's presentation metadata to expanded Arabic, English accessibility
+text, semantic class, agreement, and supported display form.
 
 The reader:
 
@@ -80,5 +81,7 @@ used for compact display. Unicode 17 additions are present in the semantic
 registry but use expanded display until the bundled font is upgraded and the
 font, browser, copy, search, bidi, and accessibility acceptance suite passes.
 
-Registry or book-profile changes create a new immutable corpus version. They
-never rewrite an already published corpus object in place.
+An upstream formula or book-profile change follows the canonical repository's
+new immutable release cycle. A Sabiqah font or presentation-adapter change is
+an application version change. Neither rewrites an already published corpus
+object in place.

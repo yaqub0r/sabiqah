@@ -59,14 +59,19 @@ Latin spellings in prose.
   `docs/contracts/contracts.registry.json`. List the applicable contract IDs in
   the pull request.
 - Follow `docs/architecture/content-governance.md` when acquiring, comparing,
-  translating, promoting, or presenting scholarly content.
+  ingesting, reviewing, storing, or presenting scholarly content. For
+  Al-Isabah translation work, follow the immutable upstream reference pinned
+  by `docs/architecture/al-isabah-governance-compatibility.md`; Sabiqah does
+  not govern translation execution.
 - Treat public availability as provenance, not permission to reproduce, adapt,
   or redistribute an artifact.
 - Apply the repository licenses by material, not by file location alone:
   Sabiqah software and code-adjacent implementation materials use PolyForm
-  Noncommercial 1.0.0; Sabiqah-authored translations and intentionally
-  published scholarly content use CC BY-NC-SA 4.0; third-party materials retain
-  their existing terms; private evidence is neither published nor licensed.
+  Noncommercial 1.0.0; any legacy Sabiqah-authored translations and
+  intentionally published scholarly content use CC BY-NC-SA 4.0; canonical
+  book repositories govern new translation and release terms; third-party
+  materials retain their existing terms; private evidence is neither published
+  nor licensed.
 - Consult `NOTICE.md`, `CONTENT-LICENSE.md`, and the applicable per-book rights
   matrix before publishing content. Do not infer that a repository-level
   license covers third-party material or private evidence.
@@ -81,8 +86,10 @@ Latin spellings in prose.
   `pnpm evidence:preserve` command with the local `sabiqah-r2-dev` AWS profile.
   Never substitute a GitHub Actions or production credential, expose its
   values, or delete the source automatically.
-- Promote content into a canonical book repository only through an explicit,
-  reviewable manifest; never silently overwrite canonical book content.
+- Submit content or correction proposals to a canonical book repository only
+  through an explicit, reviewable manifest. The canonical repository owns
+  acceptance, promotion, correction, and release; never silently overwrite
+  canonical book content or mutate an immutable release.
 
 ## Delivery
 

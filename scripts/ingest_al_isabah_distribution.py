@@ -21,12 +21,10 @@ from verify_al_isabah_legacy_binding import (
     LegacyBindingError,
     verify_legacy_binding,
 )
+from al_isabah_governance import HONORIFIC_ENTRIES
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HONORIFIC_REGISTRY = (
-    ROOT / "packages" / "release-model" / "src" / "honorifics.registry.json"
-)
 SCHEMA_VERSION = "5.0.0"
 LEGACY_SCHEMA_VERSION = "4.0.0"
 STABLE_ITEM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
@@ -78,10 +76,9 @@ def load(path: Path) -> dict[str, Any]:
 
 
 def registry_indexes() -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
-    registry = load(HONORIFIC_REGISTRY)
     by_character = {}
     by_expanded = {}
-    for entry in registry["entries"]:
+    for entry in HONORIFIC_ENTRIES:
         character = entry.get("compactCharacter")
         if character:
             by_character[character] = entry
