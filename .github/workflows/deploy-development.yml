@@ -21,7 +21,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKER_API_TOKEN }}
       PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-      AL_ISABAH_PUBLIC_CORPUS_URI: ${{ vars.AL_ISABAH_PUBLIC_CORPUS_URI }}
+      AL_ISABAH_PUBLIC_CORPUS_ROOT_URI: ${{ vars.AL_ISABAH_PUBLIC_CORPUS_ROOT_URI }}
 
     steps:
       - name: Check out repository
@@ -56,7 +56,7 @@ jobs:
           test -n "${CLOUDFLARE_ACCOUNT_ID}"
           test -n "${CLOUDFLARE_API_TOKEN}"
           test -n "${PUBLIC_TURNSTILE_SITE_KEY}"
-          test -n "${AL_ISABAH_PUBLIC_CORPUS_URI}"
+          test -n "${AL_ISABAH_PUBLIC_CORPUS_ROOT_URI}"
           test -n "${GITHUB_CLIENT_ID}"
           test -n "${GITHUB_CLIENT_SECRET}"
           test -n "${GITHUB_ISSUES_TOKEN}"
@@ -78,20 +78,17 @@ jobs:
         run: |
           set -euo pipefail
           endpoint="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          root_uri="${AL_ISABAH_PUBLIC_CORPUS_URI%/}"
-          root_uri="${root_uri%/*}"
-          if [[ "${root_uri}" != s3://*/public-corpora/al-isabah ]]; then
+          root_uri="${AL_ISABAH_PUBLIC_CORPUS_ROOT_URI%/}"
+          if [[ "${root_uri}" != "s3://sabiqah-assets-dev/public-corpora/al-isabah" ]]; then
             echo "::error::Unexpected Al-Isabah public-corpus root: ${root_uri}"
             exit 1
           fi
           bucket_uri="${root_uri%%/public-corpora/*}"
           pointer_uri="${root_uri}/current.json"
-          corpus_uri="${AL_ISABAH_PUBLIC_CORPUS_URI}"
-          if aws s3 cp "${pointer_uri}" .runtime/current.json \
-            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors; then
-            active_prefix="$(python3 scripts/resolve_al_isabah_distribution.py .runtime/current.json)"
-            corpus_uri="${bucket_uri}/${active_prefix}/"
-          fi
+          aws s3 cp "${pointer_uri}" .runtime/current.json \
+            --endpoint-url "${endpoint}" --no-cli-pager --no-progress --only-show-errors
+          active_prefix="$(python3 scripts/resolve_al_isabah_distribution.py .runtime/current.json)"
+          corpus_uri="${bucket_uri}/${active_prefix}/"
           aws s3 cp \
             "${corpus_uri}" \
             .runtime/al-isabah-public-corpus \
