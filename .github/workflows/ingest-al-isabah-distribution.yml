@@ -14,7 +14,9 @@ on:
       - al-isabah-public-distribution
 
 permissions:
+  actions: read
   contents: read
+  issues: read
 
 concurrency:
   group: sabiqah-al-isabah-distribution-development
@@ -102,10 +104,43 @@ jobs:
           echo "CORPUS_ROOT_URI=${root_uri}" >> "${GITHUB_ENV}"
           echo "CORPUS_BUCKET_URI=${bucket_uri}" >> "${GITHUB_ENV}"
 
+      - name: Resolve immutable legacy binding evidence
+        run: |
+          set -euo pipefail
+          base_schema="$(python3 -c 'import json; print(json.load(open(".runtime/base-corpus/summary.json", encoding="utf-8"))["schemaVersion"])')"
+          if [[ "${base_schema}" != "4.0.0" ]]; then
+            exit 0
+          fi
+          mkdir -p .runtime/legacy-binding
+          legacy_tag="public-working-af7e16223f7a2793101aa9f13e45c74c57ea0744"
+          gh api "repos/yaqub0r/al-isabah/releases/tags/${legacy_tag}" \
+            > .runtime/legacy-binding/release-metadata.json
+          gh api "repos/yaqub0r/al-isabah/git/ref/tags/${legacy_tag}" \
+            > .runtime/legacy-binding/tag-ref.json
+          gh api "repos/yaqub0r/sabiqah/issues/125" \
+            > .runtime/legacy-binding/approval-issue.json
+          gh api "repos/yaqub0r/sabiqah/issues/comments/5305522508" \
+            > .runtime/legacy-binding/approval-comment.json
+          gh api "repos/yaqub0r/sabiqah/actions/runs/31910853487" \
+            > .runtime/legacy-binding/activation-run.json
+
       - name: Ingest and validate complete reader corpus
         run: |
           set -euo pipefail
           python3 scripts/validate_public_corpus.py .runtime/base-corpus
+          legacy_args=()
+          base_schema="$(python3 -c 'import json; print(json.load(open(".runtime/base-corpus/summary.json", encoding="utf-8"))["schemaVersion"])')"
+          if [[ "${base_schema}" == "4.0.0" ]]; then
+            legacy_args=(
+              --legacy-binding evidence/legacy-bindings/al-isabah-active-schema-4.v1.json
+              --legacy-pointer .runtime/current.json
+              --legacy-release-metadata .runtime/legacy-binding/release-metadata.json
+              --legacy-tag-ref .runtime/legacy-binding/tag-ref.json
+              --legacy-approval-issue .runtime/legacy-binding/approval-issue.json
+              --legacy-approval-comment .runtime/legacy-binding/approval-comment.json
+              --legacy-activation-run .runtime/legacy-binding/activation-run.json
+            )
+          fi
           activated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           python3 scripts/ingest_al_isabah_distribution.py \
             --distribution .runtime/al-isabah-distribution \
@@ -116,7 +151,8 @@ jobs:
             --release-metadata .runtime/release-metadata.json \
             --tag-ref .runtime/tag-ref.json \
             --rights-matrix .runtime/rights-matrix.json \
-            --source-authority evidence/source-authorities/al-isabah.v1.json
+            --source-authority evidence/source-authorities/al-isabah.v1.json \
+            "${legacy_args[@]}"
           python3 scripts/validate_public_corpus.py .runtime/next-corpus
           corpus_id="$(python3 -c 'import json; print(json.load(open(".runtime/activation.json", encoding="utf-8"))["corpusId"])')"
           echo "NEXT_CORPUS_URI=${CORPUS_ROOT_URI}/${corpus_id}/" >> "${GITHUB_ENV}"
