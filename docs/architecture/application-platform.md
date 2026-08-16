@@ -82,9 +82,12 @@ an exact item in the Worker's pinned immutable corpus, or append a withdrawal
 of their own approval. The event records the corpus ID, stable item ID, and
 SHA-256 digest of the R2 object. Public read endpoints expose the validated
 working corpus without enrollment; invitations gate only review and correction
-actions. An approval does not approve the Arabic source,
-resolve editorial notes, merge a book-repository change, or promote the item to
-a public release. The reader derives current approval counts from each
+actions. An approval does not approve the Arabic source, resolve editorial
+notes, merge a book-repository change, or promote the item to a public release.
+It changes neither the upstream per-record metadata nor the release class. An
+accepted scholarly decision returns as a proposal governed by the canonical
+book repository; only a later immutable upstream release can change the
+displayed record. The reader derives current approval counts from each
 reviewer's latest event and may hide items with at least one current approval.
 
 AI assessment is advisory metadata on an event. It can prioritize human review

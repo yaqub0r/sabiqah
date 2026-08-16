@@ -41,20 +41,7 @@ test("release fixtures require all scholarly-content contracts", () => {
   assert.deepEqual([...required].sort(), [
     "canonical-book-promotion",
     "content-source-compliance",
-    "translation-quality-workflow",
   ]);
-});
-
-test("translation implementation paths require the quality contract", () => {
-  const { required } = requiredContracts(
-    [
-      "docs/translation-profiles/al-isabah.md",
-      "scripts/translation/run_book_pipeline.py",
-      "workers/platform/tests/translationReviews.test.ts",
-    ],
-    registry,
-  );
-  assert.deepEqual([...required], ["translation-quality-workflow"]);
 });
 
 test("user-facing paths require the presentation contract", () => {
@@ -97,7 +84,6 @@ test("all required acknowledgements pass", () => {
 - \`content-source-compliance\`
 - \`private-evidence-ingestion\`
 - \`canonical-book-promotion\`
-- \`translation-quality-workflow\`
 - \`presentation-quality\`
 `,
     registry,
@@ -119,7 +105,6 @@ test("a missing required contract fails", () => {
     [
       "private-evidence-ingestion",
       "canonical-book-promotion",
-      "translation-quality-workflow",
       "presentation-quality",
     ],
   );

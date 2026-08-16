@@ -1,4 +1,5 @@
-import registry from "./honorifics.registry.json";
+import formulaProjection from "./al-isabah-honorifics.projection.json";
+import registry from "./honorifics.presentation.json";
 
 export type HonorificLanguage = "ar" | "en" | "ur";
 
@@ -30,7 +31,20 @@ export type HonorificEntry = {
   englishAliases: string[];
 };
 
+export type AlIsabahFormulaProjectionEntry = {
+  source: string;
+  target: string;
+  semanticClass: string;
+  referentScope: string;
+  grammaticalAgreement: string;
+  expandedArabic: string;
+  accessibleEnglish: string;
+};
+
 export const honorificRegistry = registry as {
+  schema: "sabiqah.honorific-presentation.v1";
+  role: "consumer-presentation-only";
+  governanceNotice: string;
   schemaVersion: string;
   unicodeVersion: string;
   fontBaseline: {
@@ -44,7 +58,82 @@ export const honorificRegistry = registry as {
   entries: HonorificEntry[];
 };
 
-export const honorificEntries = honorificRegistry.entries;
+export const alIsabahFormulaProjection = formulaProjection as {
+  schema: "sabiqah.al-isabah-honorific-projection.v1";
+  role: "verified-consumer-projection";
+  source: {
+    repository: string;
+    commit: string;
+    referencePath: string;
+    referenceVersion: string;
+    referenceSha256: string;
+    artifactPath: string;
+    artifactVersion: string;
+    artifactSha256: string;
+    textNormalization: "utf-8-lf";
+  };
+  entries: AlIsabahFormulaProjectionEntry[];
+};
+
+const projectedFormulaByTarget = new Map<
+  string,
+  AlIsabahFormulaProjectionEntry
+>();
+for (const formula of alIsabahFormulaProjection.entries) {
+  if ([...formula.target].length !== 1) continue;
+  const existing = projectedFormulaByTarget.get(formula.target);
+  if (
+    existing &&
+    (existing.semanticClass !== formula.semanticClass ||
+      existing.grammaticalAgreement !== formula.grammaticalAgreement)
+  ) {
+    throw new Error(
+      `Conflicting Al-Isabah formula semantics for ${formula.target}`,
+    );
+  }
+  projectedFormulaByTarget.set(formula.target, formula);
+}
+
+export const honorificEntries = honorificRegistry.entries.map((entry) => {
+  const formula = projectedFormulaByTarget.get(entry.compactCharacter);
+  if (!formula) return entry;
+  return {
+    ...entry,
+    semanticClass: formula.semanticClass,
+    referent: { ...entry.referent, scope: formula.referentScope },
+    agreement: projectedAgreement(formula.grammaticalAgreement),
+    familyIncluded: formula.semanticClass.includes("family"),
+  } satisfies HonorificEntry;
+});
+
+function projectedAgreement(value: string): HonorificAgreement {
+  const agreements: Record<string, HonorificAgreement> = {
+    "masculine singular and masculine plural": {
+      number: "plural",
+      gender: "masculine-or-mixed",
+    },
+    "masculine singular with family inclusion": {
+      number: "plural",
+      gender: "mixed",
+    },
+    "masculine singular": { number: "singular", gender: "masculine" },
+    "feminine singular": { number: "singular", gender: "feminine" },
+    dual: { number: "dual", gender: "common" },
+    "masculine plural": {
+      number: "plural",
+      gender: "masculine-or-mixed",
+    },
+    "feminine plural": { number: "plural", gender: "feminine" },
+    plural: { number: "plural", gender: "masculine-or-mixed" },
+    not_applicable: {
+      number: "not-applicable",
+      gender: "not-applicable",
+    },
+  };
+  const agreement = agreements[value];
+  if (!agreement) throw new Error(`Unknown Al-Isabah agreement: ${value}`);
+  return agreement;
+}
 
 const byCharacter = new Map<string, HonorificEntry>();
 for (const entry of honorificEntries) {
@@ -53,6 +142,10 @@ for (const entry of honorificEntries) {
     byCharacter.set(alternate, entry);
   }
 }
+
+const upstreamArabicCompactions = alIsabahFormulaProjection.entries
+  .filter(({ target }) => [...target].length === 1 && byCharacter.has(target))
+  .sort((left, right) => right.source.length - left.source.length);
 
 const honorificCharacterPattern = new RegExp(
   `(${[...byCharacter.keys()]
@@ -123,7 +216,8 @@ function replaceAliases(
     let replacement =
       entry.fontSupport === "supported" ? entry.compactCharacter : fallback;
     const divineName =
-      language === "en" && entry.semanticClass === "divine-exaltation"
+      language === "en" &&
+      entry.semanticClass.replaceAll("_", "-") === "divine-exaltation"
         ? /^(Allah|God)\b/i.exec(matchedAlias)?.[1]
         : undefined;
     if (divineName) replacement = `${divineName} ${replacement}`;
@@ -158,7 +252,14 @@ export function compactHonorifics(
   value: string,
   language: HonorificLanguage,
 ): string {
-  return replaceAliases(value, language, (entry) =>
+  const projected =
+    language === "ar"
+      ? upstreamArabicCompactions.reduce(
+          (result, { source, target }) => result.replaceAll(source, target),
+          value,
+        )
+      : value;
+  return replaceAliases(projected, language, (entry) =>
     language === "en" ? entry.englishAliases : entry.arabicAliases,
   );
 }

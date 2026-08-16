@@ -1,4 +1,7 @@
 {
+  "schema": "sabiqah.honorific-presentation.v1",
+  "role": "consumer-presentation-only",
+  "governanceNotice": "Rendering and accessibility metadata only. Al-Isabah formula semantics come from the pinned upstream consumer projection.",
   "schemaVersion": "1.0.0",
   "unicodeVersion": "17.0.0",
   "fontBaseline": {

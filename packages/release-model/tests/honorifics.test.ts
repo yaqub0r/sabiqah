@@ -4,11 +4,33 @@ import {
   compactHonorifics,
   expandHonorifics,
   findHonorificByCharacter,
+  alIsabahFormulaProjection,
   honorificEntries,
   normalizeHonorificSearch,
 } from "../src/honorifics";
 
 describe("honorific registry", () => {
+  it("uses the pinned Al-Isabah formula projection without claiming policy ownership", () => {
+    expect(alIsabahFormulaProjection.role).toBe("verified-consumer-projection");
+    expect(alIsabahFormulaProjection.source).toMatchObject({
+      repository: "https://github.com/yaqub0r/al-isabah",
+      commit: "eb4fec9b744c12fcb677d9a7c53c4a58628aaa41",
+      referenceVersion: "1.0.0",
+      artifactVersion: "1.2.0",
+    });
+
+    const compactEntries = alIsabahFormulaProjection.entries.filter(
+      ({ target }) => [...target].length === 1,
+    );
+    expect(compactEntries.length).toBeGreaterThan(0);
+    for (const entry of compactEntries) {
+      expect(findHonorificByCharacter(entry.target)).toMatchObject({
+        semanticClass: entry.semanticClass,
+      });
+      expect(compactHonorifics(entry.source, "ar")).toBe(entry.target);
+    }
+  });
+
   it("models singular, dual, and plural companion agreement separately", () => {
     expect(findHonorificByCharacter("﵁")?.agreement).toEqual({
       number: "singular",

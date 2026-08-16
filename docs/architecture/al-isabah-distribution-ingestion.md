@@ -31,6 +31,12 @@ book structure, provenance, policy binding, uncertainty, machine assessment,
 and human-review state. Printed entry numbers are display metadata and may
 repeat; Sabiqah never uses them as identity.
 
+Sabiqah pins the book repository's
+[versioned translation-governance reference](al-isabah-governance-compatibility.md)
+for consumer compatibility. The pin does not make the local adapter or review
+overlay authoritative for translation execution, per-record scholarly
+metadata, corrections, or release class.
+
 Sabiqah owns only its deterministic reader projection, application state, R2
 layout, activation pointer, and presentation. Structural headings and related
 material remain ordered reading passages, but coverage counts distinguish

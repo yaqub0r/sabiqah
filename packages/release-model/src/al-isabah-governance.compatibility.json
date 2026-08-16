@@ -1,0 +1,35 @@
+{
+  "schema": "sabiqah.al-isabah-governance-compatibility.v1",
+  "consumerRole": "verified-application-consumer",
+  "upstream": {
+    "repository": "https://github.com/yaqub0r/al-isabah",
+    "commit": "eb4fec9b744c12fcb677d9a7c53c4a58628aaa41",
+    "referencePath": "docs/contracts/translation-governance-reference.v1.json",
+    "referenceVersion": "1.0.0",
+    "supportedReferenceMajor": 1,
+    "referenceSha256": "81d115c85f5c7f793439991c36ae757a80ebe92e40017f65d8fb2eb7a1e1f5db",
+    "textNormalization": "utf-8-lf"
+  },
+  "formulaProjection": {
+    "path": "profiles/honorific-formulas.v1.json",
+    "artifactId": "honorific-formula-registry",
+    "artifactVersion": "1.2.0",
+    "artifactSha256": "2691994d50457d967f41d04140b9f86f23967254fd764f2c756109194ba51a55",
+    "consumerPath": "packages/release-model/src/al-isabah-honorifics.projection.json"
+  },
+  "distributionCompatibility": {
+    "activeSchemaVersion": "2.0.0",
+    "rollbackOnlySchemaVersion": "1.0.0"
+  },
+  "releaseSemantics": {
+    "humanReviewScope": "per-record-metadata-and-confidence",
+    "humanReviewChangesReleaseClass": false,
+    "correctionMode": "new-immutable-release-with-supersession"
+  },
+  "prohibitedConsumerAuthority": [
+    "define-al-isabah-translation-policy",
+    "treat-a-local-copy-as-governing",
+    "change-release-class-from-human-review",
+    "rewrite-or-mutate-an-immutable-release"
+  ]
+}

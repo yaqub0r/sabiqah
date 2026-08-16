@@ -6,6 +6,9 @@ Every book repository publishes its own canonical schema and releases. Sabiqah
 consumes a small, versioned reader contract rather than taking ownership of the
 book's complete editorial model. A book-specific exporter may discard internal
 fields but must preserve stable IDs, provenance, uncertainty, and review state.
+For Al-Isabah, Sabiqah also verifies the immutable
+[upstream governance compatibility pin](al-isabah-governance-compatibility.md)
+without copying it as local policy.
 
 Before canonical promotion, a book repository may also publish a validated,
 immutable `public-working` distribution for reading and review. This handoff is
@@ -30,6 +33,12 @@ The editor emits a proposal, never a rewritten canonical entry. A proposal
 names the base release, entry, segment, field, proposed value, rationale, and
 evidence references. Translation proposals and canonical-Arabic corrections
 are distinct operations.
+
+The canonical book repository governs whether a proposal changes per-record
+review metadata, confidence, translation, or source text. Human review does
+not select another release class. An accepted correction, incremental
+translation, or review-coverage change appears through a new immutable release
+with explicit supersession.
 
 The Decap adapter stores that object under a single `proposal` key in a
 workflow envelope. It converts the validated object to Decap's immutable data
@@ -78,11 +87,13 @@ objects anonymously with public cache headers, while the browser receives
 neither R2 credentials nor object keys. Short entries remain in book order
 inside substantial sections so the default experience reads like a book.
 
-Human translation approvals are an operational overlay on this immutable
-public corpus. The Worker accepts an approval or withdrawal only from an active
-same-origin reviewer session after resolving the stable item ID against the
-pinned corpus. Each event binds the decision to the corpus ID and exact object
-digest. Anonymous readers receive aggregate approval counts; an active reviewer
-also receives their own current state. Approval does not alter the record or
-satisfy canonical promotion. Promotion still requires the book repository's
-independent review policy and a pinned, versioned release.
+Human translation approvals are a Sabiqah operational overlay on this
+immutable public corpus. The Worker accepts an approval or withdrawal only
+from an active same-origin reviewer session after resolving the stable item ID
+against the pinned corpus. Each event binds the decision to the corpus ID and
+exact object digest. Anonymous readers receive aggregate approval counts; an
+active reviewer also receives their own current state. Approval does not alter
+the record,
+satisfy canonical promotion, change upstream per-record metadata, or create a
+different release class. An accepted decision follows the book repository's
+proposal and immutable-release process before Sabiqah can ingest it.

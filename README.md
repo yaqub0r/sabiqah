@@ -1,11 +1,11 @@
 # Sabiqah
 
-Sabiqah is the governed acquisition-to-publication system for open scholarly
-Islamic editions. It supports source discovery and acquisition, rights
-assessment and clearance, private research evidence, textual comparison,
-translation and review, promotion into canonical book repositories, and public
-presentation. It begins with the Al-Isabah edition while remaining independent
-of any single work.
+Sabiqah is the reader, review, storage, and presentation application for open
+scholarly Islamic editions. It verifies and ingests immutable book releases,
+preserves consumer-side provenance and rights controls, manages private
+research evidence and application state, and presents release content. It
+begins with the Al-Isabah edition while remaining independent of any single
+work.
 
 Sabiqah does not treat public availability as permission to reproduce or
 redistribute material. Research witnesses that are not approved for public
@@ -16,11 +16,13 @@ for repository responsibilities and trust boundaries.
 ## Licensing and public boundary
 
 Sabiqah software is licensed under the
-[PolyForm Noncommercial License 1.0.0](LICENSE.md). Sabiqah-authored
-translations and other intentionally published scholarly content are licensed
-under [CC BY-NC-SA 4.0](CONTENT-LICENSE.md). Third-party materials retain their
-existing terms, and private research evidence is neither published nor
-licensed. See [NOTICE.md](NOTICE.md) for the complete boundary.
+[PolyForm Noncommercial License 1.0.0](LICENSE.md). Any legacy
+Sabiqah-authored translations and other intentionally published scholarly
+content are licensed under [CC BY-NC-SA 4.0](CONTENT-LICENSE.md). Canonical book
+repositories govern new translation authorship and release terms. Third-party
+materials retain their existing terms, and private research evidence is
+neither published nor licensed. See [NOTICE.md](NOTICE.md) for the complete
+boundary.
 
 ## Repository status
 
@@ -41,16 +43,20 @@ production remains protected and undeployed.
 - Content-governance model: [`docs/architecture/content-governance.md`](docs/architecture/content-governance.md)
 - Repository contracts: [`docs/contracts/INDEX.md`](docs/contracts/INDEX.md)
 - Book release contract: [`docs/architecture/book-release-contract.md`](docs/architecture/book-release-contract.md)
+- Al-Isabah governance compatibility: [`docs/architecture/al-isabah-governance-compatibility.md`](docs/architecture/al-isabah-governance-compatibility.md)
 - Honorific semantics and presentation: [`docs/architecture/honorific-presentation.md`](docs/architecture/honorific-presentation.md)
 - Reviewer access model: [`docs/security/reviewer-access.md`](docs/security/reviewer-access.md)
 
 ## Project boundaries
 
-- **Sabiqah** governs acquisition, rights assessment, private research
-  evidence, comparison, translation and review workflows, promotion, and the
-  reader/editor application.
-- **Al-Isabah** owns its approved canonical scholarly dataset, book-specific
-  provenance and editorial history, and versioned releases.
+- **Sabiqah** owns verified release ingestion, private-evidence handling,
+  application review events, storage, provenance and rights display, and the
+  reader/editor presentation.
+- **Al-Isabah** owns its translation policy and profile, formula semantics,
+  source and rights decisions, per-record scholarly review metadata,
+  corrections, canonical dataset, and immutable releases. Sabiqah consumes its
+  [versioned upstream governance reference](docs/architecture/al-isabah-governance-compatibility.md)
+  and does not govern translation execution.
 - Private downstream products may consume pinned scholarly releases without
   becoming owners of Sabiqah workflows, private evidence, or canonical book
   content.

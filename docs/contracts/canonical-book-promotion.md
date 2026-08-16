@@ -6,24 +6,25 @@
 
 ## Purpose
 
-This contract governs the explicit promotion of publication-ready scholarly
-content from Sabiqah's controlled workflow into an individual canonical book
-repository. Promotion is a reviewed release operation, never silent
-synchronization.
+This contract governs Sabiqah's proposal handoff and verified consumption at
+the canonical book boundary. A canonical repository controls promotion and
+publishes its immutable releases; Sabiqah never turns application state into a
+release through silent synchronization.
 
 ## Ownership boundary
 
-Sabiqah owns acquisition, rights assessment, private research storage,
-comparison and translation workflow, application state, and presentation. A
-book repository owns its approved canonical records, book-specific provenance,
-editorial history, stable identifiers, validation, and versioned releases.
+Sabiqah owns private-evidence handling, application state, verified release
+ingestion, storage, and presentation. A book repository owns book-specific
+source and rights decisions, translation policy and execution, per-record
+scholarly review metadata, approved canonical records, corrections, editorial
+history, stable identifiers, validation, promotion, and versioned releases.
 
 Restricted research evidence and Sabiqah account, invitation, reputation, or
 moderation state must not enter a public book repository.
 
 ## Promotion manifest
 
-Every promotion must identify:
+Every Sabiqah proposal handoff and consumed release must preserve or identify:
 
 - canonical book repository and target release;
 - immutable source commit and reproducible content hash;
@@ -31,7 +32,7 @@ Every promotion must identify:
 - content-compliance policy or contract version applied;
 - rights classification and basis for every public dependency;
 - translation or transcription base and comparison witnesses;
-- completed scholarly and compliance reviews; and
+- the upstream scholarly and compliance review states; and
 - unresolved limitations that remain visible in the public record.
 
 The manifest contains non-sensitive identifiers and conclusions, not
@@ -39,11 +40,12 @@ restricted source expression, credentials, private URLs, or correspondence.
 
 ## Independent gates
 
-Sabiqah approval makes content eligible for book-repository review; it does not
-replace that review. The book repository must independently validate its
-schema, provenance, stable identifiers, and protected canonical-Arabic path.
-Automation must not silently overwrite canonical Arabic, translation,
-provenance, or editorial history.
+Sabiqah review activity produces operational evidence or a proposal; it does
+not approve scholarly content, change a release class, or replace upstream
+review. The book repository independently validates its schema, provenance,
+stable identifiers, and protected canonical-Arabic path. Automation must not
+silently overwrite canonical Arabic, translation, provenance, or editorial
+history.
 
 ## Release consumption
 
@@ -52,5 +54,7 @@ versioned reader contract. It must reject malformed records and unknown major
 contract versions. Deployments must be reproducible from the pinned release and
 must not read private research evidence or mutable book working branches.
 
-Corrections enter as reviewable proposals and create new versioned history.
-They do not erase the provenance or review record of earlier releases.
+Corrections enter as reviewable upstream proposals and, when accepted, create
+a new immutable release with explicit supersession. Incremental translation
+and increased review coverage use the same release cycle. They do not erase
+the provenance or review record of earlier releases.
