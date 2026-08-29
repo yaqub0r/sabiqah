@@ -25,6 +25,7 @@ from test_ingest_al_isabah_distribution import (  # noqa: E402
     write,
 )
 from validate_public_corpus import validate as validate_public_corpus  # noqa: E402
+from verify_al_isabah_distribution import CompatibilityError  # noqa: E402
 from verify_al_isabah_legacy_binding import (  # noqa: E402
     LegacyBindingError,
     compact_json,
@@ -65,9 +66,15 @@ def refresh_manifest(root: Path) -> None:
 
 
 class LegacyBindingCase:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, preclosure: bool = False) -> None:
         self.root = root
         self.distribution = DistributionCase(root)
+        if preclosure:
+            manifest = self.distribution.manifest()
+            manifest.pop("releaseClosure")
+            write(self.distribution.distribution / "manifest.json", manifest)
+            (self.distribution.distribution / "release-closure.json").unlink()
+            self.distribution.finalize()
         release = json.loads(self.distribution.release.read_text(encoding="utf-8"))
         release["id"] = 101
         release["url"] = "https://api.github.com/repos/yaqub0r/al-isabah/releases/101"
@@ -434,6 +441,19 @@ class LegacyBindingCase:
 
 
 class LegacyBindingTests(unittest.TestCase):
+    def test_only_the_exact_attested_migration_accepts_a_preclosure_release(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = LegacyBindingCase(Path(temp), preclosure=True)
+            with self.assertRaisesRegex(CompatibilityError, "manifest fields"):
+                case.distribution.verify()
+            activation = ingest(*case.ingest_args(case.root / "output"))
+            self.assertEqual(activation["legacyBindings"][0]["id"], json.loads(
+                case.binding.read_text(encoding="utf-8")
+            )["bindingId"])
+            self.assertEqual(
+                validate_public_corpus(case.root / "output", case.binding), []
+            )
+
     def test_exact_binding_is_idempotent_and_discloses_rights_per_record(self):
         with tempfile.TemporaryDirectory() as temp:
             case = LegacyBindingCase(Path(temp))

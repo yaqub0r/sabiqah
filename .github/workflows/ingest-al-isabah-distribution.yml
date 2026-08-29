@@ -67,13 +67,6 @@ jobs:
           test -n "${archive}"
           python3 scripts/extract_al_isabah_distribution.py \
             "${archive}" .runtime/al-isabah-distribution
-          python3 scripts/verify_al_isabah_distribution.py \
-            --distribution .runtime/al-isabah-distribution \
-            --archive "${archive}" \
-            --release-metadata .runtime/release-metadata.json \
-            --tag-ref .runtime/tag-ref.json \
-            --rights-matrix .runtime/rights-matrix.json \
-            --source-authority evidence/source-authorities/al-isabah.v1.json
 
       - name: Resolve active immutable base corpus
         env:
@@ -137,6 +130,13 @@ jobs:
               --legacy-activation-run .runtime/legacy-binding/activation-run.json
             )
           else
+            python3 scripts/verify_al_isabah_distribution.py \
+              --distribution .runtime/al-isabah-distribution \
+              --archive .runtime/distribution-download/al-isabah-public-distribution-*.zip \
+              --release-metadata .runtime/release-metadata.json \
+              --tag-ref .runtime/tag-ref.json \
+              --rights-matrix .runtime/rights-matrix.json \
+              --source-authority evidence/source-authorities/al-isabah.v1.json
             python3 scripts/validate_public_corpus.py .runtime/base-corpus
           fi
           activated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"

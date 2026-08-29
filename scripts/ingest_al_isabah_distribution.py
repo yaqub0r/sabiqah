@@ -707,12 +707,6 @@ def ingest(
 ) -> dict[str, Any]:
     if output.exists():
         raise IngestionError(f"output already exists: {output}")
-    try:
-        manifest, records, binding = verify_distribution(
-            distribution, archive, release_metadata, tag_ref, rights_matrix, source_authority
-        )
-    except CompatibilityError as error:
-        raise IngestionError(str(error)) from error
     base_summary = load(base / "summary.json")
     base_index = load(base / "index.json")
     base_quarantine = load(base / "quarantine.json")
@@ -763,6 +757,18 @@ def ingest(
         ):
             raise IngestionError("base corpus legacy binding metadata is invalid")
         legacy_binding_records = json.loads(json.dumps(inherited))
+    try:
+        manifest, records, binding = verify_distribution(
+            distribution,
+            archive,
+            release_metadata,
+            tag_ref,
+            rights_matrix,
+            source_authority,
+            allow_attested_preclosure=legacy_binding_record is not None,
+        )
+    except CompatibilityError as error:
+        raise IngestionError(str(error)) from error
     distribution_commit = manifest["repository"]["commit"]
     corpus_id = "pending-content-addressed-corpus"
     new_cohort_id = f"distribution:{distribution_commit[:12]}"
