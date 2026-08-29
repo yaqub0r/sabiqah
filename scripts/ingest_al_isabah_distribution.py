@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "5.0.0"
 LEGACY_SCHEMA_VERSION = "4.0.0"
 STABLE_ITEM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$")
+SHA256 = re.compile(r"^[a-f0-9]{64}$")
 
 
 @dataclass(frozen=True)
@@ -718,6 +719,7 @@ def ingest(
     base_exclusions = load(base / "exclusions.json")
     attested_cohorts = None
     legacy_binding_record = None
+    legacy_binding_records: list[dict[str, str]] = []
     if base_summary.get("schemaVersion") != LEGACY_SCHEMA_VERSION and legacy_binding is not None:
         raise IngestionError("legacy binding cannot be reused for this base schema")
     if base_summary.get("schemaVersion") == LEGACY_SCHEMA_VERSION and legacy_binding is not None:
@@ -743,6 +745,24 @@ def ingest(
             )
         except LegacyBindingError as error:
             raise IngestionError(str(error)) from error
+        if legacy_binding_record is None:
+            raise IngestionError("legacy binding verification returned no record")
+        legacy_binding_records = [legacy_binding_record]
+    elif base_summary.get("schemaVersion") == SCHEMA_VERSION:
+        base_manifest = load(base / "manifest.json")
+        inherited = base_manifest.get("legacyBindings", [])
+        if (
+            not isinstance(inherited, list)
+            or any(
+                not isinstance(record, dict)
+                or set(record) != {"id", "sha256"}
+                or not isinstance(record.get("id"), str)
+                or not SHA256.fullmatch(str(record.get("sha256", "")))
+                for record in inherited
+            )
+        ):
+            raise IngestionError("base corpus legacy binding metadata is invalid")
+        legacy_binding_records = json.loads(json.dumps(inherited))
     distribution_commit = manifest["repository"]["commit"]
     corpus_id = "pending-content-addressed-corpus"
     new_cohort_id = f"distribution:{distribution_commit[:12]}"
@@ -803,6 +823,7 @@ def ingest(
             supersedes.append(supersession)
     supersedes.sort(key=lambda value: (value["cohortId"], value["itemIdsSha256"]))
     cohorts.append(cohort_from_binding(new_cohort_id, binding, new_item_ids, manifest, supersedes))
+    cohorts.sort(key=lambda cohort: cohort["id"])
     ids = [item["id"] for item in items]
     if len(ids) != len(set(ids)):
         raise IngestionError("combined corpus contains duplicate stable item IDs")
@@ -814,7 +835,7 @@ def ingest(
     candidate_fingerprint = digest_bytes(canonical_json({
         "schemaVersion": SCHEMA_VERSION,
         "distributionManifestSha256": digest_file(distribution / "manifest.json"),
-        "legacyBinding": legacy_binding_record,
+        "legacyBindings": legacy_binding_records,
         "cohorts": cohorts,
         "items": fingerprint_items,
     }))
@@ -912,8 +933,8 @@ def ingest(
         "objectCount": len(files),
         "files": files,
     }
-    if legacy_binding_record is not None:
-        corpus_manifest["legacyBindings"] = [legacy_binding_record]
+    if legacy_binding_records:
+        corpus_manifest["legacyBindings"] = legacy_binding_records
     write_json(output / "manifest.json", corpus_manifest)
     activation = {
         "schemaVersion": "1.0.0",
@@ -929,8 +950,8 @@ def ingest(
             "previousPrefix": f"public-corpora/al-isabah/{base_summary['corpus']['id']}",
         },
     }
-    if legacy_binding_record is not None:
-        activation["legacyBinding"] = legacy_binding_record
+    if legacy_binding_records:
+        activation["legacyBindings"] = legacy_binding_records
     write_json(output.parent / "activation.json", activation)
     return activation
 

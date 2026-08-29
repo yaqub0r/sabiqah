@@ -54,6 +54,16 @@ def file_evidence(path: Path, repository: str, commit: str, relative: str) -> di
     }
 
 
+def refresh_manifest(root: Path) -> None:
+    manifest_path = root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for record in manifest["files"]:
+        path = root / record["path"]
+        record["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        record["bytes"] = path.stat().st_size
+    write(manifest_path, manifest)
+
+
 class LegacyBindingCase:
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -434,8 +444,10 @@ class LegacyBindingTests(unittest.TestCase):
             second = ingest(*case.ingest_args(case.root / "second"))
             self.assertEqual(first["corpusId"], second["corpusId"])
             self.assertEqual(first["rollback"]["previousCorpusId"], case.corpus_id)
-            self.assertEqual(first["legacyBinding"], record)
-            self.assertEqual(validate_public_corpus(case.root / "first"), [])
+            self.assertEqual(first["legacyBindings"], [record])
+            self.assertEqual(
+                validate_public_corpus(case.root / "first", case.binding), []
+            )
             details = [
                 json.loads(path.read_text(encoding="utf-8"))
                 for path in (case.root / "first" / "items").glob("synthetic-*-entry-*.json")
@@ -446,6 +458,94 @@ class LegacyBindingTests(unittest.TestCase):
                 "Al-Isabah project synthetic English scholarly content",
             })
             self.assertTrue(all(item["source"]["rightsMatrix"]["id"] == "al-isabah-rights-synthetic" for item in legacy))
+
+    def test_attested_legacy_honorific_bytes_are_not_reinterpreted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = LegacyBindingCase(Path(temp))
+            ingest(*case.ingest_args(case.root / "output"))
+            output = case.root / "output"
+            item_id = "synthetic-stable-entry-0003"
+            detail_path = output / "items" / f"{item_id}.json"
+            detail = json.loads(detail_path.read_text(encoding="utf-8"))
+            detail["honorificPolicyVersion"] = "historic-policy"
+            detail["honorifics"] = [{
+                "semanticId": "historic-semantic",
+                "language": "en",
+                "agreement": "historic",
+                "familyIncluded": False,
+                "renderedForm": "\ufdfe",
+            }]
+            detail["segments"][0]["english"] += " \ufdfe"
+            write(detail_path, detail)
+            index_path = output / "index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            listed = next(item for item in index["items"] if item["id"] == item_id)
+            listed["searchText"] = "historical search representation"
+            write(index_path, index)
+            for section_path in (output / "sections").glob("*.json"):
+                section = json.loads(section_path.read_text(encoding="utf-8"))
+                for position, embedded in enumerate(section["items"]):
+                    if embedded["id"] == item_id:
+                        section["items"][position] = detail
+                        write(section_path, section)
+            refresh_manifest(output)
+
+            self.assertEqual(validate_public_corpus(output, case.binding), [])
+            unattested_errors = validate_public_corpus(output)
+            self.assertTrue(any("legacy binding differs" in error for error in unattested_errors))
+            self.assertTrue(any("wrong honorific policy" in error for error in unattested_errors))
+
+            current_id = "synthetic-entry-0001"
+            current_path = output / "items" / f"{current_id}.json"
+            current = json.loads(current_path.read_text(encoding="utf-8"))
+            current["honorificPolicyVersion"] = "historic-policy"
+            write(current_path, current)
+            for section_path in (output / "sections").glob("*.json"):
+                section = json.loads(section_path.read_text(encoding="utf-8"))
+                for position, embedded in enumerate(section["items"]):
+                    if embedded["id"] == current_id:
+                        section["items"][position] = current
+                        write(section_path, section)
+            refresh_manifest(output)
+            current_errors = validate_public_corpus(output, case.binding)
+            self.assertTrue(
+                any(
+                    f"wrong honorific policy version for {current_id}" in error
+                    for error in current_errors
+                )
+            )
+
+    def test_legacy_binding_is_preserved_across_schema_5_reingestion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = LegacyBindingCase(Path(temp))
+            first_activation = ingest(*case.ingest_args(case.root / "first"))
+            second_activation = ingest(
+                case.distribution.distribution,
+                case.root / "first",
+                case.root / "second",
+                "2026-08-16T02:00:00Z",
+                case.distribution.archive,
+                case.distribution.release,
+                case.distribution.tag_ref,
+                case.distribution.rights,
+                case.distribution.authority,
+            )
+            first_manifest = json.loads(
+                (case.root / "first" / "manifest.json").read_text(encoding="utf-8")
+            )
+            second_manifest = json.loads(
+                (case.root / "second" / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(first_activation["corpusId"], second_activation["corpusId"])
+            self.assertEqual(
+                first_manifest["legacyBindings"], second_manifest["legacyBindings"]
+            )
+            self.assertEqual(
+                first_activation["legacyBindings"], second_activation["legacyBindings"]
+            )
+            self.assertEqual(
+                validate_public_corpus(case.root / "second", case.binding), []
+            )
 
     def test_pointer_member_object_claim_and_evidence_tampering_fail_before_output(self):
         mutations = [
