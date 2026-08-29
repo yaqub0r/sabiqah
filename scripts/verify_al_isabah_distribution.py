@@ -408,6 +408,8 @@ def verify_distribution(
     tag_ref_path: Path,
     rights_matrix_path: Path,
     source_authority_path: Path,
+    *,
+    allow_attested_preclosure: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     manifest = load(root / "manifest.json")
     version = str(manifest.get("schemaVersion", ""))
@@ -415,7 +417,11 @@ def verify_distribution(
         raise CompatibilityError("Al-Isabah schema v1 is rollback-only; restore a previously verified corpus pointer")
     if version != "2.0.0":
         raise CompatibilityError("unsupported Al-Isabah distribution major version")
-    exact_keys(manifest, MANIFEST_KEYS, "manifest")
+    has_release_closure = "releaseClosure" in manifest
+    manifest_keys = MANIFEST_KEYS
+    if allow_attested_preclosure and not has_release_closure:
+        manifest_keys = MANIFEST_KEYS - {"releaseClosure"}
+    exact_keys(manifest, manifest_keys, "manifest")
     if manifest.get("publicationStatus") != "public-working" or manifest.get("canonicalPromotion") != "blocked":
         raise CompatibilityError("distribution public-working or promotion status is unsafe")
     exact_keys(manifest.get("work"), {"id", "titleArabic", "titleEnglish"}, "work")
@@ -426,7 +432,8 @@ def verify_distribution(
         "rights",
     )
     exact_keys(manifest.get("counts"), {"entries", "machinePassed", "needsAttention", "humanReviewed"}, "counts")
-    exact_keys(manifest.get("releaseClosure"), {"closureId", "sha256"}, "release closure")
+    if has_release_closure:
+        exact_keys(manifest.get("releaseClosure"), {"closureId", "sha256"}, "release closure")
     for packet in manifest.get("packets", []):
         exact_keys(packet, {"packetId", "sha256", "entryCount"}, "packet")
     for authority in manifest.get("authorities", []):
@@ -446,7 +453,8 @@ def verify_distribution(
     public_boundary(manifest)
     release_binding = verify_release(manifest, archive, load(release_path), load(tag_ref_path))
     verify_archive_matches_distribution(archive, root)
-    verify_release_closure(root, manifest)
+    if has_release_closure:
+        verify_release_closure(root, manifest)
     rights_binding = verify_rights(manifest, load(rights_matrix_path), load(source_authority_path))
     records = verify_records(root, manifest, rights_binding)
     return manifest, records, {**release_binding, **rights_binding}

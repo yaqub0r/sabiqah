@@ -144,6 +144,14 @@ record remains in every later schema-5 manifest and activation pointer so that
 a partial distribution update cannot silently discard the compatibility
 evidence.
 
+The one allowed target release predates the schema-2 `releaseClosure` member.
+The standalone distribution verifier continues to reject that older shape.
+Only the binding-aware ingestion path may accept it, and only after the exact
+active base, approval, target release, tag, asset digest, and target manifest
+have passed the one-time verifier. The remaining manifest, archive, shard,
+record, source-authority, and rights checks are identical to current schema-2
+verification. Later schema-5 updates require the current closure-bearing shape.
+
 A later approved correction may replace the same stable ID. The new cohort
 then records the superseded cohort and the exact count, sorted IDs, and hash;
 the earlier cohort and its immutable upstream corpus remain recorded even when
