@@ -1,8 +1,9 @@
 # Al-Isabah sources, attribution, and reuse
 
 The public working translation of _al-Isabah fi Tamyiz al-Sahabah_ is a
-remediated research edition. Public readability does not mean that its English
-has completed human scholarly review or canonical promotion.
+remediated research edition. Human scholarly review is ongoing and nonterminal;
+public readability neither implies a terminal review state nor, by itself,
+claims canonical promotion.
 
 ## Arabic publication base
 
@@ -63,7 +64,9 @@ source license, change release class, update upstream per-record metadata, or
 make a working record canonical by themselves. Al-Isabah owns translation
 policy, scholarly review metadata, corrections, and release decisions;
 Sabiqah displays the pinned release plus its separate operational review
-overlay.
+overlay. Review coverage is never a publication or promotion gate by itself;
+an independently identified source, rights, provenance, validation, or
+substantive defect may still block the affected record.
 
 Questions about attribution, source status, or removal should be raised in the
 [Sabiqah issue tracker](https://github.com/yaqub0r/sabiqah/issues).

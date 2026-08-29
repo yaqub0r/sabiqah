@@ -36,9 +36,11 @@ are distinct operations.
 
 The canonical book repository governs whether a proposal changes per-record
 review metadata, confidence, translation, or source text. Human review does
-not select another release class. An accepted correction, incremental
-translation, or review-coverage change appears through a new immutable release
-with explicit supersession.
+not select another release class and its absence or incompleteness does not
+block publication or promotion. Review remains ongoing and nonterminal for as
+long as the surface exists. An accepted correction, incremental translation,
+or review event appears through a new immutable release with explicit
+supersession.
 
 The Decap adapter stores that object under a single `proposal` key in a
 workflow envelope. It converts the validated object to Decap's immutable data

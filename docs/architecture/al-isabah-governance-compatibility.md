@@ -1,7 +1,8 @@
 # Al-Isabah governance compatibility
 
 - **Status:** Accepted
-- **Issue:** [#113](https://github.com/yaqub0r/sabiqah/issues/113)
+- **Issues:** [#113](https://github.com/yaqub0r/sabiqah/issues/113) and
+  [#136](https://github.com/yaqub0r/sabiqah/issues/136)
 
 ## Authority and pin
 
@@ -11,22 +12,22 @@ corrections, promotion, and immutable releases. Sabiqah is a verified
 application consumer and does not keep a governing copy of those policies.
 
 The current consumer pin is Al-Isabah commit
-[`eb4fec9b`](https://github.com/yaqub0r/al-isabah/tree/eb4fec9b744c12fcb677d9a7c53c4a58628aaa41).
+[`e301d22b`](https://github.com/yaqub0r/al-isabah/tree/e301d22bd634777d5846a844340d42a00e3a2e3a).
 At that commit:
 
 - the
-  [`translation-governance-reference.v1.json`](https://github.com/yaqub0r/al-isabah/blob/eb4fec9b744c12fcb677d9a7c53c4a58628aaa41/docs/contracts/translation-governance-reference.v1.json)
-  reference is version `1.0.0` with normalized SHA-256
-  `81d115c85f5c7f793439991c36ae757a80ebe92e40017f65d8fb2eb7a1e1f5db`;
+  [`translation-governance-reference.v2.json`](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/docs/contracts/translation-governance-reference.v2.json)
+  reference is version `2.0.0` with normalized SHA-256
+  `7d73170d384f417733134e5ca09263ba73c92e941c5590d534d9eb38ec6704ae`;
 - the referenced
-  [`translation-quality-workflow`](https://github.com/yaqub0r/al-isabah/blob/eb4fec9b744c12fcb677d9a7c53c4a58628aaa41/docs/contracts/translation-quality-workflow.md)
+  [`translation-quality-workflow`](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/docs/contracts/translation-quality-workflow.md)
   and
-  [Al-Isabah profile](https://github.com/yaqub0r/al-isabah/blob/eb4fec9b744c12fcb677d9a7c53c4a58628aaa41/docs/translation-profiles/al-isabah.md)
+  [Al-Isabah profile](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/docs/translation-profiles/al-isabah.md)
   govern translation execution; and
 - the referenced
-  [`honorific-formulas.v1.json`](https://github.com/yaqub0r/al-isabah/blob/eb4fec9b744c12fcb677d9a7c53c4a58628aaa41/profiles/honorific-formulas.v1.json)
-  registry is version `1.2.0` with normalized SHA-256
-  `2691994d50457d967f41d04140b9f86f23967254fd764f2c756109194ba51a55`.
+  [`honorific-formulas.v1.json`](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/profiles/honorific-formulas.v1.json)
+  registry is version `1.3.0` with normalized SHA-256
+  `b23fcd528b840b0e5bbe8932fca6eeaaa576ee51263d9838d4f8d18e40c9e100`.
 
 The machine-readable Sabiqah compatibility pin lives in
 `packages/release-model/src/al-isabah-governance.compatibility.json`. Its
@@ -43,10 +44,13 @@ define Al-Isabah translation policy, treat a local projection as governing,
 mutate an immutable release, or turn a human review event into another release
 class.
 
-Human review changes per-record metadata and confidence only after the result
-is accepted through Al-Isabah's proposal process. Incremental translation,
-corrections, and review-coverage changes all use a new immutable upstream
-release with explicit supersession. Sabiqah's operational review overlay does
+Human review is append-only, ongoing, nonterminal metadata. Its state must be
+disclosed, but zero or incomplete coverage does not block public-working
+publication, canonical promotion, or immutable release eligibility and does
+not select a release class. Concrete source, provenance, rights, validation,
+substantive, or unresolved-disclosure defects remain independent fail-closed
+controls. Accepted corrections and review events use a new immutable upstream
+release with explicit supersession; Sabiqah's operational review overlay does
 not change the pinned corpus object.
 
 ## Compatibility changes

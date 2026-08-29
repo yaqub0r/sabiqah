@@ -71,8 +71,9 @@ Validation distinguishes two independent outcomes:
 A literal spelling or global count difference by itself is not a public-
 eligibility failure. A known wrong-gender, wrong-number, wrong-referent, or
 meaning-changing substitution fails translation readiness and blocks human
-approval and canonical promotion until corrected. The readable working record
-remains visible with its honest state.
+approval because of that defect until corrected. The amount of human review is
+not the blocker. The readable working record remains visible with its honest
+state, and canonical promotion follows the upstream substantive controls.
 
 ## Version policy
 

@@ -56,7 +56,12 @@ class DistributionCase:
 
     def update_record(self, update) -> None:
         value = self.record()
+        previous_id = value["id"]
         update(value)
+        if value["id"] != previous_id:
+            for formula in value.get("formulas", []):
+                if formula.get("recordId") == previous_id:
+                    formula["recordId"] = value["id"]
         path = self.distribution / "records" / "volume-01.jsonl"
         path.write_text(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
         data = path.read_bytes()
@@ -65,16 +70,25 @@ class DistributionCase:
                 sha256=hashlib.sha256(data).hexdigest(), bytes=len(data)
             )
         )
+        closure_path = self.distribution / "release-closure.json"
+        closure = json.loads(closure_path.read_text(encoding="utf-8"))
+        closure["outputInventory"][0].update(
+            sha256=hashlib.sha256(data).hexdigest(), bytes=len(data)
+        )
+        write(closure_path, closure)
+        self.update_manifest(
+            lambda manifest: manifest["releaseClosure"].update(
+                sha256=hashlib.sha256(closure_path.read_bytes()).hexdigest()
+            )
+        )
 
     def finalize(self) -> None:
         if self.archive.exists():
             self.archive.unlink()
         with zipfile.ZipFile(self.archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
-            bundle.write(self.distribution / "manifest.json", "manifest.json")
-            bundle.write(
-                self.distribution / "records" / "volume-01.jsonl",
-                "records/volume-01.jsonl",
-            )
+            for path in sorted(self.distribution.rglob("*")):
+                if path.is_file():
+                    bundle.write(path, path.relative_to(self.distribution).as_posix())
         write(
             self.release,
             {
@@ -324,6 +338,10 @@ class AlIsabahDistributionVerificationTests(unittest.TestCase):
             self.assertEqual(len(records), 1)
             self.assertEqual(binding["sourceAuthorityId"], "al-isabah-openiti-5835c18-aco-v1")
             self.assertEqual(binding["rightsMatrix"]["id"], "al-isabah-rights-synthetic")
+            self.assertEqual(manifest["counts"]["humanReviewed"], 0)
+            self.assertNotEqual(
+                manifest["packets"][0]["packetId"], records[0]["packetId"]
+            )
 
     def test_v1_is_rollback_only_and_unknown_major_rejects(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -391,6 +409,21 @@ class AlIsabahDistributionVerificationTests(unittest.TestCase):
             with self.assertRaisesRegex(CompatibilityError, "archive bytes"):
                 case.verify()
 
+    def test_review_disclosure_and_release_closure_are_required(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            case.update_record(lambda value: value.pop("humanReview"))
+            case.finalize()
+            with self.assertRaisesRegex(CompatibilityError, "public contract|review"):
+                case.verify()
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            review = case.distribution / "reviews" / "issue-0136.json"
+            review.write_text("{}\n", encoding="utf-8")
+            case.finalize()
+            with self.assertRaisesRegex(CompatibilityError, "closure output|archive bytes"):
+                case.verify()
+
 
 class AlIsabahDistributionIngestionTests(unittest.TestCase):
     def build_candidate(self, root: Path, case: DistributionCase | None = None) -> Path:
@@ -436,7 +469,13 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             )
             self.assertEqual(legacy["source"]["sourceCommit"], "5" * 40)
             self.assertEqual(legacy["provenance"]["sourceArtifactSha256"], "6" * 64)
-            self.assertEqual(item["source"]["producerAuthorityId"], "openiti-jk000533-5835c183")
+            self.assertEqual(item["source"]["producerAuthorityId"], "openiti-cleaned-arabic-comparison")
+            self.assertEqual(item["humanReview"], "unreviewed")
+            self.assertEqual(len(item["honorifics"]), 2)
+            self.assertEqual(
+                item["honorifics"][0]["accessibleText"],
+                "O God, bless Muḥammad and the family of Muḥammad.",
+            )
             self.assertIn("englishRights", item["source"])
             self.assertEqual(validate_public_corpus(root / "output"), [])
             self.assertEqual(activation["rollback"]["previousCorpusId"], "old-corpus")
@@ -456,6 +495,32 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
                 ingest(
                     case.distribution, base_corpus(root), root / "output", "2026-08-15T18:00:00Z",
                     case.archive, case.release, case.tag_ref, case.rights, case.authority,
+                )
+            self.assertFalse((root / "output").exists())
+            self.assertFalse((root / "activation.json").exists())
+
+    def test_unknown_compact_formula_fails_before_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            case.update_record(
+                lambda value: value["formulas"][0].update(
+                    observedArabic="صيغة غير مسجلة",
+                    targetRealization="Unregistered formula.",
+                )
+            )
+            case.finalize()
+            with self.assertRaisesRegex(IngestionError, "pinned registry"):
+                ingest(
+                    case.distribution,
+                    base_corpus(root),
+                    root / "output",
+                    "2026-08-15T18:00:00Z",
+                    case.archive,
+                    case.release,
+                    case.tag_ref,
+                    case.rights,
+                    case.authority,
                 )
             self.assertFalse((root / "output").exists())
             self.assertFalse((root / "activation.json").exists())

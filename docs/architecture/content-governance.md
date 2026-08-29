@@ -1,7 +1,8 @@
 # Content-governance operating model
 
 - **Status:** Proposed
-- **Issue:** [#26](https://github.com/yaqub0r/sabiqah/issues/26)
+- **Issues:** [#26](https://github.com/yaqub0r/sabiqah/issues/26) and
+  [#136](https://github.com/yaqub0r/sabiqah/issues/136)
 
 ## Purpose
 
@@ -107,12 +108,19 @@ identify:
 - the content and provenance manifest being promoted;
 - the applicable compliance-policy version;
 - the source commit or reproducible content hash;
-- the completed scholarly and compliance reviews; and
+- the current scholarly-review disclosure and applicable compliance decision;
+  and
 - unresolved limitations that remain visible in the public record.
 
 Book-repository review and validation remain authoritative. A Sabiqah event
 does not change release class, and Sabiqah must never silently replace
 canonical content or mutate a published release.
+
+Human scholarly review is an ongoing, append-only activity, not a terminal
+promotion step. Zero or incomplete review coverage never blocks publication,
+promotion, or immutable release eligibility by itself. Concrete source,
+rights, provenance, validation, substantive, or unresolved-disclosure defects
+remain fail-closed under the canonical repository's policy.
 
 ## Public documentation rule
 

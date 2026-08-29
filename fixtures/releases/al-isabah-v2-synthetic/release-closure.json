@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "closureId": "issue-0136-current-public-working-closure-v1",
+  "publicationStatus": "public-working",
+  "canonicalPromotion": "blocked",
+  "consumerSchemaVersion": "2.0.0",
+  "proposals": [
+    {
+      "proposalId": "issue-0136-public-proposal-v1",
+      "publicProposal": {
+        "path": "content/public-proposals/issue-0136.public-proposal.json",
+        "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "publicReview": {
+        "path": "content/public-proposals/issue-0136.public-review.json",
+        "sha256": "1889ea3049b539fdba73f93ac5a4230defe7f3b23b2d8152b2a070d27a465aa6"
+      },
+      "projection": {
+        "entryCount": 1
+      }
+    }
+  ],
+  "outputInventory": [
+    {
+      "path": "records/volume-01.jsonl",
+      "sha256": "c97478189c267c7f67506a20027b5545fb02200859a8d04ce4a157a6dcda7722",
+      "bytes": 1542,
+      "recordCount": 1
+    },
+    {
+      "path": "reviews/issue-0136.json",
+      "sha256": "1889ea3049b539fdba73f93ac5a4230defe7f3b23b2d8152b2a070d27a465aa6",
+      "bytes": 110,
+      "recordCount": 1
+    }
+  ]
+}

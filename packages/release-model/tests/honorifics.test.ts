@@ -14,9 +14,9 @@ describe("honorific registry", () => {
     expect(alIsabahFormulaProjection.role).toBe("verified-consumer-projection");
     expect(alIsabahFormulaProjection.source).toMatchObject({
       repository: "https://github.com/yaqub0r/al-isabah",
-      commit: "eb4fec9b744c12fcb677d9a7c53c4a58628aaa41",
-      referenceVersion: "1.0.0",
-      artifactVersion: "1.2.0",
+      commit: "e301d22bd634777d5846a844340d42a00e3a2e3a",
+      referenceVersion: "2.0.0",
+      artifactVersion: "1.3.0",
     });
 
     const compactEntries = alIsabahFormulaProjection.entries.filter(
