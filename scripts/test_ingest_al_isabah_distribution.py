@@ -28,6 +28,16 @@ def write(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def refresh_manifest(root: Path) -> None:
+    manifest_path = root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for record in manifest["files"]:
+        path = root / record["path"]
+        record["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        record["bytes"] = path.stat().st_size
+    write(manifest_path, manifest)
+
+
 class DistributionCase:
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -576,6 +586,61 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertTrue(
                 any("source commit differs from cohort" in error for error in validate_public_corpus(output))
             )
+
+    def test_active_pointer_preserves_historical_adapter_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build_candidate(root)
+            summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            current_cohort = next(
+                cohort
+                for cohort in summary["corpus"]["cohorts"]
+                if cohort["upstream"].get("distributionId")
+                == manifest["distribution"]["id"]
+            )
+            item_id = current_cohort["membership"]["itemIds"][0]
+            detail_path = output / "items" / f"{item_id}.json"
+            detail = json.loads(detail_path.read_text(encoding="utf-8"))
+            detail["honorificPolicyVersion"] = "historic-policy"
+            write(detail_path, detail)
+            for section_path in (output / "sections").glob("*.json"):
+                section = json.loads(section_path.read_text(encoding="utf-8"))
+                for position, embedded in enumerate(section["items"]):
+                    if embedded["id"] == item_id:
+                        section["items"][position] = detail
+                        write(section_path, section)
+            refresh_manifest(output)
+            pointer_path = root / "current.json"
+            write(pointer_path, {
+                "schemaVersion": "1.0.0",
+                "corpusId": summary["corpus"]["id"],
+                "prefix": f"public-corpora/al-isabah/{summary['corpus']['id']}",
+                "distributionId": manifest["distribution"]["id"],
+                "distributionCommit": manifest["distribution"]["commit"],
+                "distributionManifestSha256": manifest["distribution"]["manifestSha256"],
+            })
+
+            self.assertTrue(
+                any(
+                    f"wrong honorific policy version for {item_id}" in error
+                    for error in validate_public_corpus(output)
+                )
+            )
+            self.assertEqual(
+                validate_public_corpus(
+                    output, active_pointer_path=pointer_path
+                ),
+                [],
+            )
+            pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+            pointer["corpusId"] = "different-corpus"
+            write(pointer_path, pointer)
+            errors = validate_public_corpus(
+                output, active_pointer_path=pointer_path
+            )
+            self.assertTrue(any("active pointer: identity differs" in error for error in errors))
+            self.assertTrue(any("wrong honorific policy" in error for error in errors))
 
     def test_same_id_correction_records_explicit_supersession(self):
         with tempfile.TemporaryDirectory() as temp:
