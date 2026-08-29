@@ -54,10 +54,6 @@ MISATTACHED_COMPACT_HONORIFIC = re.compile(
     + r")[\t ]*—"
 )
 EMBEDDED_ENTRY_HEADING = re.compile(r"(?m)^\s*\d+\s*[.\-—]\s*\S")
-DANGLING_DASH_BOUNDARY = re.compile(r"—[ \t]*\n\s*\n[ \t]*(?=\S)")
-STRUCTURAL_HEADING_IN_PROSE = re.compile(
-    r"(?mi)^(?:THE LETTER\b.*|(?:THE\s+)?(?:SECOND\s+AND\s+THIRD\s+SECTIONS|SECOND,\s+THIRD,\s+AND\s+FOURTH\s+SECTIONS|SECTION\s+(?:ONE|TWO|THREE|FOUR)|FOURTH\s+SECTION)|NO ONE WAS MENTIONED IN (?:EITHER|ANY) OF THEM\.?)\s*$"
-)
 RAW_METER_LABEL = re.compile(
     r"\[(?:al-)?(?:rajaz|tawil|basit)(?: meter)?\]|\[al-[A-Za-z-]+ meter\]",
     re.I,
@@ -615,12 +611,6 @@ def validate(
             errors.append(f"detail: public working English is marked excluded for {item_id}")
         if EMBEDDED_ENTRY_HEADING.search(displayed_english):
             errors.append(f"detail: embedded legacy entry heading remains for {item_id}")
-        if DANGLING_DASH_BOUNDARY.search(displayed_english):
-            errors.append(f"detail: dangling dash crosses a paragraph boundary for {item_id}")
-        if detail.get("kind") == "entry" and STRUCTURAL_HEADING_IN_PROSE.search(
-            displayed_english
-        ):
-            errors.append(f"detail: source structure is embedded in entry prose for {item_id}")
         if RAW_METER_LABEL.search(displayed_english):
             errors.append(f"detail: raw poetry meter label remains for {item_id}")
         expected_headings = list(SOURCE_HEADINGS_BEFORE.get(source_entry_number, ()))

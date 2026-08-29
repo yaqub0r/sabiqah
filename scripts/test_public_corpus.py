@@ -578,7 +578,7 @@ class PublicCorpusTests(unittest.TestCase):
                 )
             )
 
-    def test_validator_rejects_dangling_dashes_embedded_headings_and_raw_meter_labels(self):
+    def test_validator_keeps_style_review_nonblocking_but_rejects_projection_artifacts(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             output = self.build(root)
@@ -591,9 +591,9 @@ class PublicCorpusTests(unittest.TestCase):
             item_path.write_text(json.dumps(item), encoding="utf-8")
             errors = VALIDATE.validate(output)
             self.assertTrue(any("embedded legacy entry heading" in error for error in errors))
-            self.assertTrue(any("dangling dash" in error for error in errors))
-            self.assertTrue(any("source structure" in error for error in errors))
             self.assertTrue(any("raw poetry meter" in error for error in errors))
+            self.assertFalse(any("dangling dash" in error for error in errors))
+            self.assertFalse(any("source structure" in error for error in errors))
 
     def test_validator_rejects_openiti_poetry_delimiters(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -78,6 +78,13 @@ Compact formula records are joined to the exact pinned upstream formula
 registry using their observed Arabic or target realization; Sabiqah does not
 invent missing formula semantics.
 
+Presentation heuristics are not publication gates. Verse punctuation at a
+paragraph or stanza boundary and source alphabet headings retained in an entry
+remain visible for ongoing reader review and correction. Validation continues
+to reject deterministic projection artifacts such as duplicated numbered entry
+titles and raw meter labels, as well as every integrity, provenance, rights,
+privacy, and schema violation.
+
 The projected corpus keeps Arabic-source rights, independently authored English
 rights, and the rights-matrix identity as separate fields. It does not reduce
 them to a repository-wide license string.
