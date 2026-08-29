@@ -133,6 +133,17 @@ using the binding with a changed pointer, member, object, claim, target, or a
 schema-5 base fails closed. The resulting corpus manifest and activation plan
 record the binding ID and file digest.
 
+The schema-4 bytes are verified against that attestation before migration; they
+are not reinterpreted with a later Sabiqah presentation-adapter registry. In a
+schema-5 corpus, only records in a `legacy-schema-4` cohort whose manifest has
+the exact supplied binding ID and normalized file digest retain their historic
+honorific metadata and search representation. Missing, ambiguous, or changed
+binding evidence fails closed and restores current honorific validation. New
+`distribution-v2` cohorts always use the current adapter rules. The binding
+record remains in every later schema-5 manifest and activation pointer so that
+a partial distribution update cannot silently discard the compatibility
+evidence.
+
 A later approved correction may replace the same stable ID. The new cohort
 then records the superseded cohort and the exact count, sorted IDs, and hash;
 the earlier cohort and its immutable upstream corpus remain recorded even when

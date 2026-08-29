@@ -124,7 +124,6 @@ jobs:
       - name: Ingest and validate complete reader corpus
         run: |
           set -euo pipefail
-          python3 scripts/validate_public_corpus.py .runtime/base-corpus
           legacy_args=()
           base_schema="$(python3 -c 'import json; print(json.load(open(".runtime/base-corpus/summary.json", encoding="utf-8"))["schemaVersion"])')"
           if [[ "${base_schema}" == "4.0.0" ]]; then
@@ -137,6 +136,8 @@ jobs:
               --legacy-approval-comment .runtime/legacy-binding/approval-comment.json
               --legacy-activation-run .runtime/legacy-binding/activation-run.json
             )
+          else
+            python3 scripts/validate_public_corpus.py .runtime/base-corpus
           fi
           activated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           python3 scripts/ingest_al_isabah_distribution.py \

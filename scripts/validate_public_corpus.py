@@ -62,6 +62,10 @@ RAW_METER_LABEL = re.compile(
     r"\[(?:al-)?(?:rajaz|tawil|basit)(?: meter)?\]|\[al-[A-Za-z-]+ meter\]",
     re.I,
 )
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_LEGACY_BINDING = (
+    ROOT / "evidence" / "legacy-bindings" / "al-isabah-active-schema-4.v1.json"
+)
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -207,7 +211,132 @@ def cohort_map(summary: dict[str, Any], errors: list[str]) -> dict[str, dict[str
     return result
 
 
-def validate(root: Path) -> list[str]:
+def validate_legacy_bindings(
+    manifest: dict[str, Any],
+    cohorts: dict[str, dict[str, Any]],
+    binding_path: Path | None,
+    errors: list[str],
+) -> bool:
+    records = manifest.get("legacyBindings")
+    if records is None:
+        return False
+    if not isinstance(records, list) or len(records) != 1:
+        errors.append("manifest: legacy binding record is missing or ambiguous")
+        return False
+    legacy_cohorts = [
+        cohort for cohort in cohorts.values()
+        if cohort.get("kind") == "legacy-schema-4"
+    ]
+    if not legacy_cohorts:
+        errors.append("manifest: legacy binding has no legacy cohort")
+        return False
+    if binding_path is None:
+        errors.append("manifest: legacy binding evidence was not supplied")
+        return False
+    try:
+        binding_bytes = binding_path.read_bytes().replace(b"\r\n", b"\n")
+        binding = json.loads(binding_bytes)
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        errors.append("manifest: legacy binding evidence is missing or invalid")
+        return False
+    expected = [{
+        "id": binding.get("bindingId"),
+        "sha256": hashlib.sha256(binding_bytes).hexdigest(),
+    }]
+    if (
+        not isinstance(expected[0]["id"], str)
+        or not ITEM_ID.fullmatch(expected[0]["id"])
+        or records != expected
+    ):
+        errors.append("manifest: legacy binding differs from supplied evidence")
+        return False
+    return True
+
+
+def validate_current_honorifics(
+    detail: dict[str, Any],
+    item: dict[str, Any],
+    displayed_arabic: str,
+    displayed_english: str,
+    remediation: dict[str, Any] | None,
+    item_id: str,
+    errors: list[str],
+) -> None:
+    if MISATTACHED_COMPACT_HONORIFIC.search(displayed_english):
+        errors.append(
+            f"detail: compact honorific retains parenthetical punctuation for {item_id}"
+        )
+    if detail.get("honorificPolicyVersion") != HONORIFIC_POLICY_VERSION:
+        errors.append(f"detail: wrong honorific policy version for {item_id}")
+    occurrences = detail.get("honorifics")
+    if not isinstance(occurrences, list):
+        errors.append(f"detail: honorific occurrence metadata missing for {item_id}")
+        occurrences = []
+    semantic_counts: dict[str, dict[str, int]] = {"ar": {}, "en": {}}
+    literal_counts: dict[str, dict[str, int]] = {"ar": {}, "en": {}}
+    for occurrence in occurrences:
+        semantic_id = occurrence.get("semanticId")
+        entry = HONORIFIC_ENTRY_BY_ID.get(semantic_id)
+        if entry is None:
+            errors.append(f"detail: unknown honorific semantic ID for {item_id}")
+            continue
+        if occurrence.get("agreement") != entry["agreement"]:
+            errors.append(f"detail: honorific agreement differs from registry for {item_id}")
+        if occurrence.get("familyIncluded") != entry["familyIncluded"]:
+            errors.append(f"detail: honorific family scope differs from registry for {item_id}")
+        language = occurrence.get("language")
+        if language not in semantic_counts:
+            continue
+        if occurrence.get("renderedForm") != honorific_display(entry, language):
+            errors.append(f"detail: honorific rendering differs from registry for {item_id}")
+        semantic_key = honorific_semantic_key(entry)
+        semantic_counts[language][semantic_key] = (
+            semantic_counts[language].get(semantic_key, 0) + 1
+        )
+        literal_counts[language][semantic_id] = (
+            literal_counts[language].get(semantic_id, 0) + 1
+        )
+    source_semantics = dict(sorted(semantic_counts["ar"].items()))
+    english_semantics = dict(sorted(semantic_counts["en"].items()))
+    literal_differs = literal_counts["ar"] != literal_counts["en"]
+    semantic_differs = source_semantics != english_semantics
+    if remediation is not None and remediation.get("sourceHonorificSemantics") != source_semantics:
+        errors.append(f"detail: source honorific semantics differ for {item_id}")
+    if remediation is not None and remediation.get("englishHonorificSemantics") != english_semantics:
+        errors.append(f"detail: English honorific semantics differ for {item_id}")
+    if remediation is not None and remediation.get("honorificLiteralInventoryDiffers") != literal_differs:
+        errors.append(f"detail: honorific literal-difference flag is wrong for {item_id}")
+    expected_review = "needs_attention" if semantic_differs else "passed"
+    if remediation is not None and remediation.get("honorificSemanticReview") != expected_review:
+        errors.append(f"detail: honorific semantic review state is wrong for {item_id}")
+    if semantic_differs and detail.get("machineAssessment") != "needs_attention":
+        errors.append(f"detail: semantic honorific difference did not fail review for {item_id}")
+    for character in HONORIFIC_CODEPOINT_RANGES.findall(
+        f"{displayed_arabic}\n{displayed_english}"
+    ):
+        if character not in HONORIFIC_BY_CHARACTER:
+            errors.append(f"detail: unknown compact honorific {ord(character):04X} for {item_id}")
+        elif HONORIFIC_BY_CHARACTER[character]["fontSupport"] != "supported":
+            errors.append(f"detail: unsupported compact honorific {ord(character):04X} for {item_id}")
+    expected_search = normalize_search_text(
+        "\n".join(
+            [
+                str(detail.get("title", {}).get("en", "")),
+                str(detail.get("title", {}).get("ar", "")),
+            ]
+            + [
+                f"{segment.get('english', '')}\n{segment.get('arabic', '')}"
+                for segment in detail.get("segments", [])
+            ]
+        )
+    )
+    if item.get("searchText") != expected_search:
+        errors.append(f"index: expanded honorific search text differs for {item_id}")
+
+
+def validate(
+    root: Path, legacy_binding_path: Path | None = DEFAULT_LEGACY_BINDING,
+) -> list[str]:
     errors: list[str] = []
     title_decisions = load_entry_title_profile()
     summary = load(root / "summary.json")
@@ -233,7 +362,11 @@ def validate(root: Path) -> list[str]:
     if corpus.get("promotionStatus") != "blocked":
         errors.append("summary: canonical promotion must remain blocked")
     cohorts = cohort_map(summary, errors) if schema_version == COHORT_SCHEMA_VERSION else {}
+    legacy_honorifics_attested = False
     if schema_version == COHORT_SCHEMA_VERSION:
+        legacy_honorifics_attested = validate_legacy_bindings(
+            manifest, cohorts, legacy_binding_path, errors
+        )
         current_distribution_cohorts = [
             cohort for cohort in cohorts.values()
             if cohort.get("kind") == "distribution-v2"
@@ -445,10 +578,6 @@ def validate(root: Path) -> list[str]:
             remediation.get("englishExcluded") is not False or exclusion_reasons
         ):
             errors.append(f"detail: public working English is marked excluded for {item_id}")
-        if MISATTACHED_COMPACT_HONORIFIC.search(displayed_english):
-            errors.append(
-                f"detail: compact honorific retains parenthetical punctuation for {item_id}"
-            )
         if EMBEDDED_ENTRY_HEADING.search(displayed_english):
             errors.append(f"detail: embedded legacy entry heading remains for {item_id}")
         if DANGLING_DASH_BOUNDARY.search(displayed_english):
@@ -469,72 +598,21 @@ def validate(root: Path) -> list[str]:
         ):
             if old in displayed_arabic:
                 errors.append(f"detail: audited Arabic apparatus remains for {item_id}")
-        if detail.get("honorificPolicyVersion") != HONORIFIC_POLICY_VERSION:
-            errors.append(f"detail: wrong honorific policy version for {item_id}")
-        occurrences = detail.get("honorifics")
-        if not isinstance(occurrences, list):
-            errors.append(f"detail: honorific occurrence metadata missing for {item_id}")
-            occurrences = []
-        semantic_counts = {"ar": {}, "en": {}}
-        literal_counts = {"ar": {}, "en": {}}
-        for occurrence in occurrences:
-            semantic_id = occurrence.get("semanticId")
-            entry = HONORIFIC_ENTRY_BY_ID.get(semantic_id)
-            if entry is None:
-                errors.append(f"detail: unknown honorific semantic ID for {item_id}")
-                continue
-            if occurrence.get("agreement") != entry["agreement"]:
-                errors.append(f"detail: honorific agreement differs from registry for {item_id}")
-            if occurrence.get("familyIncluded") != entry["familyIncluded"]:
-                errors.append(f"detail: honorific family scope differs from registry for {item_id}")
-            language = occurrence.get("language")
-            if language not in semantic_counts:
-                continue
-            if occurrence.get("renderedForm") != honorific_display(entry, language):
-                errors.append(f"detail: honorific rendering differs from registry for {item_id}")
-            semantic_key = honorific_semantic_key(entry)
-            semantic_counts[language][semantic_key] = (
-                semantic_counts[language].get(semantic_key, 0) + 1
-            )
-            literal_counts[language][semantic_id] = (
-                literal_counts[language].get(semantic_id, 0) + 1
-            )
-        source_semantics = dict(sorted(semantic_counts["ar"].items()))
-        english_semantics = dict(sorted(semantic_counts["en"].items()))
-        literal_differs = literal_counts["ar"] != literal_counts["en"]
-        semantic_differs = source_semantics != english_semantics
-        if remediation is not None and remediation.get("sourceHonorificSemantics") != source_semantics:
-            errors.append(f"detail: source honorific semantics differ for {item_id}")
-        if remediation is not None and remediation.get("englishHonorificSemantics") != english_semantics:
-            errors.append(f"detail: English honorific semantics differ for {item_id}")
-        if remediation is not None and remediation.get("honorificLiteralInventoryDiffers") != literal_differs:
-            errors.append(f"detail: honorific literal-difference flag is wrong for {item_id}")
-        expected_review = "needs_attention" if semantic_differs else "passed"
-        if remediation is not None and remediation.get("honorificSemanticReview") != expected_review:
-            errors.append(f"detail: honorific semantic review state is wrong for {item_id}")
-        if semantic_differs and detail.get("machineAssessment") != "needs_attention":
-            errors.append(f"detail: semantic honorific difference did not fail review for {item_id}")
-        for character in HONORIFIC_CODEPOINT_RANGES.findall(
-            f"{displayed_arabic}\n{displayed_english}"
-        ):
-            if character not in HONORIFIC_BY_CHARACTER:
-                errors.append(f"detail: unknown compact honorific {ord(character):04X} for {item_id}")
-            elif HONORIFIC_BY_CHARACTER[character]["fontSupport"] != "supported":
-                errors.append(f"detail: unsupported compact honorific {ord(character):04X} for {item_id}")
-        expected_search = normalize_search_text(
-            "\n".join(
-                [
-                    str(detail.get("title", {}).get("en", "")),
-                    str(detail.get("title", {}).get("ar", "")),
-                ]
-                + [
-                    f"{segment.get('english', '')}\n{segment.get('arabic', '')}"
-                    for segment in segments
-                ]
-            )
+        historical_honorifics = (
+            legacy_honorifics_attested
+            and cohort is not None
+            and cohort.get("kind") == "legacy-schema-4"
         )
-        if item.get("searchText") != expected_search:
-            errors.append(f"index: expanded honorific search text differs for {item_id}")
+        if not historical_honorifics:
+            validate_current_honorifics(
+                detail,
+                item,
+                displayed_arabic,
+                displayed_english,
+                remediation,
+                item_id,
+                errors,
+            )
         serialized = json.dumps(detail, ensure_ascii=False)
         if any(pattern.search(serialized) for pattern in FORBIDDEN_PUBLIC_PATTERNS):
             errors.append(f"detail: private or unapproved expression remains for {item_id}")
@@ -748,8 +826,14 @@ def validate(root: Path) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("root", type=Path)
+    parser.add_argument(
+        "--legacy-binding",
+        type=Path,
+        default=DEFAULT_LEGACY_BINDING,
+        help="Evidence allowed to attest historical schema-4 honorific semantics.",
+    )
     args = parser.parse_args()
-    errors = validate(args.root.resolve())
+    errors = validate(args.root.resolve(), args.legacy_binding.resolve())
     if errors:
         for error in errors:
             print(error)
