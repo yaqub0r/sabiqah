@@ -105,6 +105,9 @@ When a schema-2 Al-Isabah distribution is partial, ingestion projects and
 validates the complete incoming stable-ID inventory before changing cohort
 membership. Incoming entries and structural passages replace carried items
 with the same stable IDs; duplicate IDs inside the incoming projection fail
+closed. A uniquely matched legacy entry with the same volume and source entry
+number is an older identity alias: the incoming stable ID supersedes it and the
+old cohort records that exact supersession. Ambiguous source-entry matches fail
 closed. Other records are carried forward in their existing cohorts. The first
 schema-5 construction migrates the active schema-4 corpus into a
 `legacy-schema-4` cohort only after every carried record matches that corpus's
