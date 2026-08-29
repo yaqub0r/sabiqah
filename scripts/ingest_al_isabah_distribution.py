@@ -803,11 +803,37 @@ def ingest(
         item["corpusId"] = corpus_id
         items.append(item)
     cohorts = carried_cohorts(base_summary, items, attested_cohorts)
+    cohort_kinds = {cohort["id"]: cohort["kind"] for cohort in cohorts}
+    incoming_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
+    legacy_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
+    for item in incoming_items:
+        if item.get("kind") == "entry" and isinstance(item.get("sourceEntryNumber"), int):
+            incoming_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
+    for item in items:
+        if (
+            item.get("kind") == "entry"
+            and isinstance(item.get("sourceEntryNumber"), int)
+            and cohort_kinds.get(item.get("cohortId")) == "legacy-schema-4"
+        ):
+            legacy_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
+    alias_replaced_ids: set[str] = set()
+    for key in incoming_by_source.keys() & legacy_by_source.keys():
+        incoming_matches = incoming_by_source[key]
+        legacy_matches = legacy_by_source[key]
+        if len(incoming_matches) != 1 or len(legacy_matches) != 1:
+            raise IngestionError("legacy source-entry identity is ambiguous")
+        if incoming_matches[0]["id"] != legacy_matches[0]["id"]:
+            alias_replaced_ids.add(legacy_matches[0]["id"])
+    alias_replaced_entries: dict[int, int] = defaultdict(int)
+    for item in items:
+        if item["id"] in alias_replaced_ids:
+            alias_replaced_entries[item["volume"]] += 1
+    replaced_ids = incoming_ids | alias_replaced_ids
     replaced_members: dict[str, list[str]] = defaultdict(list)
     for item in items:
-        if item["id"] in incoming_ids:
+        if item["id"] in replaced_ids:
             replaced_members[item["cohortId"]].append(item["id"])
-    items = [item for item in items if item["id"] not in incoming_ids]
+    items = [item for item in items if item["id"] not in replaced_ids]
     remaining_by_cohort: dict[str, list[str]] = defaultdict(list)
     for item in items:
         remaining_by_cohort[item["cohortId"]].append(item["id"])
@@ -862,10 +888,12 @@ def ingest(
         matching_passages = [item for item in matching if item["kind"] == "passage"]
         section_count = len({item["sectionId"] for item in matching})
         pages = [item["printedPageStart"] for item in matching if item["printedPageStart"] is not None]
-        source_count = max(
-            len(matching_entries),
-            int(base_volume.get(volume_number, {}).get("sourceItemCount", 0)),
+        carried_source_count = max(
+            0,
+            int(base_volume.get(volume_number, {}).get("sourceItemCount", 0))
+            - alias_replaced_entries[volume_number],
         )
+        source_count = max(len(matching_entries), carried_source_count)
         if not matching_entries:
             availability = "not_translated"
         elif len(matching_entries) >= source_count:

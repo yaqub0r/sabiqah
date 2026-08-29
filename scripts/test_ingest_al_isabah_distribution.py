@@ -674,6 +674,36 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
                 (second / "summary.json").read_bytes(),
             )
 
+    def test_unique_legacy_source_entry_alias_is_superseded(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            case.update_record(
+                lambda record: record.update(
+                    volume=2,
+                    printedEntryNumber=2,
+                    pages=[{"volume": 2, "page": 2}],
+                )
+            )
+            case.finalize()
+            output = self.build_candidate(root, case)
+            summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+            index = json.loads((output / "index.json").read_text(encoding="utf-8"))
+            cohorts = {cohort["kind"]: cohort for cohort in summary["corpus"]["cohorts"]}
+            volume = next(volume for volume in summary["volumes"] if volume["number"] == 2)
+            self.assertEqual(
+                [item["id"] for item in index["items"] if item["volume"] == 2],
+                ["synthetic-entry-0001"],
+            )
+            self.assertEqual(volume["itemCount"], 1)
+            self.assertEqual(volume["sourceItemCount"], 1)
+            self.assertEqual(cohorts["legacy-schema-4"]["membership"]["itemCount"], 0)
+            self.assertEqual(
+                cohorts["distribution-v2"]["supersedes"][0]["itemIds"],
+                ["synthetic-legacy-entry-0002"],
+            )
+            self.assertEqual(validate_public_corpus(output), [])
+
     def test_projected_passage_replaces_carried_member_by_stable_id(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
