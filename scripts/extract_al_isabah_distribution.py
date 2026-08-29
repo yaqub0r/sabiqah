@@ -9,7 +9,19 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-ALLOWED = re.compile(r"(?:manifest\.json|records/volume-\d{2}\.jsonl)")
+ALLOWED = re.compile(
+    r"(?:manifest\.json|release-closure\.json|records/volume-\d{2}\.jsonl|reviews/issue-\d{4}\.json)"
+)
+
+
+def is_safe_member(name: str) -> bool:
+    relative = PurePosixPath(name)
+    return (
+        not relative.is_absolute()
+        and ".." not in relative.parts
+        and "\\" not in name
+        and ALLOWED.fullmatch(name) is not None
+    )
 
 
 def extract(archive: Path, output: Path) -> None:
@@ -20,13 +32,7 @@ def extract(archive: Path, output: Path) -> None:
         if len(names) != len(set(names)) or "manifest.json" not in names:
             raise ValueError("archive inventory is duplicated or lacks manifest.json")
         for name in names:
-            relative = PurePosixPath(name)
-            if (
-                relative.is_absolute()
-                or ".." in relative.parts
-                or "\\" in name
-                or not ALLOWED.fullmatch(name)
-            ):
+            if not is_safe_member(name):
                 raise ValueError(f"archive contains an unsafe member: {name}")
         output.mkdir(parents=True)
         for name in sorted(names):
