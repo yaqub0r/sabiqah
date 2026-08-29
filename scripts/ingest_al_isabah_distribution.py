@@ -94,8 +94,11 @@ def matched_formula(
     by_expanded: dict[str, dict[str, Any]],
 ) -> dict[str, Any] | None:
     target = str(formula.get("targetRealization", ""))
-    return by_character.get(target) or by_expanded.get(
-        str(formula.get("expandedArabic", ""))
+    observed = str(formula.get("observedArabic", ""))
+    return (
+        by_character.get(target)
+        or by_expanded.get(target)
+        or by_expanded.get(observed)
     )
 
 
@@ -141,21 +144,20 @@ def honorifics_for(
     for formula in formulas:
         registry = matched_formula(formula, by_character, by_expanded)
         if registry is None:
-            continue
+            raise IngestionError("distribution formula is absent from the pinned registry")
+        if formula.get("semanticClass") != registry.get("semanticClass"):
+            raise IngestionError("distribution formula semantics differ from the pinned registry")
         base = {
             "semanticId": registry["id"],
             "semanticClass": registry["semanticClass"],
             "field": "segment",
             "segmentId": segment_id,
-            "renderedForm": registry.get("compactCharacter")
-            if registry.get("fontSupport") == "supported"
-            else registry["expandedArabic"],
-            "expandedArabic": formula["expandedArabic"],
-            "accessibleText": formula["accessibleEnglish"],
+            "expandedArabic": registry["expandedArabic"],
+            "accessibleText": registry["accessibleEnglish"],
             "formulaRole": "formulaic",
             "referent": {
                 "kind": registry["referent"]["kind"],
-                "scope": formula.get("referentScope") or registry["referent"]["scope"],
+                "scope": registry["referent"]["scope"],
                 "context": "",
                 "status": "machine-inferred",
             },
@@ -168,6 +170,9 @@ def honorifics_for(
                 "id": f"{formula['formulaId']}-ar",
                 "language": "ar",
                 "observedForm": formula["observedArabic"],
+                "renderedForm": registry.get("compactCharacter")
+                if registry.get("fontSupport") == "supported"
+                else registry["expandedArabic"],
             }
         )
         result.append(
@@ -176,6 +181,9 @@ def honorifics_for(
                 "id": f"{formula['formulaId']}-en",
                 "language": "en",
                 "observedForm": formula["targetRealization"],
+                "renderedForm": registry.get("compactCharacter")
+                if registry.get("fontSupport") == "supported"
+                else registry["accessibleEnglish"],
             }
         )
     return result

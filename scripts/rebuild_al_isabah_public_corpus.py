@@ -1132,7 +1132,7 @@ def public_item(
             {
                 "stage": "compliance_promotion",
                 "state": "blocked",
-                "summary": "Canonical promotion remains separate and requires human review plus receiving-repository approval.",
+                "summary": "Canonical promotion remains separate and depends on the receiving repository's substantive eligibility controls; human review remains ongoing, disclosed, and non-gating.",
             },
         ],
         "source": {

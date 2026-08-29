@@ -28,14 +28,14 @@
   },
   "packets": [
     {
-      "packetId": "synthetic-packet-0001",
+      "packetId": "issue-0136-public-proposal-v1",
       "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
       "entryCount": 1
     }
   ],
   "authorities": [
     {
-      "sourceId": "openiti-jk000533-5835c183",
+      "sourceId": "openiti-cleaned-arabic-comparison",
       "commit": "5835c183b8bbf4ea454d5c1be2b168b669403771",
       "sha256": "bc9db8134c8278973967c91c00324531833f643fc0fb2c8ebe318c9ed4469eea",
       "license": {
@@ -55,10 +55,14 @@
   "files": [
     {
       "path": "records/volume-01.jsonl",
-      "sha256": "d0ce70aeac5fe3524d693e2595d3dce324f0b84a9d437000af980f44c5ac7cea",
-      "bytes": 1130,
+      "sha256": "c97478189c267c7f67506a20027b5545fb02200859a8d04ce4a157a6dcda7722",
+      "bytes": 1542,
       "recordCount": 1,
       "volume": 1
     }
-  ]
+  ],
+  "releaseClosure": {
+    "closureId": "issue-0136-current-public-working-closure-v1",
+    "sha256": "be00ee90cc7eeaad082fae4b0661a0ef0aa4ce92ec57b079515d7b0cf727c80f"
+  }
 }

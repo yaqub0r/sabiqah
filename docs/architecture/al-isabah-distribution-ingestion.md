@@ -6,7 +6,8 @@
   [#125](https://github.com/yaqub0r/sabiqah/issues/125),
   [#129](https://github.com/yaqub0r/sabiqah/issues/129),
   [#131](https://github.com/yaqub0r/sabiqah/issues/131), and
-  [#133](https://github.com/yaqub0r/sabiqah/issues/133)
+  [#133](https://github.com/yaqub0r/sabiqah/issues/133), and
+  [#136](https://github.com/yaqub0r/sabiqah/issues/136)
 
 ## Decision
 
@@ -42,12 +43,14 @@ layout, activation pointer, and presentation. Structural headings and related
 material remain ordered reading passages, but coverage counts distinguish
 translated entries from those passages.
 
-The development workflow polls the latest Al-Isabah `public-working` GitHub
-prerelease twice per hour. This avoids a cross-repository write token; the
-tradeoff is up to thirty minutes of automatic propagation latency. An operator
-may dispatch the workflow with an explicit release tag for immediate ingestion.
-Merging consumer code does not itself run ingestion; the next schedule,
-repository dispatch, or approved manual dispatch does.
+When enabled, the development workflow polls the latest Al-Isabah
+`public-working` GitHub prerelease twice per hour. This avoids a
+cross-repository write token; the tradeoff is up to thirty minutes of automatic
+propagation latency. A push to Al-Isabah is not an ingestible release and does
+not update Sabiqah. An operator may dispatch the enabled workflow with an
+explicit immutable release tag for immediate ingestion. Merging consumer code
+does not itself run ingestion, and a disabled workflow performs no polling or
+activation.
 
 ## Version and producer negotiation
 
@@ -60,12 +63,20 @@ The consumer binds the distribution to evidence rather than trusting manifest
 claims. It requires the exact Al-Isabah owner/repository, public-working release
 tag, tag commit, release target, distribution ID, single asset name, byte count,
 and GitHub-computed SHA-256. It also validates the manifest and shard hashes,
-packet and record counts, public-only record allowlist, blocked canonical
-promotion, the pinned OpenITI source commit and artifact hash, license and
+proposal inventory, internal record identities, public-only record allowlist,
+checksum-bound release closure and review members, blocked canonical promotion,
+the pinned OpenITI source commit and artifact hash, license and
 attribution, and the exact per-book rights-matrix ID, schema, publication
 decision, exclusions, review date, and follow-up policy. Only after those values
 match Sabiqah's approved source-authority record may the reader projection use
 that Sabiqah authority ID.
+
+Every record must disclose its human-review state and aggregate counts must
+match, including a valid zero-review distribution. Review coverage is ongoing
+metadata and is never an ingestion, publication, or promotion gate by itself.
+Compact formula records are joined to the exact pinned upstream formula
+registry using their observed Arabic or target realization; Sabiqah does not
+invent missing formula semantics.
 
 The projected corpus keeps Arabic-source rights, independently authored English
 rights, and the rights-matrix identity as separate fields. It does not reduce

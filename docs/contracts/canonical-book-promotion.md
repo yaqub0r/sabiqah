@@ -2,7 +2,8 @@
 
 - **Contract ID:** `canonical-book-promotion`
 - **Status:** Active
-- **Issue:** [#30](https://github.com/yaqub0r/sabiqah/issues/30)
+- **Issues:** [#30](https://github.com/yaqub0r/sabiqah/issues/30) and
+  [#136](https://github.com/yaqub0r/sabiqah/issues/136)
 
 ## Purpose
 
@@ -47,6 +48,14 @@ stable identifiers, and protected canonical-Arabic path. Automation must not
 silently overwrite canonical Arabic, translation, provenance, or editorial
 history.
 
+Human scholarly review is append-only, ongoing, and nonterminal. Its state and
+coverage must be disclosed, but zero, partial, or stale coverage does not block
+public-working publication, canonical promotion, or immutable release
+eligibility by itself. A concrete source, rights, provenance, public-boundary,
+deterministic-validation, substantive, or unresolved-disclosure defect may
+block the affected record; the blocker is the defect, never the absence or
+percentage of human review.
+
 ## Release consumption
 
 Sabiqah consumes an immutable release ID and source commit through the
@@ -56,5 +65,6 @@ must not read private research evidence or mutable book working branches.
 
 Corrections enter as reviewable upstream proposals and, when accepted, create
 a new immutable release with explicit supersession. Incremental translation
-and increased review coverage use the same release cycle. They do not erase
-the provenance or review record of earlier releases.
+and accepted review events use the same release cycle. They do not imply that
+review can be completed, select a release class, or erase the provenance or
+review record of earlier releases.

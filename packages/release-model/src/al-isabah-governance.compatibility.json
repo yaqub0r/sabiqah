@@ -3,18 +3,18 @@
   "consumerRole": "verified-application-consumer",
   "upstream": {
     "repository": "https://github.com/yaqub0r/al-isabah",
-    "commit": "eb4fec9b744c12fcb677d9a7c53c4a58628aaa41",
-    "referencePath": "docs/contracts/translation-governance-reference.v1.json",
-    "referenceVersion": "1.0.0",
-    "supportedReferenceMajor": 1,
-    "referenceSha256": "81d115c85f5c7f793439991c36ae757a80ebe92e40017f65d8fb2eb7a1e1f5db",
+    "commit": "e301d22bd634777d5846a844340d42a00e3a2e3a",
+    "referencePath": "docs/contracts/translation-governance-reference.v2.json",
+    "referenceVersion": "2.0.0",
+    "supportedReferenceMajor": 2,
+    "referenceSha256": "7d73170d384f417733134e5ca09263ba73c92e941c5590d534d9eb38ec6704ae",
     "textNormalization": "utf-8-lf"
   },
   "formulaProjection": {
     "path": "profiles/honorific-formulas.v1.json",
     "artifactId": "honorific-formula-registry",
-    "artifactVersion": "1.2.0",
-    "artifactSha256": "2691994d50457d967f41d04140b9f86f23967254fd764f2c756109194ba51a55",
+    "artifactVersion": "1.3.0",
+    "artifactSha256": "b23fcd528b840b0e5bbe8932fca6eeaaa576ee51263d9838d4f8d18e40c9e100",
     "consumerPath": "packages/release-model/src/al-isabah-honorifics.projection.json"
   },
   "distributionCompatibility": {
@@ -22,13 +22,29 @@
     "rollbackOnlySchemaVersion": "1.0.0"
   },
   "releaseSemantics": {
-    "humanReviewScope": "per-record-metadata-and-confidence",
+    "agentCompletionIndependentOfHumanReview": true,
+    "humanReviewScope": "append-only-per-record-metadata-and-confidence",
+    "humanReviewManagementState": "ongoing-nonterminal",
+    "humanReviewDisclosureRequired": true,
+    "humanReviewAffectsEligibility": false,
     "humanReviewChangesReleaseClass": false,
+    "substantiveDefectsAffectEligibility": true,
+    "promotionEligibilityControls": [
+      "source-binding",
+      "provenance-binding",
+      "rights-eligibility",
+      "public-output-boundary",
+      "deterministic-validation",
+      "substantive-eligibility",
+      "unresolved-state-disclosure"
+    ],
     "correctionMode": "new-immutable-release-with-supersession"
   },
   "prohibitedConsumerAuthority": [
     "define-al-isabah-translation-policy",
     "treat-a-local-copy-as-governing",
+    "gate-publication-or-promotion-on-human-review-coverage",
+    "infer-terminal-human-review-completion",
     "change-release-class-from-human-review",
     "rewrite-or-mutate-an-immutable-release"
   ]

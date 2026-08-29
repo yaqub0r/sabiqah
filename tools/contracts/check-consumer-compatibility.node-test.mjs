@@ -43,12 +43,12 @@ test("the consumer pin declares explicit upstream version compatibility", () => 
   assert.equal(compatibility.consumerRole, "verified-application-consumer");
   assert.deepEqual(compatibility.upstream, {
     repository: "https://github.com/yaqub0r/al-isabah",
-    commit: "eb4fec9b744c12fcb677d9a7c53c4a58628aaa41",
-    referencePath: "docs/contracts/translation-governance-reference.v1.json",
-    referenceVersion: "1.0.0",
-    supportedReferenceMajor: 1,
+    commit: "e301d22bd634777d5846a844340d42a00e3a2e3a",
+    referencePath: "docs/contracts/translation-governance-reference.v2.json",
+    referenceVersion: "2.0.0",
+    supportedReferenceMajor: 2,
     referenceSha256:
-      "81d115c85f5c7f793439991c36ae757a80ebe92e40017f65d8fb2eb7a1e1f5db",
+      "7d73170d384f417733134e5ca09263ba73c92e941c5590d534d9eb38ec6704ae",
     textNormalization: "utf-8-lf",
   });
   assert.equal(
@@ -60,8 +60,22 @@ test("the consumer pin declares explicit upstream version compatibility", () => 
     rollbackOnlySchemaVersion: "1.0.0",
   });
   assert.deepEqual(compatibility.releaseSemantics, {
-    humanReviewScope: "per-record-metadata-and-confidence",
+    agentCompletionIndependentOfHumanReview: true,
+    humanReviewScope: "append-only-per-record-metadata-and-confidence",
+    humanReviewManagementState: "ongoing-nonterminal",
+    humanReviewDisclosureRequired: true,
+    humanReviewAffectsEligibility: false,
     humanReviewChangesReleaseClass: false,
+    substantiveDefectsAffectEligibility: true,
+    promotionEligibilityControls: [
+      "source-binding",
+      "provenance-binding",
+      "rights-eligibility",
+      "public-output-boundary",
+      "deterministic-validation",
+      "substantive-eligibility",
+      "unresolved-state-disclosure",
+    ],
     correctionMode: "new-immutable-release-with-supersession",
   });
 });
@@ -75,7 +89,7 @@ test("the honorific adapter projection is bound to the upstream artifact", () =>
 
   assert.equal(projection.role, "verified-consumer-projection");
   assert.equal(presentation.role, "consumer-presentation-only");
-  assert.equal(projection.entries.length, 25);
+  assert.equal(projection.entries.length, 30);
   assert.equal(
     new Set(projection.entries.map(({ source }) => source)).size,
     projection.entries.length,

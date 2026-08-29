@@ -86,6 +86,10 @@ def _agreement(value: str) -> dict[str, str]:
             "number": "plural",
             "gender": "mixed",
         },
+        "second-person masculine singular imperative addressed to God; masculine singular prophetic referent with family inclusion": {
+            "number": "plural",
+            "gender": "mixed",
+        },
         "masculine singular": {"number": "singular", "gender": "masculine"},
         "feminine singular": {"number": "singular", "gender": "feminine"},
         "dual": {"number": "dual", "gender": "common"},

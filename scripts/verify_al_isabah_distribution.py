@@ -17,8 +17,8 @@ from typing import Any
 REPOSITORY = "https://github.com/yaqub0r/al-isabah"
 REPOSITORY_API = "https://api.github.com/repos/yaqub0r/al-isabah"
 WORK_ID = "ibn-hajar-al-isabah"
-PRODUCER_SOURCE_ID = "openiti-jk000533-5835c183"
-MATRIX_SOURCE_ID = "openiti-cleaned-arabic-comparison"
+PRODUCER_SOURCE_ID = "openiti-cleaned-arabic-comparison"
+MATRIX_SOURCE_ID = PRODUCER_SOURCE_ID
 PRODUCER_SOURCE_ATTRIBUTION = (
     "OpenITI, JK000533 transcription of Ibn Hajar al-Asqalani's "
     "al-Isabah fi Tamyiz al-Sahabah"
@@ -35,7 +35,7 @@ TAG = re.compile(r"^public-working-([a-f0-9]{40})$")
 MANIFEST_KEYS = {
     "schemaVersion", "distributionId", "publicationStatus", "canonicalPromotion",
     "work", "repository", "generatedAt", "rights", "packets", "authorities",
-    "counts", "duplicatePrintedEntryNumbers", "files",
+    "counts", "duplicatePrintedEntryNumbers", "files", "releaseClosure",
 }
 RECORD_KEYS = {
     "schemaVersion", "id", "kind", "workId", "packetId", "sourceOrdinal",
@@ -141,8 +141,10 @@ def verify_archive_matches_distribution(archive: Path, root: Path) -> None:
     try:
         with zipfile.ZipFile(archive) as bundle:
             members = {item.filename for item in bundle.infolist() if not item.is_dir()}
-            expected = {"manifest.json"} | {
-                path.relative_to(root).as_posix() for path in root.glob("records/*.jsonl")
+            expected = {
+                path.relative_to(root).as_posix()
+                for path in root.rglob("*")
+                if path.is_file()
             }
             if members != expected:
                 raise CompatibilityError("archive inventory does not match the extracted distribution")
@@ -239,13 +241,9 @@ def verify_rights(
 
 def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]) -> list[dict[str, Any]]:
     authorities = {item["sourceId"]: item for item in manifest["authorities"]}
-    packet_counts = {item.get("packetId"): item.get("entryCount") for item in manifest.get("packets", [])}
-    if not packet_counts or any(not SHA256.fullmatch(str(item.get("sha256", ""))) for item in manifest.get("packets", [])):
-        raise CompatibilityError("packet inventory is invalid")
     records: list[dict[str, Any]] = []
     seen: set[str] = set()
     actual_paths: set[str] = set()
-    packet_actual: dict[str, int] = defaultdict(int)
     needs_attention = 0
     human_reviewed = 0
     for file in manifest.get("files", []):
@@ -292,16 +290,33 @@ def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]
                 or not str(record.get("english", "")).strip()
             ):
                 raise CompatibilityError("record does not match the verified public contract")
-            packet_id = record.get("packetId")
-            if packet_id not in packet_counts:
-                raise CompatibilityError("record refers to an undeclared packet")
-            packet_actual[packet_id] += 1
+            if not IDENTIFIER.fullmatch(str(record.get("packetId", ""))):
+                raise CompatibilityError("record contains an invalid internal packet identity")
+            if record.get("humanReview") not in {"unreviewed", "reviewed", "verified"}:
+                raise CompatibilityError("record omits a valid human-review disclosure")
+            allowed_formula_owners = {record_id} | {
+                str(item.get("id")) for item in record.get("precedingMaterial", [])
+            }
+            for formula in record.get("formulas", []):
+                exact_keys(
+                    formula,
+                    {"formulaId", "observedArabic", "recordId", "semanticClass", "targetRealization"},
+                    "record formula",
+                )
+                if (
+                    not IDENTIFIER.fullmatch(str(formula.get("formulaId", "")))
+                    or formula.get("recordId") not in allowed_formula_owners
+                    or not str(formula.get("observedArabic", "")).strip()
+                    or not str(formula.get("semanticClass", "")).strip()
+                    or not str(formula.get("targetRealization", "")).strip()
+                ):
+                    raise CompatibilityError("record formula does not match the compact public contract")
             needs_attention += record.get("machineAssessment") == "needs_attention"
             human_reviewed += record.get("humanReview") in {"reviewed", "verified"}
             records.append(record)
     disk_paths = {path.relative_to(root).as_posix() for path in root.glob("records/*.jsonl")}
-    if disk_paths != actual_paths or packet_actual != packet_counts:
-        raise CompatibilityError("distribution file or packet inventory differs")
+    if disk_paths != actual_paths:
+        raise CompatibilityError("distribution file inventory differs")
     counts = manifest.get("counts", {})
     if (
         counts.get("entries") != len(records)
@@ -320,6 +335,70 @@ def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]
     if expected_duplicates != manifest.get("duplicatePrintedEntryNumbers"):
         raise CompatibilityError("duplicate printed-entry accounting differs")
     return records
+
+
+def verify_release_closure(root: Path, manifest: dict[str, Any]) -> None:
+    binding = manifest.get("releaseClosure")
+    exact_keys(binding, {"closureId", "sha256"}, "release closure binding")
+    closure_path = root / "release-closure.json"
+    if not closure_path.is_file() or digest_file(closure_path) != binding.get("sha256"):
+        raise CompatibilityError("release closure checksum differs")
+    closure = load(closure_path)
+    if (
+        closure.get("closureId") != binding.get("closureId")
+        or closure.get("publicationStatus") != "public-working"
+        or closure.get("canonicalPromotion") != "blocked"
+        or closure.get("consumerSchemaVersion") != "2.0.0"
+    ):
+        raise CompatibilityError("release closure does not match the public-working contract")
+    proposal_inventory = {
+        item.get("proposalId"): {
+            "packetId": item.get("proposalId"),
+            "sha256": item.get("publicProposal", {}).get("sha256"),
+            "entryCount": item.get("projection", {}).get("entryCount"),
+        }
+        for item in closure.get("proposals", [])
+    }
+    manifest_packets = {item.get("packetId"): item for item in manifest.get("packets", [])}
+    if (
+        not proposal_inventory
+        or len(proposal_inventory) != len(closure.get("proposals", []))
+        or len(manifest_packets) != len(manifest.get("packets", []))
+        or manifest_packets != proposal_inventory
+    ):
+        raise CompatibilityError("proposal inventory does not match the release closure")
+    output_inventory = {item.get("path"): item for item in closure.get("outputInventory", [])}
+    if len(output_inventory) != len(closure.get("outputInventory", [])):
+        raise CompatibilityError("release closure output inventory contains duplicates")
+    for relative, item in output_inventory.items():
+        if (
+            not isinstance(relative, str)
+            or not re.fullmatch(r"(?:records/volume-\d{2}\.jsonl|reviews/issue-\d{4}\.json)", relative)
+        ):
+            raise CompatibilityError("release closure contains an unsafe output path")
+        path = root / relative
+        if (
+            not path.is_file()
+            or digest_file(path) != item.get("sha256")
+            or path.stat().st_size != item.get("bytes")
+        ):
+            raise CompatibilityError("release closure output inventory differs")
+    manifest_files = {item.get("path") for item in manifest.get("files", [])}
+    closure_record_files = {
+        path for path in output_inventory if isinstance(path, str) and path.startswith("records/")
+    }
+    if manifest_files != closure_record_files:
+        raise CompatibilityError("manifest shards do not match the release closure")
+    for proposal in closure.get("proposals", []):
+        proposal_id = str(proposal.get("proposalId", ""))
+        match = re.fullmatch(r"(issue-\d{4})-public-proposal-v1", proposal_id)
+        review_path = f"reviews/{match.group(1)}.json" if match else ""
+        if (
+            not match
+            or output_inventory.get(review_path, {}).get("sha256")
+            != proposal.get("publicReview", {}).get("sha256")
+        ):
+            raise CompatibilityError("public review does not match the release closure")
 
 
 def verify_distribution(
@@ -347,6 +426,7 @@ def verify_distribution(
         "rights",
     )
     exact_keys(manifest.get("counts"), {"entries", "machinePassed", "needsAttention", "humanReviewed"}, "counts")
+    exact_keys(manifest.get("releaseClosure"), {"closureId", "sha256"}, "release closure")
     for packet in manifest.get("packets", []):
         exact_keys(packet, {"packetId", "sha256", "entryCount"}, "packet")
     for authority in manifest.get("authorities", []):
@@ -366,6 +446,7 @@ def verify_distribution(
     public_boundary(manifest)
     release_binding = verify_release(manifest, archive, load(release_path), load(tag_ref_path))
     verify_archive_matches_distribution(archive, root)
+    verify_release_closure(root, manifest)
     rights_binding = verify_rights(manifest, load(rights_matrix_path), load(source_authority_path))
     records = verify_records(root, manifest, rights_binding)
     return manifest, records, {**release_binding, **rights_binding}
