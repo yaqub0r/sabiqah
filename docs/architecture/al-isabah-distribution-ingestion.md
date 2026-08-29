@@ -152,6 +152,16 @@ have passed the one-time verifier. The remaining manifest, archive, shard,
 record, source-authority, and rights checks are identical to current schema-2
 verification. Later schema-5 updates require the current closure-bearing shape.
 
+Before using a schema-5 base, the workflow binds it to the captured active
+pointer and validates every immutable object, cohort, source, right, count, and
+public-safety rule. Honorific metadata and search representation in that active
+base are treated as historical adapter output rather than recomputed under the
+current registry. Candidate validation applies current adapter rules to the
+new distribution cohort; earlier distribution cohorts and exactly attested
+schema-4 cohorts retain their recorded adapter semantics. This prevents a
+presentation-adapter upgrade from rewriting or blocking immutable scholarly
+content while keeping the newly projected records on the current rules.
+
 A later approved correction may replace the same stable ID. The new cohort
 then records the superseded cohort and the exact count, sorted IDs, and hash;
 the earlier cohort and its immutable upstream corpus remain recorded even when

@@ -253,6 +253,32 @@ def validate_legacy_bindings(
     return True
 
 
+def validate_active_pointer(
+    pointer_path: Path,
+    corpus_id: str | None,
+    manifest: dict[str, Any],
+    errors: list[str],
+) -> bool:
+    try:
+        pointer = load(pointer_path)
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        errors.append("active pointer: evidence is missing or invalid")
+        return False
+    distribution = manifest.get("distribution", {})
+    if (
+        pointer.get("schemaVersion") != "1.0.0"
+        or pointer.get("corpusId") != corpus_id
+        or pointer.get("prefix") != f"public-corpora/al-isabah/{corpus_id}"
+        or pointer.get("distributionId") != distribution.get("id")
+        or pointer.get("distributionCommit") != distribution.get("commit")
+        or pointer.get("distributionManifestSha256")
+        != distribution.get("manifestSha256")
+    ):
+        errors.append("active pointer: identity differs from the corpus manifest")
+        return False
+    return True
+
+
 def validate_current_honorifics(
     detail: dict[str, Any],
     item: dict[str, Any],
@@ -335,7 +361,9 @@ def validate_current_honorifics(
 
 
 def validate(
-    root: Path, legacy_binding_path: Path | None = DEFAULT_LEGACY_BINDING,
+    root: Path,
+    legacy_binding_path: Path | None = DEFAULT_LEGACY_BINDING,
+    active_pointer_path: Path | None = None,
 ) -> list[str]:
     errors: list[str] = []
     title_decisions = load_entry_title_profile()
@@ -363,10 +391,16 @@ def validate(
         errors.append("summary: canonical promotion must remain blocked")
     cohorts = cohort_map(summary, errors) if schema_version == COHORT_SCHEMA_VERSION else {}
     legacy_honorifics_attested = False
+    active_base_honorifics = False
+    current_distribution_cohort_id = None
     if schema_version == COHORT_SCHEMA_VERSION:
         legacy_honorifics_attested = validate_legacy_bindings(
             manifest, cohorts, legacy_binding_path, errors
         )
+        if active_pointer_path is not None:
+            active_base_honorifics = validate_active_pointer(
+                active_pointer_path, corpus_id, manifest, errors
+            )
         current_distribution_cohorts = [
             cohort for cohort in cohorts.values()
             if cohort.get("kind") == "distribution-v2"
@@ -376,6 +410,7 @@ def validate(
             errors.append("summary: current verified distribution cohort is missing or ambiguous")
         else:
             current = current_distribution_cohorts[0]
+            current_distribution_cohort_id = current["id"]
             upstream = current["upstream"]
             if (
                 upstream.get("releaseTag") != distribution.get("releaseTag")
@@ -599,9 +634,17 @@ def validate(
             if old in displayed_arabic:
                 errors.append(f"detail: audited Arabic apparatus remains for {item_id}")
         historical_honorifics = (
-            legacy_honorifics_attested
-            and cohort is not None
-            and cohort.get("kind") == "legacy-schema-4"
+            active_base_honorifics
+            or (
+                legacy_honorifics_attested
+                and cohort is not None
+                and cohort.get("kind") == "legacy-schema-4"
+            )
+            or (
+                cohort is not None
+                and cohort.get("kind") == "distribution-v2"
+                and cohort.get("id") != current_distribution_cohort_id
+            )
         )
         if not historical_honorifics:
             validate_current_honorifics(
@@ -832,8 +875,17 @@ def main() -> int:
         default=DEFAULT_LEGACY_BINDING,
         help="Evidence allowed to attest historical schema-4 honorific semantics.",
     )
+    parser.add_argument(
+        "--active-pointer",
+        type=Path,
+        help="Treat adapter fields as historical only for this exact active corpus.",
+    )
     args = parser.parse_args()
-    errors = validate(args.root.resolve(), args.legacy_binding.resolve())
+    errors = validate(
+        args.root.resolve(),
+        args.legacy_binding.resolve(),
+        args.active_pointer.resolve() if args.active_pointer else None,
+    )
     if errors:
         for error in errors:
             print(error)

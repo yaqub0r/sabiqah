@@ -137,7 +137,8 @@ jobs:
               --tag-ref .runtime/tag-ref.json \
               --rights-matrix .runtime/rights-matrix.json \
               --source-authority evidence/source-authorities/al-isabah.v1.json
-            python3 scripts/validate_public_corpus.py .runtime/base-corpus
+            python3 scripts/validate_public_corpus.py .runtime/base-corpus \
+              --active-pointer .runtime/current.json
           fi
           activated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           python3 scripts/ingest_al_isabah_distribution.py \
