@@ -467,6 +467,53 @@ describe("CorpusReader", () => {
     );
   });
 
+  it("scrolls again when search reopens the same entry after navigating away", async () => {
+    const scrollIntoView = installScrollSpy();
+    vi.stubGlobal("scrollTo", vi.fn());
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${linkedSectionId}#${linkedItem.id}`,
+    );
+    installReaderFetch(
+      [
+        { record: firstItem, section: sectionId },
+        { record: linkedItem, section: linkedSectionId },
+      ],
+      sectionResponses([
+        [sectionId, readingSection(sectionId, [firstItem])],
+        [linkedSectionId, readingSection(linkedSectionId, [linkedItem], 2)],
+      ]),
+    );
+
+    render(<CorpusReader />);
+    expect(
+      await screen.findByText(linkedItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+
+    fireEvent.click(screen.getByRole("button", { name: /Pages 1–25/ }));
+    expect(
+      await screen.findByText(firstItem.segments[0]!.english),
+    ).toBeTruthy();
+
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Name or entry number" }),
+      { target: { value: "Directly linked" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Directly linked entry/ }),
+    );
+
+    expect(
+      await screen.findByText(linkedItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(2));
+    expect(scrollIntoView.mock.contexts[1]).toBe(
+      document.getElementById(linkedItem.id),
+    );
+  });
+
   it("requires an explicit meter label before styling text as poetry", () => {
     const prose = englishReadingBlocks(
       "ibn Abd al-Muttalib al-Hashimiyya\n\nal-Daraqutni mentioned her in the Book of Siblings.",
