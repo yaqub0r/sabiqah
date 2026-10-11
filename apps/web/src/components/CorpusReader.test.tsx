@@ -14,6 +14,10 @@ import { CorpusReader, englishReadingBlocks } from "./CorpusReader";
 
 const corpusId = "al-isabah-reading-a3b76bf-v3";
 const sectionId = "volume-08-pages-0001-0025";
+const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  "scrollIntoView",
+);
 
 function item(id: string, sequence: number, title: string, sentence: string) {
   return {
@@ -119,6 +123,13 @@ const secondItem = item(
   "Second short entry",
   "The following short record continues in the same reading section.",
 );
+const linkedSectionId = "volume-08-pages-0126-0150";
+const linkedItem = item(
+  "isabah-entry-00011827",
+  11827,
+  "Directly linked entry",
+  "The directly linked record renders after its reading section loads.",
+);
 const untranslatedItem = {
   ...secondItem,
   title: { ...secondItem.title, en: "Entry 10760" },
@@ -132,10 +143,328 @@ const untranslatedItem = {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  if (originalScrollIntoView)
+    Object.defineProperty(
+      HTMLElement.prototype,
+      "scrollIntoView",
+      originalScrollIntoView,
+    );
+  else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
   window.history.replaceState(null, "", "/");
 });
 
+function indexedItem(record: ReturnType<typeof item>, recordSectionId: string) {
+  return {
+    id: record.id,
+    kind: record.kind,
+    sequence: record.sequence,
+    printedEntryNumber: record.printedEntryNumber,
+    volume: record.volume,
+    printedPageStart: 126,
+    printedPageEnd: 150,
+    sectionId: recordSectionId,
+    titleEn: record.title.en,
+    titleAr: record.title.ar,
+    translationState: record.translationState,
+    machineAssessment: record.machineAssessment,
+    humanReview: record.humanReview,
+    unresolvedCount: 0,
+  };
+}
+
+function readingSection(
+  id: string,
+  records: ReturnType<typeof item>[],
+  position = 1,
+) {
+  return {
+    schemaVersion: "2.0.0",
+    corpusId,
+    id,
+    volume: 8,
+    label: "Pages 126–150",
+    availability: "complete_translation",
+    position,
+    totalSections: 2,
+    printedPageStart: 126,
+    printedPageEnd: 150,
+    previousSectionId: position === 1 ? null : sectionId,
+    nextSectionId: position === 1 ? linkedSectionId : null,
+    items: records,
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
+
+function installScrollSpy() {
+  const scrollIntoView = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    configurable: true,
+    value: scrollIntoView,
+  });
+  return scrollIntoView;
+}
+
+function installReaderFetch(
+  records: Array<{
+    record: ReturnType<typeof item>;
+    section: string;
+  }>,
+  sections: Map<
+    string,
+    | ReturnType<typeof readingSection>
+    | Promise<ReturnType<typeof readingSection>>
+  >,
+) {
+  const fetchMock = vi.fn(async (input: string | URL | Request) => {
+    const path = typeof input === "string" ? input : input.toString();
+    if (path === "/api/corpus/al-isabah/index")
+      return {
+        ok: true,
+        json: async () => ({
+          schemaVersion: "2.0.0",
+          corpusId,
+          items: records.map(({ record, section }) =>
+            indexedItem(record, section),
+          ),
+        }),
+      };
+    if (path === "/api/corpus/al-isabah/reviews")
+      return {
+        ok: true,
+        json: async () => ({ corpusId, reviewedItems: 0, items: {} }),
+      };
+    if (path === "/api/session")
+      return { ok: false, json: async () => ({ error: "anonymous" }) };
+    const prefix = "/api/corpus/al-isabah/sections/";
+    const body = path.startsWith(prefix)
+      ? sections.get(decodeURIComponent(path.slice(prefix.length)))
+      : undefined;
+    return {
+      ok: body !== undefined,
+      json: async () => await body,
+    };
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+function sectionResponses(
+  entries: Array<
+    [
+      string,
+      (
+        | ReturnType<typeof readingSection>
+        | Promise<ReturnType<typeof readingSection>>
+      ),
+    ]
+  >,
+) {
+  return new Map(entries);
+}
+
 describe("CorpusReader", () => {
+  it("scrolls a direct entry link after its section finishes loading", async () => {
+    const sectionResponse = deferred<ReturnType<typeof readingSection>>();
+    const scrollIntoView = installScrollSpy();
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${linkedSectionId}#${linkedItem.id}`,
+    );
+    const fetchMock = installReaderFetch(
+      [{ record: linkedItem, section: linkedSectionId }],
+      sectionResponses([[linkedSectionId, sectionResponse.promise]]),
+    );
+
+    render(<CorpusReader />);
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/corpus/al-isabah/sections/${linkedSectionId}`,
+        expect.objectContaining({ credentials: "same-origin" }),
+      ),
+    );
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    sectionResponse.resolve(readingSection(linkedSectionId, [linkedItem], 2));
+
+    expect(
+      await screen.findByText(linkedItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+    expect(scrollIntoView.mock.contexts[0]).toBe(
+      document.getElementById(linkedItem.id),
+    );
+    expect(window.location.hash).toBe(`#${linkedItem.id}`);
+  });
+
+  it("keeps a changed hash pending while the target section renders", async () => {
+    const sectionResponse = deferred<ReturnType<typeof readingSection>>();
+    const scrollIntoView = installScrollSpy();
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${sectionId}`,
+    );
+    const fetchMock = installReaderFetch(
+      [
+        { record: firstItem, section: sectionId },
+        { record: linkedItem, section: linkedSectionId },
+      ],
+      sectionResponses([
+        [sectionId, readingSection(sectionId, [firstItem])],
+        [linkedSectionId, sectionResponse.promise],
+      ]),
+    );
+
+    render(<CorpusReader />);
+    expect(
+      await screen.findByText(firstItem.segments[0]!.english),
+    ).toBeTruthy();
+
+    window.history.pushState(null, "", `#${linkedItem.id}`);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/corpus/al-isabah/sections/${linkedSectionId}`,
+        expect.objectContaining({ credentials: "same-origin" }),
+      ),
+    );
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    sectionResponse.resolve(readingSection(linkedSectionId, [linkedItem], 2));
+
+    expect(
+      await screen.findByText(linkedItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+    expect(scrollIntoView.mock.contexts[0]).toBe(
+      document.getElementById(linkedItem.id),
+    );
+    expect(window.location.search).toContain(`section=${linkedSectionId}`);
+    expect(window.location.hash).toBe(`#${linkedItem.id}`);
+  });
+
+  it("leaves an unknown anchor harmlessly pending", async () => {
+    const scrollIntoView = installScrollSpy();
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${sectionId}#missing-entry`,
+    );
+    installReaderFetch(
+      [{ record: firstItem, section: sectionId }],
+      sectionResponses([[sectionId, readingSection(sectionId, [firstItem])]]),
+    );
+
+    render(<CorpusReader />);
+
+    expect(
+      await screen.findByText(firstItem.segments[0]!.english),
+    ).toBeTruthy();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe("#missing-entry");
+  });
+
+  it("clears a stale entry hash when navigating to another section", async () => {
+    const scrollIntoView = installScrollSpy();
+    vi.stubGlobal("scrollTo", vi.fn());
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${linkedSectionId}#${linkedItem.id}`,
+    );
+    installReaderFetch(
+      [
+        { record: firstItem, section: sectionId },
+        { record: linkedItem, section: linkedSectionId },
+      ],
+      sectionResponses([
+        [sectionId, readingSection(sectionId, [firstItem])],
+        [linkedSectionId, readingSection(linkedSectionId, [linkedItem], 2)],
+      ]),
+    );
+
+    const firstMount = render(<CorpusReader />);
+    expect(
+      await screen.findByText(linkedItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+
+    fireEvent.click(screen.getByRole("button", { name: /Pages 1–25/ }));
+
+    expect(
+      await screen.findByText(firstItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() =>
+      expect(window.location.search).toContain(`section=${sectionId}`),
+    );
+    expect(window.location.hash).toBe("");
+
+    firstMount.unmount();
+    render(<CorpusReader />);
+    expect(
+      await screen.findByText(firstItem.segments[0]!.english),
+    ).toBeTruthy();
+    expect(window.location.hash).toBe("");
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+  });
+
+  it("replaces an existing entry hash when opening a search result", async () => {
+    const sectionResponse = deferred<ReturnType<typeof readingSection>>();
+    const scrollIntoView = installScrollSpy();
+    vi.stubGlobal("scrollTo", vi.fn());
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${sectionId}#${firstItem.id}`,
+    );
+    installReaderFetch(
+      [
+        { record: firstItem, section: sectionId },
+        { record: linkedItem, section: linkedSectionId },
+      ],
+      sectionResponses([
+        [sectionId, readingSection(sectionId, [firstItem])],
+        [linkedSectionId, sectionResponse.promise],
+      ]),
+    );
+
+    render(<CorpusReader />);
+    expect(
+      await screen.findByText(firstItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Name or entry number" }),
+      { target: { value: "Directly linked" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Directly linked entry/ }),
+    );
+
+    expect(window.location.hash).toBe(`#${linkedItem.id}`);
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+
+    sectionResponse.resolve(readingSection(linkedSectionId, [linkedItem], 2));
+    expect(
+      await screen.findByText(linkedItem.segments[0]!.english),
+    ).toBeTruthy();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(2));
+    expect(scrollIntoView.mock.contexts[1]).toBe(
+      document.getElementById(linkedItem.id),
+    );
+  });
+
   it("requires an explicit meter label before styling text as poetry", () => {
     const prose = englishReadingBlocks(
       "ibn Abd al-Muttalib al-Hashimiyya\n\nal-Daraqutni mentioned her in the Book of Siblings.",
