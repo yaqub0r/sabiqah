@@ -21,12 +21,34 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     const summary = parseReviewCorpusSummary(load("summary.json"));
     const index = parseReviewCorpusIndex(load("index.json"));
 
-    expect(summary.schemaVersion).toBe("4.0.0");
+    expect(["4.0.0", "5.0.0"]).toContain(summary.schemaVersion);
+    expect(index.schemaVersion).toBe(summary.schemaVersion);
     expect(summary.corpus.publicationStatus).toBe("public-working");
-    expect(summary.corpus.sourceAuthorityId).toBe(
-      "al-isabah-openiti-5835c18-aco-v1",
+    const cohorts =
+      summary.schemaVersion === "5.0.0" && "cohorts" in summary.corpus
+        ? summary.corpus.cohorts
+        : [];
+    const cohortById = new Map(cohorts.map((cohort) => [cohort.id, cohort]));
+    const cohortItemIds = new Map(
+      cohorts.map((cohort) => [cohort.id, new Set(cohort.membership.itemIds)]),
     );
-    expect(summary.corpus.license?.spdx).toBe("CC-BY-NC-SA-4.0");
+    if (summary.schemaVersion === "5.0.0") {
+      expect(cohorts).not.toHaveLength(0);
+      expect(
+        cohorts.flatMap((cohort) => cohort.membership.itemIds).sort(),
+      ).toEqual(index.items.map((item) => item.id).sort());
+      for (const cohort of cohorts) {
+        expect(cohort.rights.arabicSource.license.spdx).toBe("CC-BY-NC-SA-4.0");
+        expect(cohort.rights.englishTranslation.license.spdx).toBe(
+          "CC-BY-NC-SA-4.0",
+        );
+      }
+    } else {
+      expect(summary.corpus.sourceAuthorityId).toBe(
+        "al-isabah-openiti-5835c18-aco-v1",
+      );
+      expect(summary.corpus.license?.spdx).toBe("CC-BY-NC-SA-4.0");
+    }
     expect(summary.counts.sourceInventory).toBe(
       summary.counts.entries +
         summary.counts.passages +
@@ -41,17 +63,40 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     );
     for (const listed of index.items) {
       const item = parseReviewCorpusItem(load(`items/${listed.id}.json`));
+      expect(item.schemaVersion).toBe(summary.schemaVersion);
       expect(item.id).toBe(listed.id);
       expect(item.corpusId).toBe(index.corpusId);
+      expect(item.cohortId).toBe(listed.cohortId);
       expect(item.publicEligibility).toBe("eligible");
-      expect(item.source?.authorityId).toBe(summary.corpus.sourceAuthorityId);
+      const cohort = item.cohortId ? cohortById.get(item.cohortId) : undefined;
+      if (summary.schemaVersion === "5.0.0") {
+        expect(cohort).toBeDefined();
+        expect(cohortItemIds.get(item.cohortId)?.has(item.id)).toBe(true);
+        expect(item.source?.authorityId).toBe(cohort?.source.authorityId);
+        expect(item.source?.sourceRepository).toBe(cohort?.source.repository);
+        expect(item.source?.sourceCommit).toBe(cohort?.source.commit);
+        expect(item.source?.sourceArtifactSha256).toBe(
+          cohort?.source.artifactSha256,
+        );
+        expect(item.source?.license).toEqual(
+          cohort?.rights.arabicSource.license,
+        );
+        expect(item.source?.englishRights).toEqual(
+          cohort?.rights.englishTranslation,
+        );
+        expect(item.source?.rightsMatrix).toEqual(cohort?.rights.matrix);
+      } else {
+        expect(item.source?.authorityId).toBe(summary.corpus.sourceAuthorityId);
+      }
       if (item.remediation) {
         expect(item.remediation.sourceArabicReplaced).toBe(true);
         expect(item.remediation.privateLocatorsRemoved).toBe(true);
         expect(item.remediation.englishExcluded).toBe(false);
       } else {
         expect(item.source?.alignment.method).toBe(
-          "al-isabah-public-distribution-v1",
+          cohort?.kind === "distribution-v2"
+            ? "al-isabah-public-distribution-v2"
+            : "al-isabah-public-distribution-v1",
         );
       }
       if (item.remediation?.sourcePresentationRepairs !== undefined) {
@@ -69,6 +114,8 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
       const section = parseReviewCorpusSection(
         load(`sections/${sectionId}.json`),
       );
+      expect(section.schemaVersion).toBe(summary.schemaVersion);
+      expect(section.corpusId).toBe(index.corpusId);
       sectionItems.push(...section.items.map((item) => item.id));
     }
     expect(sectionItems.sort()).toEqual(
