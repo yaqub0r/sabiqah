@@ -6,7 +6,14 @@ import {
   type ReviewCorpusItem,
   type ReviewCorpusSection,
 } from "@sabiqah/release-model";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
 import { HonorificText } from "./HonorificText";
@@ -308,6 +315,7 @@ function ReadingRecord({
   onReadStateChange,
   readStateLoaded,
   canTrackReading,
+  anchorRef,
 }: {
   item: ReviewCorpusItem;
   reviewState?: TranslationReviewState;
@@ -318,6 +326,7 @@ function ReadingRecord({
   onReadStateChange: (state: TranslationReadState | null) => void;
   readStateLoaded: boolean;
   canTrackReading: boolean;
+  anchorRef: (target: HTMLElement | null) => void;
 }) {
   const pages = [
     ...new Set(
@@ -377,6 +386,7 @@ function ReadingRecord({
       <article
         className={`reading-record${isShort ? " short-record" : ""}`}
         id={item.id}
+        ref={anchorRef}
       >
         <header>
           <p className="record-number">
@@ -481,8 +491,29 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     typeof window === "undefined" ? "" : locationAnchor(),
   );
   const handledAnchor = useRef("");
+  const anchorScrollFrame = useRef<number | null>(null);
   const [hideReviewed, setHideReviewed] = useState(false);
   const [hideRead, setHideRead] = useState(false);
+
+  const scrollToRequestedAnchor = useCallback(
+    (candidate: HTMLElement | null = null) => {
+      const anchor = locationAnchor();
+      if (!anchor || handledAnchor.current === anchor) return;
+      const target =
+        candidate?.id === anchor ? candidate : document.getElementById(anchor);
+      if (!target) return;
+      if (anchorScrollFrame.current !== null)
+        window.cancelAnimationFrame(anchorScrollFrame.current);
+      anchorScrollFrame.current = window.requestAnimationFrame(() => {
+        anchorScrollFrame.current = null;
+        if (locationAnchor() !== anchor || !target.isConnected) return;
+        target.scrollIntoView({ block: "start" });
+        handledAnchor.current = anchor;
+        setPendingAnchor((current) => (current === anchor ? "" : current));
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -525,11 +556,16 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     const updatePendingAnchor = () => {
       handledAnchor.current = "";
       setPendingAnchor(locationAnchor());
+      scrollToRequestedAnchor();
     };
     window.addEventListener("hashchange", updatePendingAnchor);
     updatePendingAnchor();
-    return () => window.removeEventListener("hashchange", updatePendingAnchor);
-  }, []);
+    return () => {
+      window.removeEventListener("hashchange", updatePendingAnchor);
+      if (anchorScrollFrame.current !== null)
+        window.cancelAnimationFrame(anchorScrollFrame.current);
+    };
+  }, [scrollToRequestedAnchor]);
 
   useEffect(() => {
     fetch("/api/corpus/al-isabah/reviews", { credentials: "same-origin" })
@@ -662,21 +698,6 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     [hideRead, hideReviewed, readSummary, reviewSummary, section],
   );
 
-  useEffect(() => {
-    if (!section) return;
-    const anchor = pendingAnchor || locationAnchor();
-    if (!anchor || handledAnchor.current === anchor) return;
-    const target = document.getElementById(anchor);
-    if (!target) return;
-    const frame = window.requestAnimationFrame(() => {
-      if (locationAnchor() !== anchor || !target.isConnected) return;
-      target.scrollIntoView({ block: "start" });
-      handledAnchor.current = anchor;
-      setPendingAnchor((current) => (current === anchor ? "" : current));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [pendingAnchor, section, visibleItems]);
-
   const availableVolumes = useMemo(() => {
     const counts = new Map<number, number>();
     for (const item of index?.items ?? [])
@@ -724,6 +745,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     setPendingAnchor(anchor);
     setSelectedSectionId(sectionId);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToRequestedAnchor();
   }
 
   return (
@@ -902,6 +924,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                       canTrackReading={
                         session === "active" || session === "limited"
                       }
+                      anchorRef={scrollToRequestedAnchor}
                       key={item.id}
                     />
                   ))}
