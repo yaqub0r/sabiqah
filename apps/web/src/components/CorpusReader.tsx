@@ -477,7 +477,9 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   const [query, setQuery] = useState("");
   const [selectedVolume, setSelectedVolume] = useState(8);
   const [selectedSectionId, setSelectedSectionId] = useState("");
-  const [pendingAnchor, setPendingAnchor] = useState("");
+  const [pendingAnchor, setPendingAnchor] = useState(() =>
+    typeof window === "undefined" ? "" : locationAnchor(),
+  );
   const [hideReviewed, setHideReviewed] = useState(false);
   const [hideRead, setHideRead] = useState(false);
 
@@ -520,8 +522,8 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
 
   useEffect(() => {
     const updatePendingAnchor = () => setPendingAnchor(locationAnchor());
-    updatePendingAnchor();
     window.addEventListener("hashchange", updatePendingAnchor);
+    updatePendingAnchor();
     return () => window.removeEventListener("hashchange", updatePendingAnchor);
   }, []);
 
@@ -660,7 +662,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     if (!section || !pendingAnchor) return;
     const target = document.getElementById(pendingAnchor);
     if (!target) return;
-    target.scrollIntoView({ behavior: "smooth" });
+    target.scrollIntoView({ block: "start" });
     setPendingAnchor((current) => (current === pendingAnchor ? "" : current));
   }, [pendingAnchor, section, visibleItems]);
 

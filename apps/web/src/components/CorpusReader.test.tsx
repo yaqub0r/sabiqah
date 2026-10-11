@@ -299,6 +299,7 @@ describe("CorpusReader", () => {
       await screen.findByText(linkedItem.segments[0]!.english),
     ).toBeTruthy();
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
     expect(scrollIntoView.mock.contexts[0]).toBe(
       document.getElementById(linkedItem.id),
     );
@@ -346,6 +347,7 @@ describe("CorpusReader", () => {
       await screen.findByText(linkedItem.segments[0]!.english),
     ).toBeTruthy();
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
     expect(scrollIntoView.mock.contexts[0]).toBe(
       document.getElementById(linkedItem.id),
     );
