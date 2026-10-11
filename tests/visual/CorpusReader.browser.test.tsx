@@ -1,4 +1,5 @@
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot, hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { page } from "vitest/browser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -332,6 +333,68 @@ afterEach(() => {
 });
 
 describe("CorpusReader presentation quality", () => {
+  it("scrolls a server-rendered direct link after asynchronous hydration", async () => {
+    root.unmount();
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${sectionId}#${structuredRecord.id}`,
+    );
+    document.body.innerHTML =
+      '<div aria-hidden="true" style="height: 1800px"></div><main class="shell" id="visual-root"></main>';
+    const container = document.getElementById("visual-root")!;
+    container.innerHTML = renderToString(<CorpusReader />);
+    window.scrollTo(0, 0);
+
+    root = hydrateRoot(container, <CorpusReader />);
+
+    const deadline = Date.now() + 5_000;
+    let target: HTMLElement | null = null;
+    while (Date.now() < deadline) {
+      target = document.getElementById(structuredRecord.id);
+      if (
+        target &&
+        window.scrollY > 0 &&
+        target.getBoundingClientRect().top >= 0 &&
+        target.getBoundingClientRect().top < window.innerHeight
+      ) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(target).not.toBeNull();
+    expect(window.location.hash).toBe(`#${structuredRecord.id}`);
+    expect(window.scrollY).toBeGreaterThan(0);
+    expect(target!.getBoundingClientRect().top).toBeGreaterThanOrEqual(0);
+    expect(target!.getBoundingClientRect().top).toBeLessThan(
+      window.innerHeight,
+    );
+
+    window.location.hash = contextualRecord.id;
+    const subsequentDeadline = Date.now() + 5_000;
+    while (Date.now() < subsequentDeadline) {
+      const nextTarget = document.getElementById(contextualRecord.id);
+      if (
+        nextTarget &&
+        nextTarget.getBoundingClientRect().top >= 0 &&
+        nextTarget.getBoundingClientRect().top < window.innerHeight
+      ) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    const subsequentTarget = document.getElementById(contextualRecord.id)!;
+    expect(window.location.hash).toBe(`#${contextualRecord.id}`);
+    expect(subsequentTarget.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      0,
+    );
+    expect(subsequentTarget.getBoundingClientRect().top).toBeLessThan(
+      window.innerHeight,
+    );
+  });
+
   it("keeps the separate coverage dashboard legible and actionable", async () => {
     root.render(<CorpusCoverage />);
     const cards = await waitForVolumeShelf();
