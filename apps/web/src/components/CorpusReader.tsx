@@ -41,6 +41,25 @@ interface EnglishReadingBlock {
 const METER_LABEL =
   /^Meter:\s*(al-[\p{L}\p{M}-]+)(?:\s+(And the remaining verses\.))?$/iu;
 
+function locationAnchor(): string {
+  const anchor = window.location.hash.slice(1);
+  try {
+    return decodeURIComponent(anchor);
+  } catch {
+    return anchor;
+  }
+}
+
+function replaceLocationAnchor(anchor: string) {
+  const location = new URL(window.location.href);
+  location.hash = anchor;
+  window.history.replaceState(
+    null,
+    "",
+    `${location.pathname}${location.search}${location.hash}`,
+  );
+}
+
 export function englishReadingBlocks(text: string): EnglishReadingBlock[] {
   const paragraphs = text
     .split(/\n\s*\n/)
@@ -469,7 +488,6 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
     setHideReviewed(params.get("review") === "unreviewed");
     setHideRead(params.get("reading") === "unread");
     setSelectedSectionId(params.get("section") ?? "");
-    setPendingAnchor(window.location.hash.slice(1));
 
     fetch("/api/corpus/al-isabah/index", { credentials: "same-origin" })
       .then(async (response) => {
@@ -498,6 +516,13 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
         );
       })
       .catch(() => setSession("anonymous"));
+  }, []);
+
+  useEffect(() => {
+    const updatePendingAnchor = () => setPendingAnchor(locationAnchor());
+    updatePendingAnchor();
+    window.addEventListener("hashchange", updatePendingAnchor);
+    return () => window.removeEventListener("hashchange", updatePendingAnchor);
   }, []);
 
   useEffect(() => {
@@ -548,11 +573,21 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   }, [index, links, selectedSectionId]);
 
   useEffect(() => {
+    if (!index || !pendingAnchor) return;
+    const target = index.items.find((item) => item.id === pendingAnchor);
+    if (!target) return;
+    if (target.volume !== selectedVolume) setSelectedVolume(target.volume);
+    if (target.sectionId !== selectedSectionId)
+      setSelectedSectionId(target.sectionId);
+  }, [index, pendingAnchor, selectedSectionId, selectedVolume]);
+
+  useEffect(() => {
     if (!selectedSectionId) return;
+    const controller = new AbortController();
     setSection(undefined);
     fetch(
       `/api/corpus/al-isabah/sections/${encodeURIComponent(selectedSectionId)}`,
-      { credentials: "same-origin" },
+      { credentials: "same-origin", signal: controller.signal },
     )
       .then(async (response) => {
         if (!response.ok)
@@ -578,25 +613,19 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
         window.history.replaceState(
           null,
           "",
-          `${window.location.pathname}?${params}${pendingAnchor ? `#${pendingAnchor}` : ""}`,
+          `${window.location.pathname}?${params}${window.location.hash}`,
         );
       })
-      .catch((caught) =>
+      .catch((caught) => {
+        if (caught instanceof Error && caught.name === "AbortError") return;
         setError(
           caught instanceof Error
             ? caught.message
             : "The reading section could not be loaded.",
-        ),
-      );
+        );
+      });
+    return () => controller.abort();
   }, [selectedSectionId]);
-
-  useEffect(() => {
-    if (!section || !pendingAnchor) return;
-    document
-      .getElementById(pendingAnchor)
-      ?.scrollIntoView({ behavior: "smooth" });
-    setPendingAnchor("");
-  }, [pendingAnchor, section]);
 
   const searchResults = useMemo(() => {
     const normalized = normalizeHonorificSearch(query.trim());
@@ -626,6 +655,14 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
         ) ?? [],
     [hideRead, hideReviewed, readSummary, reviewSummary, section],
   );
+
+  useEffect(() => {
+    if (!section || !pendingAnchor) return;
+    const target = document.getElementById(pendingAnchor);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth" });
+    setPendingAnchor((current) => (current === pendingAnchor ? "" : current));
+  }, [pendingAnchor, section, visibleItems]);
 
   const availableVolumes = useMemo(() => {
     const counts = new Map<number, number>();
@@ -669,6 +706,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   function openSection(sectionId: string, anchor = "") {
     const target = index?.items.find((item) => item.sectionId === sectionId);
     if (target) setSelectedVolume(target.volume);
+    replaceLocationAnchor(anchor);
     setPendingAnchor(anchor);
     setSelectedSectionId(sectionId);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -701,6 +739,8 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                 aria-label="Reading volume"
                 value={selectedVolume}
                 onChange={(event) => {
+                  replaceLocationAnchor("");
+                  setPendingAnchor("");
                   setSelectedVolume(Number(event.target.value));
                   setSelectedSectionId("");
                 }}
