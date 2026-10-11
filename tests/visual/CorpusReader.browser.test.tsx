@@ -154,6 +154,7 @@ const structuredRecord = {
 };
 
 let root: Root;
+let sectionLoadGate: Promise<void> | undefined;
 
 function response(body: unknown, ok = true) {
   return Promise.resolve({ ok, json: async () => body });
@@ -179,6 +180,7 @@ function rectanglesOverlap(a: DOMRect, b: DOMRect) {
 }
 
 beforeEach(() => {
+  sectionLoadGate = undefined;
   document.body.innerHTML = '<main class="shell" id="visual-root"></main>';
   window.history.replaceState(null, "", "/works/al-isabah/");
 
@@ -303,21 +305,23 @@ beforeEach(() => {
         });
       }
       if (path === `/api/corpus/al-isabah/sections/${sectionId}`) {
-        return response({
-          schemaVersion: "2.0.0",
-          corpusId,
-          id: sectionId,
-          volume: 8,
-          label: "Pages 1–25",
-          availability: "complete_translation",
-          position: 1,
-          totalSections: 1,
-          printedPageStart: 1,
-          printedPageEnd: 1,
-          previousSectionId: null,
-          nextSectionId: null,
-          items: [contextualRecord, structuredRecord],
-        });
+        return (sectionLoadGate ?? Promise.resolve()).then(() =>
+          response({
+            schemaVersion: "2.0.0",
+            corpusId,
+            id: sectionId,
+            volume: 8,
+            label: "Pages 1–25",
+            availability: "complete_translation",
+            position: 1,
+            totalSections: 1,
+            printedPageStart: 1,
+            printedPageEnd: 1,
+            previousSectionId: null,
+            nextSectionId: null,
+            items: [contextualRecord, structuredRecord],
+          }),
+        );
       }
       return response({}, false);
     }),
@@ -333,6 +337,73 @@ afterEach(() => {
 });
 
 describe("CorpusReader presentation quality", () => {
+  it("reconciles the live URL anchor when asynchronous content resolves", async () => {
+    root.unmount();
+    let releaseSection!: () => void;
+    sectionLoadGate = new Promise<void>((resolve) => {
+      releaseSection = resolve;
+    });
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${sectionId}`,
+    );
+    document.body.innerHTML =
+      '<div aria-hidden="true" style="height: 1800px"></div><main class="shell" id="visual-root"></main>';
+    const container = document.getElementById("visual-root")!;
+    container.innerHTML = renderToString(<CorpusReader />);
+    root = hydrateRoot(container, <CorpusReader />);
+
+    const fetchDeadline = Date.now() + 5_000;
+    while (
+      Date.now() < fetchDeadline &&
+      !vi
+        .mocked(fetch)
+        .mock.calls.some(([input]) =>
+          String(input).includes(`/sections/${sectionId}`),
+        )
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(([input]) =>
+          String(input).includes(`/sections/${sectionId}`),
+        ),
+    ).toBe(true);
+    window.history.replaceState(
+      null,
+      "",
+      `/works/al-isabah/?volume=8&section=${sectionId}#${structuredRecord.id}`,
+    );
+    window.scrollTo(0, 0);
+    releaseSection();
+
+    const scrollDeadline = Date.now() + 5_000;
+    let target: HTMLElement | null = null;
+    while (Date.now() < scrollDeadline) {
+      target = document.getElementById(structuredRecord.id);
+      if (
+        target &&
+        window.scrollY > 0 &&
+        target.getBoundingClientRect().top >= 0 &&
+        target.getBoundingClientRect().top < window.innerHeight
+      ) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(target).not.toBeNull();
+    expect(window.location.hash).toBe(`#${structuredRecord.id}`);
+    expect(window.scrollY).toBeGreaterThan(0);
+    expect(target!.getBoundingClientRect().top).toBeGreaterThanOrEqual(0);
+    expect(target!.getBoundingClientRect().top).toBeLessThan(
+      window.innerHeight,
+    );
+  });
+
   it("scrolls a server-rendered direct link after asynchronous hydration", async () => {
     root.unmount();
     window.history.replaceState(

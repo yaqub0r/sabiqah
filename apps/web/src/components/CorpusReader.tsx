@@ -6,7 +6,7 @@ import {
   type ReviewCorpusItem,
   type ReviewCorpusSection,
 } from "@sabiqah/release-model";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { CorpusAccess } from "./CorpusAccess";
 import { HonorificText } from "./HonorificText";
@@ -480,6 +480,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   const [pendingAnchor, setPendingAnchor] = useState(() =>
     typeof window === "undefined" ? "" : locationAnchor(),
   );
+  const handledAnchor = useRef("");
   const [hideReviewed, setHideReviewed] = useState(false);
   const [hideRead, setHideRead] = useState(false);
 
@@ -521,7 +522,10 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   }, []);
 
   useEffect(() => {
-    const updatePendingAnchor = () => setPendingAnchor(locationAnchor());
+    const updatePendingAnchor = () => {
+      handledAnchor.current = "";
+      setPendingAnchor(locationAnchor());
+    };
     window.addEventListener("hashchange", updatePendingAnchor);
     updatePendingAnchor();
     return () => window.removeEventListener("hashchange", updatePendingAnchor);
@@ -659,11 +663,18 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   );
 
   useEffect(() => {
-    if (!section || !pendingAnchor) return;
-    const target = document.getElementById(pendingAnchor);
+    if (!section) return;
+    const anchor = pendingAnchor || locationAnchor();
+    if (!anchor || handledAnchor.current === anchor) return;
+    const target = document.getElementById(anchor);
     if (!target) return;
-    target.scrollIntoView({ block: "start" });
-    setPendingAnchor((current) => (current === pendingAnchor ? "" : current));
+    const frame = window.requestAnimationFrame(() => {
+      if (locationAnchor() !== anchor || !target.isConnected) return;
+      target.scrollIntoView({ block: "start" });
+      handledAnchor.current = anchor;
+      setPendingAnchor((current) => (current === anchor ? "" : current));
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [pendingAnchor, section, visibleItems]);
 
   const availableVolumes = useMemo(() => {
@@ -708,6 +719,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
   function openSection(sectionId: string, anchor = "") {
     const target = index?.items.find((item) => item.sectionId === sectionId);
     if (target) setSelectedVolume(target.volume);
+    handledAnchor.current = "";
     replaceLocationAnchor(anchor);
     setPendingAnchor(anchor);
     setSelectedSectionId(sectionId);
@@ -741,6 +753,7 @@ export function CorpusReader({ siteKey }: { siteKey?: string }) {
                 aria-label="Reading volume"
                 value={selectedVolume}
                 onChange={(event) => {
+                  handledAnchor.current = "";
                   replaceLocationAnchor("");
                   setPendingAnchor("");
                   setSelectedVolume(Number(event.target.value));
