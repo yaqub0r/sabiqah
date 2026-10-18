@@ -272,8 +272,24 @@ def unresolved(values: Iterable[dict[str, Any]]) -> list[dict[str, str]]:
     ]
 
 
+def public_entry_ids(records: Iterable[dict[str, Any]]) -> dict[str, str]:
+    grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        grouped[int(record["printedEntryNumber"])].append(record)
+    result = {}
+    for printed_number, matching in grouped.items():
+        ordered = sorted(matching, key=lambda value: (value["sourceOrdinal"], value["id"]))
+        base_id = f"isabah-entry-{printed_number:08d}"
+        for position, record in enumerate(ordered, 1):
+            result[record["id"]] = (
+                base_id if position == 1 else f"{base_id}-duplicate-{position:02d}"
+            )
+    return result
+
+
 def direct_item(
     record: dict[str, Any],
+    public_id: str,
     corpus_id: str,
     by_character: dict[str, dict[str, Any]],
     by_expanded: dict[str, dict[str, Any]],
@@ -346,7 +362,6 @@ def direct_item(
             }
         )
     formulas = formulas_by_record.get(record["id"], [])
-    public_id = f"isabah-entry-{record['printedEntryNumber']:08d}"
     segment_id = f"{public_id}-body"
     arabic_title = compact_arabic(record["title"]["arabic"], formulas, by_character, by_expanded)
     arabic_body = compact_arabic(record["arabic"], formulas, by_character, by_expanded)
@@ -781,11 +796,13 @@ def ingest(
     corpus_id = "pending-content-addressed-corpus"
     new_cohort_id = f"distribution:{distribution_commit[:12]}"
     by_character, by_expanded = registry_indexes()
+    public_ids = public_entry_ids(records)
     incoming_items: list[dict[str, Any]] = []
     for record in records:
         incoming_items.extend(
             direct_item(
                 record,
+                public_ids[record["id"]],
                 corpus_id,
                 by_character,
                 by_expanded,
@@ -813,26 +830,35 @@ def ingest(
     cohorts = carried_cohorts(base_summary, items, attested_cohorts)
     cohort_kinds = {cohort["id"]: cohort["kind"] for cohort in cohorts}
     incoming_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
-    carried_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
+    incoming_by_distribution_id: dict[str, dict[str, Any]] = {}
+    legacy_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
     for item in incoming_items:
         if item.get("kind") == "entry" and isinstance(item.get("sourceEntryNumber"), int):
             incoming_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
+            incoming_by_distribution_id[item["source"]["distributionRecordId"]] = item
+    alias_replaced_ids: set[str] = set()
     for item in items:
         if (
             item.get("kind") == "entry"
             and isinstance(item.get("sourceEntryNumber"), int)
-            and cohort_kinds.get(item.get("cohortId"))
-            in {"legacy-schema-4", "distribution-v2"}
         ):
-            carried_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
-    alias_replaced_ids: set[str] = set()
-    for key in incoming_by_source.keys() & carried_by_source.keys():
+            cohort_kind = cohort_kinds.get(item.get("cohortId"))
+            if cohort_kind == "legacy-schema-4":
+                legacy_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
+            elif cohort_kind == "distribution-v2":
+                distribution_id = item.get("source", {}).get("distributionRecordId")
+                if distribution_id is None and item["id"] in incoming_by_distribution_id:
+                    distribution_id = item["id"]
+                incoming = incoming_by_distribution_id.get(distribution_id)
+                if incoming is not None and incoming["id"] != item["id"]:
+                    alias_replaced_ids.add(item["id"])
+    for key in incoming_by_source.keys() & legacy_by_source.keys():
         incoming_matches = incoming_by_source[key]
-        carried_matches = carried_by_source[key]
-        if len(incoming_matches) != 1 or len(carried_matches) != 1:
-            raise IngestionError("carried source-entry identity is ambiguous")
-        if incoming_matches[0]["id"] != carried_matches[0]["id"]:
-            alias_replaced_ids.add(carried_matches[0]["id"])
+        legacy_matches = legacy_by_source[key]
+        if len(incoming_matches) != 1 or len(legacy_matches) != 1:
+            raise IngestionError("legacy source-entry identity is ambiguous")
+        if incoming_matches[0]["id"] != legacy_matches[0]["id"]:
+            alias_replaced_ids.add(legacy_matches[0]["id"])
     alias_replaced_entries: dict[int, int] = defaultdict(int)
     for item in items:
         if item["id"] in alias_replaced_ids:

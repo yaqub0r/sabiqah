@@ -12,7 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from ingest_al_isabah_distribution import IngestionError, ingest, membership  # noqa: E402
+from ingest_al_isabah_distribution import (  # noqa: E402
+    IngestionError,
+    ingest,
+    membership,
+    public_entry_ids,
+)
 from validate_public_corpus import validate as validate_public_corpus  # noqa: E402
 from verify_al_isabah_distribution import CompatibilityError, verify_distribution  # noqa: E402
 
@@ -537,6 +542,21 @@ class AlIsabahDistributionVerificationTests(unittest.TestCase):
 
 
 class AlIsabahDistributionIngestionTests(unittest.TestCase):
+    def test_duplicate_printed_numbers_receive_deterministic_public_ids(self):
+        records = [
+            {"id": "record-b", "printedEntryNumber": 1311, "sourceOrdinal": 1311},
+            {"id": "record-a", "printedEntryNumber": 1311, "sourceOrdinal": 1310},
+            {"id": "record-c", "printedEntryNumber": 11827, "sourceOrdinal": 11826},
+        ]
+        self.assertEqual(
+            public_entry_ids(records),
+            {
+                "record-a": "isabah-entry-00001311",
+                "record-b": "isabah-entry-00001311-duplicate-02",
+                "record-c": "isabah-entry-00011827",
+            },
+        )
+
     def build_candidate(self, root: Path, case: DistributionCase | None = None) -> Path:
         case = case or DistributionCase(root)
         ingest(
