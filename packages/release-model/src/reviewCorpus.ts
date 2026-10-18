@@ -448,6 +448,7 @@ export const reviewCorpusItemSchema = z
           .regex(/^[a-f0-9]{40}$/)
           .optional(),
         sourceArtifactSha256: sha256Schema.optional(),
+        distributionRecordId: identifier.optional(),
         entryNumber: z.number().int().positive(),
         pages: z.array(z.string().regex(/^V\d{2}P\d{3}$/)),
         sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -519,6 +520,7 @@ export const reviewCorpusItemSchema = z
             .regex(/^[a-f0-9]{40}$/)
             .optional(),
           sourceArtifactSha256: z.string().regex(/^[a-f0-9]{64}$/),
+          distributionRecordId: identifier.optional(),
           sourceTextSha256: z.string().regex(/^[a-f0-9]{64}$/),
           sourceExactTextSha256: z
             .string()

@@ -220,7 +220,7 @@ def source_url(source: dict[str, Any], binding: dict[str, Any]) -> str:
 
 def source_metadata(
     source: dict[str, Any], entry_number: int, display_arabic: str, title_score: float,
-    binding: dict[str, Any],
+    binding: dict[str, Any], distribution_record_id: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     display_hash = digest_bytes(" ".join(display_arabic.split()).encode("utf-8"))
     metadata = {
@@ -229,6 +229,7 @@ def source_metadata(
         "sourceRepository": binding["sourceRepository"],
         "sourceCommit": binding["sourceCommit"],
         "sourceArtifactSha256": source["artifactSha256"],
+        "distributionRecordId": distribution_record_id,
         "entryNumber": entry_number,
         "pages": [],
         "sourceTextSha256": display_hash,
@@ -253,6 +254,7 @@ def source_metadata(
         "sourceRepository": binding["sourceRepository"],
         "sourceCommit": binding["sourceCommit"],
         "sourceArtifactSha256": source["artifactSha256"],
+        "distributionRecordId": distribution_record_id,
         "sourceTextSha256": display_hash,
         "sourceExactTextSha256": source["exactTextSha256"],
     }
@@ -301,6 +303,7 @@ def direct_item(
             display_arabic,
             1.0 if heading.get("arabic") and heading.get("english") else 0.5,
             binding,
+            record["id"],
         )
         source["pages"] = [
             f"V{page['volume']:02d}P{page['page']:03d}" for page in passage.get("pages", [])
@@ -343,7 +346,8 @@ def direct_item(
             }
         )
     formulas = formulas_by_record.get(record["id"], [])
-    segment_id = f"{record['id']}-body"
+    public_id = f"isabah-entry-{record['printedEntryNumber']:08d}"
+    segment_id = f"{public_id}-body"
     arabic_title = compact_arabic(record["title"]["arabic"], formulas, by_character, by_expanded)
     arabic_body = compact_arabic(record["arabic"], formulas, by_character, by_expanded)
     display_arabic = " ".join((arabic_title, arabic_body)).strip()
@@ -353,6 +357,7 @@ def direct_item(
         display_arabic,
         1.0 if record["title"]["state"] == "ready" else 0.5,
         binding,
+        record["id"],
     )
     source["pages"] = [
         f"V{page['volume']:02d}P{page['page']:03d}" for page in record.get("pages", [])
@@ -362,7 +367,7 @@ def direct_item(
             "schemaVersion": SCHEMA_VERSION,
             "corpusId": corpus_id,
             "cohortId": cohort_id,
-            "id": record["id"],
+            "id": public_id,
             "kind": "entry",
             "sequence": record["sourceOrdinal"] * 100,
             "printedEntryNumber": record["printedEntryNumber"],
@@ -808,7 +813,7 @@ def ingest(
     cohorts = carried_cohorts(base_summary, items, attested_cohorts)
     cohort_kinds = {cohort["id"]: cohort["kind"] for cohort in cohorts}
     incoming_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
-    legacy_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
+    carried_by_source: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
     for item in incoming_items:
         if item.get("kind") == "entry" and isinstance(item.get("sourceEntryNumber"), int):
             incoming_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
@@ -816,17 +821,18 @@ def ingest(
         if (
             item.get("kind") == "entry"
             and isinstance(item.get("sourceEntryNumber"), int)
-            and cohort_kinds.get(item.get("cohortId")) == "legacy-schema-4"
+            and cohort_kinds.get(item.get("cohortId"))
+            in {"legacy-schema-4", "distribution-v2"}
         ):
-            legacy_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
+            carried_by_source[(item["volume"], item["sourceEntryNumber"])].append(item)
     alias_replaced_ids: set[str] = set()
-    for key in incoming_by_source.keys() & legacy_by_source.keys():
+    for key in incoming_by_source.keys() & carried_by_source.keys():
         incoming_matches = incoming_by_source[key]
-        legacy_matches = legacy_by_source[key]
-        if len(incoming_matches) != 1 or len(legacy_matches) != 1:
-            raise IngestionError("legacy source-entry identity is ambiguous")
-        if incoming_matches[0]["id"] != legacy_matches[0]["id"]:
-            alias_replaced_ids.add(legacy_matches[0]["id"])
+        carried_matches = carried_by_source[key]
+        if len(incoming_matches) != 1 or len(carried_matches) != 1:
+            raise IngestionError("carried source-entry identity is ambiguous")
+        if incoming_matches[0]["id"] != carried_matches[0]["id"]:
+            alias_replaced_ids.add(carried_matches[0]["id"])
     alias_replaced_entries: dict[int, int] = defaultdict(int)
     for item in items:
         if item["id"] in alias_replaced_ids:
