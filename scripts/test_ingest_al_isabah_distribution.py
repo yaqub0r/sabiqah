@@ -622,6 +622,24 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertEqual(item["segments"][0]["english"], "")
             self.assertEqual(validate_public_corpus(output), [])
 
+    def test_current_distribution_content_is_not_bound_to_legacy_projection_repairs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            case.update_record(
+                lambda value: value.update(printedEntryNumber=11441)
+            )
+            case.finalize()
+            output = self.build_candidate(root, case)
+            item = json.loads(
+                (output / "items" / "synthetic-entry-0001.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(item["sourceEntryNumber"], 11441)
+            self.assertEqual(item["title"]["en"], "Synthetic title")
+            self.assertEqual(validate_public_corpus(output), [])
+
     def test_verification_failure_writes_no_output_or_activation(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

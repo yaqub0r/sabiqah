@@ -28,6 +28,19 @@ VALIDATE_SPEC.loader.exec_module(VALIDATE)
 
 
 class PublicCorpusTests(unittest.TestCase):
+    def test_volume_eight_opening_ignores_structural_passage_numbers(self):
+        self.assertEqual(
+            VALIDATE.volume_eight_opening_entry_numbers(
+                [
+                    {"kind": "entry", "volume": 8, "sourceEntryNumber": 11426},
+                    {"kind": "passage", "volume": 8, "sourceEntryNumber": 11426},
+                    {"kind": "entry", "volume": 8, "sourceEntryNumber": 11427},
+                    {"kind": "entry", "volume": 7, "sourceEntryNumber": 11428},
+                ]
+            ),
+            [11426, 11427],
+        )
+
     def test_volume_coverage_classifies_complete_partial_and_untranslated_sources(self):
         def source(number: int, volume: int) -> object:
             return REBUILD.OpenITIEntry(
