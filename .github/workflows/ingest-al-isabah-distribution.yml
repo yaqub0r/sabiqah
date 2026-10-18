@@ -61,7 +61,7 @@ jobs:
             "repos/yaqub0r/al-isabah/contents/compliance/rights-matrix.al-isabah.v1.json?ref=${commit}" \
             > .runtime/rights-matrix.json
           gh release download "${tag}" --repo yaqub0r/al-isabah \
-            --pattern "al-isabah-public-distribution-${commit}.zip" \
+            --pattern "al-isabah-public-distribution-${commit}.zip*" \
             --dir .runtime/distribution-download
           archive=".runtime/distribution-download/al-isabah-public-distribution-${commit}.zip"
           test -n "${archive}"
@@ -118,6 +118,17 @@ jobs:
         run: |
           set -euo pipefail
           legacy_args=()
+          checksum_args=()
+          shopt -s nullglob
+          checksum_files=(.runtime/distribution-download/al-isabah-public-distribution-*.zip.sha256)
+          shopt -u nullglob
+          if (( ${#checksum_files[@]} > 1 )); then
+            echo "::error::Downloaded more than one Al-Isabah checksum sidecar."
+            exit 1
+          fi
+          if (( ${#checksum_files[@]} == 1 )); then
+            checksum_args=(--checksum "${checksum_files[0]}")
+          fi
           base_schema="$(python3 -c 'import json; print(json.load(open(".runtime/base-corpus/summary.json", encoding="utf-8"))["schemaVersion"])')"
           if [[ "${base_schema}" == "4.0.0" ]]; then
             legacy_args=(
@@ -133,6 +144,7 @@ jobs:
             python3 scripts/verify_al_isabah_distribution.py \
               --distribution .runtime/al-isabah-distribution \
               --archive .runtime/distribution-download/al-isabah-public-distribution-*.zip \
+              "${checksum_args[@]}" \
               --release-metadata .runtime/release-metadata.json \
               --tag-ref .runtime/tag-ref.json \
               --rights-matrix .runtime/rights-matrix.json \
@@ -147,6 +159,7 @@ jobs:
             --output .runtime/next-corpus \
             --activated-at "${activated_at}" \
             --archive .runtime/distribution-download/al-isabah-public-distribution-*.zip \
+            "${checksum_args[@]}" \
             --release-metadata .runtime/release-metadata.json \
             --tag-ref .runtime/tag-ref.json \
             --rights-matrix .runtime/rights-matrix.json \

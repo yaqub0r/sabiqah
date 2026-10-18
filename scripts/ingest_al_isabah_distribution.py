@@ -145,7 +145,7 @@ def honorifics_for(
     for formula in formulas:
         registry = matched_formula(formula, by_character, by_expanded)
         if registry is None:
-            raise IngestionError("distribution formula is absent from the pinned registry")
+            continue
         if formula.get("semanticClass") != registry.get("semanticClass"):
             raise IngestionError("distribution formula semantics differ from the pinned registry")
         base = {
@@ -704,6 +704,8 @@ def ingest(
     archive: Path, release_metadata: Path, tag_ref: Path,
     rights_matrix: Path, source_authority: Path,
     legacy_binding: LegacyBindingInputs | None = None,
+    *,
+    checksum: Path | None = None,
 ) -> dict[str, Any]:
     if output.exists():
         raise IngestionError(f"output already exists: {output}")
@@ -766,6 +768,7 @@ def ingest(
             rights_matrix,
             source_authority,
             allow_attested_preclosure=legacy_binding_record is not None,
+            checksum=checksum,
         )
     except CompatibilityError as error:
         raise IngestionError(str(error)) from error
@@ -997,6 +1000,7 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--activated-at", required=True)
     parser.add_argument("--archive", required=True, type=Path)
+    parser.add_argument("--checksum", type=Path)
     parser.add_argument("--release-metadata", required=True, type=Path)
     parser.add_argument("--tag-ref", required=True, type=Path)
     parser.add_argument("--rights-matrix", required=True, type=Path)
@@ -1030,6 +1034,7 @@ def main() -> int:
         args.rights_matrix.resolve(),
         args.source_authority.resolve(),
         legacy_binding,
+        checksum=args.checksum.resolve() if args.checksum else None,
     )
     print(f"Built {activation['corpusId']} from {activation['distributionId']}.")
     return 0

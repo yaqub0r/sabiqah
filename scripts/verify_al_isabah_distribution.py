@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from al_isabah_governance import FORMULA_PROJECTION
+
 
 REPOSITORY = "https://github.com/yaqub0r/al-isabah"
 REPOSITORY_API = "https://api.github.com/repos/yaqub0r/al-isabah"
@@ -43,7 +45,15 @@ RECORD_KEYS = {
     "arabic", "english", "precedingMaterial", "names", "unresolved", "formulas",
     "machineAssessment", "humanReview", "source", "policy",
 }
+RECORD_SCHEMA_VERSIONS = {"2.0.0", "2.1.0"}
+RECORD_TITLE_KEYS = {"arabic", "english", "method", "state"}
 SOURCE_KEYS = {"authorityId", "commit", "artifactSha256", "exactTextSha256", "license"}
+FORMULA_BINDINGS = {
+    (value, str(entry.get("semanticClass", "")))
+    for entry in FORMULA_PROJECTION.get("entries", [])
+    for value in (str(entry.get("source", "")), str(entry.get("expandedArabic", "")))
+    if value
+}
 PRIVATE_FIELDS = {
     "api", "api_url", "bucket", "credential", "endpoint", "local_path", "object_key",
     "private_path", "private_url", "schema_path", "source_path", "storage_location", "token",
@@ -101,7 +111,11 @@ def public_boundary(value: Any) -> None:
 
 
 def verify_release(
-    manifest: dict[str, Any], archive: Path, release: dict[str, Any], tag_ref: dict[str, Any]
+    manifest: dict[str, Any],
+    archive: Path,
+    checksum: Path | None,
+    release: dict[str, Any],
+    tag_ref: dict[str, Any],
 ) -> dict[str, Any]:
     match = TAG.fullmatch(str(release.get("tag_name", "")))
     if not match:
@@ -120,10 +134,20 @@ def verify_release(
         raise CompatibilityError("distribution identity does not match the release commit")
     assets = release.get("assets")
     expected_name = f"al-isabah-public-distribution-{commit}.zip"
-    if not isinstance(assets, list) or len(assets) != 1:
-        raise CompatibilityError("release must contain exactly one distribution asset")
-    asset = assets[0]
-    if asset.get("name") != expected_name or archive.name != expected_name:
+    checksum_name = f"{expected_name}.sha256"
+    if not isinstance(assets, list) or any(not isinstance(asset, dict) for asset in assets):
+        raise CompatibilityError("release assets do not match the public contract")
+    archive_assets = [asset for asset in assets if asset.get("name") == expected_name]
+    checksum_assets = [asset for asset in assets if asset.get("name") == checksum_name]
+    if len(archive_assets) != 1:
+        raise CompatibilityError("release must contain exactly one distribution archive")
+    if len(checksum_assets) > 1:
+        raise CompatibilityError("release must contain at most one checksum sidecar")
+    allowed_names = {expected_name, checksum_name}
+    if any(asset.get("name") not in allowed_names for asset in assets):
+        raise CompatibilityError("release contains an unsupported asset")
+    asset = archive_assets[0]
+    if archive.name != expected_name:
         raise CompatibilityError("distribution asset identity does not match the release")
     try:
         archive_size = archive.stat().st_size
@@ -134,6 +158,31 @@ def verify_release(
     archive_sha = digest_file(archive)
     if asset.get("digest") != f"sha256:{archive_sha}":
         raise CompatibilityError("distribution asset digest does not match the release")
+    if checksum_assets:
+        if checksum is None or checksum.name != checksum_name:
+            raise CompatibilityError("release checksum sidecar is missing")
+        checksum_asset = checksum_assets[0]
+        try:
+            checksum_size = checksum.stat().st_size
+            checksum_text = checksum.read_text(encoding="ascii")
+        except (OSError, UnicodeError) as error:
+            raise CompatibilityError("release checksum sidecar is unreadable") from error
+        if checksum_asset.get("size") != checksum_size:
+            raise CompatibilityError("release checksum sidecar byte count does not match")
+        if checksum_asset.get("digest") != f"sha256:{digest_file(checksum)}":
+            raise CompatibilityError("release checksum sidecar digest does not match")
+        declaration = re.fullmatch(
+            r"([a-f0-9]{64})  ([A-Za-z0-9._-]+)(?:\r?\n)?",
+            checksum_text,
+        )
+        if (
+            declaration is None
+            or declaration.group(1) != archive_sha
+            or declaration.group(2) != expected_name
+        ):
+            raise CompatibilityError("release checksum declaration does not match the archive")
+    elif checksum is not None:
+        raise CompatibilityError("checksum sidecar is not declared by the release")
     return {"tag": release["tag_name"], "asset": expected_name, "sha256": archive_sha}
 
 
@@ -264,7 +313,9 @@ def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]
             raise CompatibilityError("distribution shard record count differs")
         previous: tuple[int, str] | None = None
         for record in shard:
-            exact_keys(record, RECORD_KEYS, "record")
+            record_keys = RECORD_KEYS | ({"bodyState"} if "bodyState" in record else set())
+            exact_keys(record, record_keys, "record")
+            exact_keys(record.get("title"), RECORD_TITLE_KEYS, "record title")
             exact_keys(record.get("source"), SOURCE_KEYS, "record source")
             exact_keys(record.get("policy"), {"bindingSha256"}, "record policy")
             public_boundary(record)
@@ -276,9 +327,31 @@ def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]
             if previous is not None and order <= previous:
                 raise CompatibilityError("distribution shard is not in stable source order")
             previous = order
+            version = record.get("schemaVersion")
+            arabic = record.get("arabic")
+            english = record.get("english")
+            body_state = record.get("bodyState")
             if (
-                record.get("schemaVersion") != "2.0.0"
-                or record.get("kind") != "entry"
+                version not in RECORD_SCHEMA_VERSIONS
+                or ("bodyState" in record and body_state != "title-only")
+                or (
+                    body_state == "title-only"
+                    and (version != "2.1.0" or arabic != "" or english != "")
+                )
+                or (body_state is None and (not str(arabic or "").strip() or not str(english or "").strip()))
+                or body_state not in {None, "title-only"}
+            ):
+                raise CompatibilityError("record body state does not match the public contract")
+            title = record.get("title", {})
+            if (
+                not str(title.get("arabic", "")).strip()
+                or not str(title.get("english", "")).strip()
+                or not str(title.get("method", "")).strip()
+                or not str(title.get("state", "")).strip()
+            ):
+                raise CompatibilityError("record title does not match the public contract")
+            if (
+                record.get("kind") != "entry"
                 or record.get("workId") != WORK_ID
                 or record.get("source", {}).get("authorityId") != binding["producerAuthorityId"]
                 or record.get("source", {}).get("commit") != binding["sourceCommit"]
@@ -286,8 +359,6 @@ def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]
                 or record.get("source", {}).get("license") != authorities[binding["producerAuthorityId"]]["license"]
                 or not SHA256.fullmatch(str(record.get("source", {}).get("exactTextSha256", "")))
                 or not SHA256.fullmatch(str(record.get("policy", {}).get("bindingSha256", "")))
-                or not str(record.get("arabic", "")).strip()
-                or not str(record.get("english", "")).strip()
             ):
                 raise CompatibilityError("record does not match the verified public contract")
             if not IDENTIFIER.fullmatch(str(record.get("packetId", ""))):
@@ -309,8 +380,15 @@ def verify_records(root: Path, manifest: dict[str, Any], binding: dict[str, Any]
                     or not str(formula.get("observedArabic", "")).strip()
                     or not str(formula.get("semanticClass", "")).strip()
                     or not str(formula.get("targetRealization", "")).strip()
+                    or (
+                        str(formula.get("observedArabic", "")),
+                        str(formula.get("semanticClass", "")),
+                    )
+                    not in FORMULA_BINDINGS
                 ):
-                    raise CompatibilityError("record formula does not match the compact public contract")
+                    raise CompatibilityError(
+                        "record formula is absent from the pinned registry or differs from its semantics"
+                    )
             needs_attention += record.get("machineAssessment") == "needs_attention"
             human_reviewed += record.get("humanReview") in {"reviewed", "verified"}
             records.append(record)
@@ -410,6 +488,7 @@ def verify_distribution(
     source_authority_path: Path,
     *,
     allow_attested_preclosure: bool = False,
+    checksum: Path | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     manifest = load(root / "manifest.json")
     version = str(manifest.get("schemaVersion", ""))
@@ -451,7 +530,13 @@ def verify_distribution(
     except ValueError as error:
         raise CompatibilityError("distribution timestamp is invalid") from error
     public_boundary(manifest)
-    release_binding = verify_release(manifest, archive, load(release_path), load(tag_ref_path))
+    release_binding = verify_release(
+        manifest,
+        archive,
+        checksum,
+        load(release_path),
+        load(tag_ref_path),
+    )
     verify_archive_matches_distribution(archive, root)
     if has_release_closure:
         verify_release_closure(root, manifest)
@@ -464,6 +549,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Verify an extracted Al-Isabah distribution offline.")
     parser.add_argument("--distribution", required=True, type=Path)
     parser.add_argument("--archive", required=True, type=Path)
+    parser.add_argument("--checksum", type=Path)
     parser.add_argument("--release-metadata", required=True, type=Path)
     parser.add_argument("--tag-ref", required=True, type=Path)
     parser.add_argument("--rights-matrix", required=True, type=Path)
@@ -472,6 +558,7 @@ def main() -> int:
     verify_distribution(
         args.distribution.resolve(), args.archive.resolve(), args.release_metadata.resolve(),
         args.tag_ref.resolve(), args.rights_matrix.resolve(), args.source_authority.resolve(),
+        checksum=args.checksum.resolve() if args.checksum else None,
     )
     print("Al-Isabah schema v2 distribution is compatible.")
     return 0

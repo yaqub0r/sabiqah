@@ -43,12 +43,12 @@ test("the consumer pin declares explicit upstream version compatibility", () => 
   assert.equal(compatibility.consumerRole, "verified-application-consumer");
   assert.deepEqual(compatibility.upstream, {
     repository: "https://github.com/yaqub0r/al-isabah",
-    commit: "e301d22bd634777d5846a844340d42a00e3a2e3a",
-    referencePath: "docs/contracts/translation-governance-reference.v2.json",
-    referenceVersion: "2.0.0",
-    supportedReferenceMajor: 2,
+    commit: "9dfb8cea613329917ea9c932baaaef0bb842e966",
+    referencePath: "docs/contracts/translation-governance-reference.v13.json",
+    referenceVersion: "13.0.0",
+    supportedReferenceMajor: 13,
     referenceSha256:
-      "7d73170d384f417733134e5ca09263ba73c92e941c5590d534d9eb38ec6704ae",
+      "f5c0b4819939fadcd5808bec26fe345c9c868faddbf2b00556ecc0df02a175a5",
     textNormalization: "utf-8-lf",
   });
   assert.equal(
@@ -89,7 +89,7 @@ test("the honorific adapter projection is bound to the upstream artifact", () =>
 
   assert.equal(projection.role, "verified-consumer-projection");
   assert.equal(presentation.role, "consumer-presentation-only");
-  assert.equal(projection.entries.length, 30);
+  assert.equal(projection.entries.length, 222);
   assert.equal(
     new Set(projection.entries.map(({ source }) => source)).size,
     projection.entries.length,

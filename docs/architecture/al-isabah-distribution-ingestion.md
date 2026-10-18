@@ -7,7 +7,8 @@
   [#129](https://github.com/yaqub0r/sabiqah/issues/129),
   [#131](https://github.com/yaqub0r/sabiqah/issues/131), and
   [#133](https://github.com/yaqub0r/sabiqah/issues/133), and
-  [#136](https://github.com/yaqub0r/sabiqah/issues/136)
+  [#136](https://github.com/yaqub0r/sabiqah/issues/136), and
+  [#158](https://github.com/yaqub0r/sabiqah/issues/158)
 
 ## Decision
 
@@ -54,15 +55,23 @@ activation.
 
 ## Version and producer negotiation
 
-Schema `2.0.0` is the only format accepted for a new ingestion. Schema `1.0.0`
-is rollback-only: recovery restores the pointer to an already verified immutable
-corpus rather than rebuilding from an old distribution. Unknown major versions
+Distribution-manifest schema `2.0.0` is the only format accepted for a new
+ingestion. Its record shards may contain the backward-compatible `2.0.0` and
+`2.1.0` record shapes. A `2.1.0` record may omit body text only when it declares
+`bodyState: title-only` and retains nonempty bilingual titles; Sabiqah preserves
+that title without inventing body content. Schema `1.0.0` is rollback-only:
+recovery restores the pointer to an already verified immutable corpus rather
+than rebuilding from an old distribution. Unknown manifest or record versions
 fail closed.
 
 The consumer binds the distribution to evidence rather than trusting manifest
 claims. It requires the exact Al-Isabah owner/repository, public-working release
-tag, tag commit, release target, distribution ID, single asset name, byte count,
-and GitHub-computed SHA-256. It also validates the manifest and shard hashes,
+tag, tag commit, release target, distribution ID, distribution archive name,
+byte count, and GitHub-computed SHA-256. The release may additionally contain
+exactly one matching `.sha256` sidecar; when present, Sabiqah validates its
+release metadata and requires its single checksum declaration to name and match
+the distribution archive. Other release assets fail closed. It also validates
+the manifest and shard hashes,
 proposal inventory, internal record identities, public-only record allowlist,
 checksum-bound release closure and review members, blocked canonical promotion,
 the pinned OpenITI source commit and artifact hash, license and
@@ -74,9 +83,11 @@ that Sabiqah authority ID.
 Every record must disclose its human-review state and aggregate counts must
 match, including a valid zero-review distribution. Review coverage is ongoing
 metadata and is never an ingestion, publication, or promotion gate by itself.
-Compact formula records are joined to the exact pinned upstream formula
-registry using their observed Arabic or target realization; Sabiqah does not
-invent missing formula semantics.
+Formula records are joined to the exact pinned upstream formula registry using
+their observed Arabic and semantic class. Sabiqah applies compact honorific
+presentation only when it has a consumer-owned display adapter; other verified
+formulae retain their upstream text. Sabiqah does not invent missing formula
+semantics.
 
 Presentation heuristics are not publication gates. Verse punctuation at a
 paragraph or stanza boundary and source alphabet headings retained in an entry
@@ -202,11 +213,15 @@ metadata and the rights matrix from the candidate commit:
 pnpm compatibility:al-isabah -- \
   --distribution PATH/TO/EXTRACTED_DISTRIBUTION \
   --archive PATH/TO/al-isabah-public-distribution-COMMIT.zip \
+  --checksum PATH/TO/al-isabah-public-distribution-COMMIT.zip.sha256 \
   --release-metadata PATH/TO/release.json \
   --tag-ref PATH/TO/tag-ref.json \
   --rights-matrix PATH/TO/rights-matrix.json \
   --source-authority evidence/source-authorities/al-isabah.v1.json
 ```
+
+Omit `--checksum` only for an older immutable release that does not declare the
+sidecar in its release metadata.
 
 For the one-time schema-4 migration, run
 `scripts/verify_al_isabah_legacy_binding.py` with the exact pointer, base corpus,
