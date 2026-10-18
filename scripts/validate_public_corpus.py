@@ -356,6 +356,16 @@ def validate_current_honorifics(
         errors.append(f"index: expanded honorific search text differs for {item_id}")
 
 
+def volume_eight_opening_entry_numbers(details: Any) -> list[int]:
+    return sorted(
+        int(detail["sourceEntryNumber"])
+        for detail in details
+        if detail.get("volume") == 8
+        and detail.get("kind") == "entry"
+        and 11426 <= int(detail.get("sourceEntryNumber", 0)) <= 11481
+    )
+
+
 def validate(
     root: Path,
     legacy_binding_path: Path | None = DEFAULT_LEGACY_BINDING,
@@ -523,6 +533,13 @@ def validate(
                 errors.append(f"detail: wrong source license URL for {item_id}")
             if provenance.get("sourceArtifactSha256") != SOURCE_SHA256:
                 errors.append(f"detail: wrong source artifact hash for {item_id}")
+        # These repairs validate Sabiqah's legacy private-to-public rebuild.
+        # A current verified upstream distribution owns its published content
+        # and must not be rewritten to match that historical projection.
+        legacy_projection_contracts = (
+            schema_version == SCHEMA_VERSION
+            or (cohort is not None and cohort.get("kind") == "legacy-schema-4")
+        )
         exact_source_sha = source.get("sourceExactTextSha256")
         if (
             not isinstance(exact_source_sha, str)
@@ -554,7 +571,7 @@ def validate(
         segments = detail.get("segments", [])
         source_entry_number = detail.get("sourceEntryNumber")
         title_decision = title_decisions.get(source_entry_number)
-        if title_decision is not None:
+        if legacy_projection_contracts and title_decision is not None:
             if detail.get("title") != title_decision["title"]:
                 errors.append(
                     f"detail: {item_id} title differs from Al-Isabah entry {source_entry_number} contract"
@@ -582,7 +599,7 @@ def validate(
             + [str(segment.get("arabic", "")) for segment in segments]
         ).strip()
         displayed_arabic = " ".join(displayed_arabic.split())
-        if "%" in displayed_arabic:
+        if legacy_projection_contracts and "%" in displayed_arabic:
             errors.append(f"detail: OpenITI poetry delimiter remains for {item_id}")
         source_text_sha = hashlib.sha256(displayed_arabic.encode("utf-8")).hexdigest()
         if source.get("sourceTextSha256") != source_text_sha:
@@ -609,20 +626,28 @@ def validate(
             remediation.get("englishExcluded") is not False or exclusion_reasons
         ):
             errors.append(f"detail: public working English is marked excluded for {item_id}")
-        if EMBEDDED_ENTRY_HEADING.search(displayed_english):
+        if legacy_projection_contracts and EMBEDDED_ENTRY_HEADING.search(
+            displayed_english
+        ):
             errors.append(f"detail: embedded legacy entry heading remains for {item_id}")
-        if RAW_METER_LABEL.search(displayed_english):
+        if legacy_projection_contracts and RAW_METER_LABEL.search(
+            displayed_english
+        ):
             errors.append(f"detail: raw poetry meter label remains for {item_id}")
         expected_headings = list(SOURCE_HEADINGS_BEFORE.get(source_entry_number, ()))
-        if detail.get("headingsBefore", []) != expected_headings:
+        if (
+            legacy_projection_contracts
+            and detail.get("headingsBefore", []) != expected_headings
+        ):
             errors.append(
                 f"detail: source headings before entry {source_entry_number} differ for {item_id}"
             )
-        for old, _new in SOURCE_ARABIC_APPARATUS_REPLACEMENTS.get(
-            source_entry_number, ()
-        ):
-            if old in displayed_arabic:
-                errors.append(f"detail: audited Arabic apparatus remains for {item_id}")
+        if legacy_projection_contracts:
+            for old, _new in SOURCE_ARABIC_APPARATUS_REPLACEMENTS.get(
+                source_entry_number, ()
+            ):
+                if old in displayed_arabic:
+                    errors.append(f"detail: audited Arabic apparatus remains for {item_id}")
         historical_honorifics = (
             active_base_honorifics
             or (
@@ -647,7 +672,9 @@ def validate(
                 errors,
             )
         serialized = json.dumps(detail, ensure_ascii=False)
-        if any(pattern.search(serialized) for pattern in FORBIDDEN_PUBLIC_PATTERNS):
+        if legacy_projection_contracts and any(
+            pattern.search(serialized) for pattern in FORBIDDEN_PUBLIC_PATTERNS
+        ):
             errors.append(f"detail: private or unapproved expression remains for {item_id}")
         if len(detail.get("unresolved", [])) != item.get("unresolvedCount"):
             errors.append(f"detail: unresolved count differs for {item_id}")
@@ -750,12 +777,7 @@ def validate(
         for item_id in ids
         if (root / "items" / f"{item_id}.json").is_file()
     }
-    volume_eight_opening = sorted(
-        int(detail["sourceEntryNumber"])
-        for detail in detail_by_id.values()
-        if detail.get("volume") == 8
-        and 11426 <= int(detail.get("sourceEntryNumber", 0)) <= 11481
-    )
+    volume_eight_opening = volume_eight_opening_entry_numbers(detail_by_id.values())
     if volume_eight_opening and volume_eight_opening != list(range(11426, 11482)):
         errors.append(
             "sections: Volume 8 pages 1-25 must contain entries 11426-11481 exactly once"
