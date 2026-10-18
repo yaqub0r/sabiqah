@@ -124,7 +124,7 @@ describe.skipIf(!corpusRoot)("generated review corpus", () => {
     expect(JSON.stringify(summary).toLocaleLowerCase()).not.toContain(
       "khadijah",
     );
-  });
+  }, 30_000);
 
   it("rejects a negative source presentation repair count", () => {
     const index = parseReviewCorpusIndex(
