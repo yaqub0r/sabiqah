@@ -666,6 +666,19 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertEqual(item["source"]["distributionRecordId"], "synthetic-entry-0001")
             self.assertEqual(validate_public_corpus(output), [])
 
+    def test_stable_public_entry_requires_upstream_record_provenance(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = self.build_candidate(root)
+            item_path = output / "items" / "isabah-entry-00000001.json"
+            item = json.loads(item_path.read_text(encoding="utf-8"))
+            item["provenance"].pop("distributionRecordId")
+            write(item_path, item)
+            self.assertTrue(any(
+                "upstream distribution record identity is missing" in error
+                for error in validate_public_corpus(output)
+            ))
+
     def test_verification_failure_writes_no_output_or_activation(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -995,6 +1008,8 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             item = json.loads(stable_path.read_text(encoding="utf-8"))
             item["id"] = upstream_id
             item["segments"][0]["id"] = f"{upstream_id}-body"
+            item["source"].pop("distributionRecordId")
+            item["provenance"].pop("distributionRecordId")
             write(first / "items" / f"{upstream_id}.json", item)
             stable_path.unlink()
 
