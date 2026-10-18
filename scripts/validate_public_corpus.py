@@ -516,6 +516,14 @@ def validate(
                     errors.append(f"detail: source commit differs from cohort for {item_id}")
                 if source.get("sourceArtifactSha256") != binding.get("artifactSha256") or provenance.get("sourceArtifactSha256") != binding.get("artifactSha256"):
                     errors.append(f"detail: source artifact differs from cohort for {item_id}")
+                if cohort.get("kind") == "distribution-v2" and (
+                    not isinstance(source.get("distributionRecordId"), str)
+                    or source.get("distributionRecordId")
+                    != provenance.get("distributionRecordId")
+                ):
+                    errors.append(
+                        f"detail: upstream distribution record identity is missing for {item_id}"
+                    )
                 if source.get("license") != rights.get("arabicSource", {}).get("license") or source.get("attribution") != rights.get("arabicSource", {}).get("attribution"):
                     errors.append(f"detail: Arabic rights differ from cohort for {item_id}")
                 if source.get("englishRights") != rights.get("englishTranslation"):

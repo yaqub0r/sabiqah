@@ -72,6 +72,47 @@ const item = {
 };
 
 describe("review reading contract", () => {
+  it("retains an upstream distribution record ID separately from public identity", () => {
+    const parsed = parseReviewCorpusItem({
+      ...item,
+      schemaVersion: "5.0.0",
+      cohortId: "distribution:test",
+      source: {
+        authorityId: "openiti-cleaned-arabic-comparison",
+        sourceRepository: "https://example.test/al-isabah",
+        sourceCommit: "a".repeat(40),
+        sourceArtifactSha256: "b".repeat(64),
+        distributionRecordId: "openiti-record-011826",
+        entryNumber: 10759,
+        pages: [],
+        sourceTextSha256: "c".repeat(64),
+        sourceUrl: "https://example.test/al-isabah/source",
+        license: {
+          spdx: "CC-BY-NC-SA-4.0",
+          url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        },
+        alignment: {
+          method: "al-isabah-public-distribution-v2",
+          titleScore: 1,
+          bodyScore: 1,
+        },
+      },
+      provenance: {
+        sourceAuthorityId: "openiti-cleaned-arabic-comparison",
+        sourceRepository: "https://example.test/al-isabah",
+        sourceCommit: "a".repeat(40),
+        sourceArtifactSha256: "b".repeat(64),
+        distributionRecordId: "openiti-record-011826",
+        sourceTextSha256: "c".repeat(64),
+      },
+    });
+
+    expect(parsed.id).toBe("isabah-entry-00010759");
+    expect(parsed.provenance).toMatchObject({
+      distributionRecordId: "openiti-record-011826",
+    });
+  });
+
   it("parses mixed-cohort metadata without a corpus-wide rights claim", () => {
     const license = {
       spdx: "CC-BY-NC-SA-4.0",

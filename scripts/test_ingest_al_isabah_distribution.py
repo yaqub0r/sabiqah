@@ -562,7 +562,7 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             )
             activation = ingest(*args)
             summary = json.loads((root / "output" / "summary.json").read_text(encoding="utf-8"))
-            item = json.loads((root / "output" / "items" / "synthetic-entry-0001.json").read_text(encoding="utf-8"))
+            item = json.loads((root / "output" / "items" / "isabah-entry-00000001.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["schemaVersion"], "5.0.0")
             self.assertNotIn("rights", summary["corpus"])
             cohorts = {cohort["id"]: cohort for cohort in summary["corpus"]["cohorts"]}
@@ -581,6 +581,9 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertEqual(legacy["source"]["sourceCommit"], "5" * 40)
             self.assertEqual(legacy["provenance"]["sourceArtifactSha256"], "6" * 64)
             self.assertEqual(item["source"]["producerAuthorityId"], "openiti-cleaned-arabic-comparison")
+            self.assertEqual(item["id"], "isabah-entry-00000001")
+            self.assertEqual(item["source"]["distributionRecordId"], "synthetic-entry-0001")
+            self.assertEqual(item["provenance"]["distributionRecordId"], "synthetic-entry-0001")
             self.assertEqual(item["humanReview"], "unreviewed")
             self.assertEqual(item["honorifics"], [])
             self.assertIn(
@@ -612,7 +615,7 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             case.finalize()
             output = self.build_candidate(root, case)
             item = json.loads(
-                (output / "items" / "synthetic-entry-0001.json").read_text(
+                (output / "items" / "isabah-entry-00000001.json").read_text(
                     encoding="utf-8"
                 )
             )
@@ -632,12 +635,35 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             case.finalize()
             output = self.build_candidate(root, case)
             item = json.loads(
-                (output / "items" / "synthetic-entry-0001.json").read_text(
+                (output / "items" / "isabah-entry-00011441.json").read_text(
                     encoding="utf-8"
                 )
             )
             self.assertEqual(item["sourceEntryNumber"], 11441)
             self.assertEqual(item["title"]["en"], "Synthetic title")
+            self.assertEqual(validate_public_corpus(output), [])
+
+    def test_printed_entry_number_defines_stable_public_reader_id(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            case.update_record(
+                lambda value: value.update(
+                    volume=8,
+                    printedEntryNumber=11827,
+                    pages=[{"volume": 8, "page": 126}],
+                )
+            )
+            case.finalize()
+            output = self.build_candidate(root, case)
+            item = json.loads(
+                (output / "items" / "isabah-entry-00011827.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(item["id"], "isabah-entry-00011827")
+            self.assertEqual(item["printedEntryNumber"], 11827)
+            self.assertEqual(item["source"]["distributionRecordId"], "synthetic-entry-0001")
             self.assertEqual(validate_public_corpus(output), [])
 
     def test_verification_failure_writes_no_output_or_activation(self):
@@ -787,7 +813,7 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertTrue(any("active pointer: identity differs" in error for error in errors))
             self.assertTrue(any("wrong honorific policy" in error for error in errors))
 
-    def test_same_id_correction_records_explicit_supersession(self):
+    def test_same_source_correction_records_explicit_supersession(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             case = DistributionCase(root)
@@ -838,7 +864,7 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             volume = next(volume for volume in summary["volumes"] if volume["number"] == 2)
             self.assertEqual(
                 [item["id"] for item in index["items"] if item["volume"] == 2],
-                ["synthetic-entry-0001"],
+                ["isabah-entry-00000002"],
             )
             self.assertEqual(volume["itemCount"], 1)
             self.assertEqual(volume["sourceItemCount"], 1)
@@ -901,9 +927,10 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             root = Path(temp)
             case = DistributionCase(root)
             case.update_record(
-                lambda record: record["precedingMaterial"].append(
-                    synthetic_preceding_material(record["id"])
-                )
+                lambda record: record["precedingMaterial"].extend([
+                    synthetic_preceding_material("duplicate-structural-passage"),
+                    synthetic_preceding_material("duplicate-structural-passage"),
+                ])
             )
             case.finalize()
             with self.assertRaisesRegex(
@@ -952,10 +979,57 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertEqual(validate_public_corpus(second), [])
             for relative in (
                 "summary.json", "index.json",
-                "items/synthetic-entry-0001.json",
+                "items/isabah-entry-00000001.json",
                 "items/synthetic-legacy-entry-0002.json",
             ):
                 self.assertEqual((first / relative).read_bytes(), (second / relative).read_bytes())
+
+    def test_schema_5_upstream_id_projection_is_replaced_without_duplication(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            first = self.build_candidate(root, case)
+            stable_id = "isabah-entry-00000001"
+            upstream_id = "synthetic-entry-0001"
+            stable_path = first / "items" / f"{stable_id}.json"
+            item = json.loads(stable_path.read_text(encoding="utf-8"))
+            item["id"] = upstream_id
+            item["segments"][0]["id"] = f"{upstream_id}-body"
+            write(first / "items" / f"{upstream_id}.json", item)
+            stable_path.unlink()
+
+            index_path = first / "index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            listed = next(value for value in index["items"] if value["id"] == stable_id)
+            listed["id"] = upstream_id
+            write(index_path, index)
+
+            summary_path = first / "summary.json"
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            cohort = next(
+                value
+                for value in summary["corpus"]["cohorts"]
+                if value["kind"] == "distribution-v2"
+            )
+            cohort["membership"] = membership([upstream_id])
+            write(summary_path, summary)
+
+            second = root / "output-second"
+            ingest(
+                case.distribution, first, second, "2026-08-15T18:00:00Z",
+                case.archive, case.release, case.tag_ref, case.rights, case.authority,
+            )
+            second_index = json.loads(
+                (second / "index.json").read_text(encoding="utf-8")
+            )
+            projected = [
+                value
+                for value in second_index["items"]
+                if value["sourceEntryNumber"] == 1
+            ]
+            self.assertEqual([value["id"] for value in projected], [stable_id])
+            self.assertFalse((second / "items" / f"{upstream_id}.json").exists())
+            self.assertEqual(validate_public_corpus(second), [])
 
     def test_partial_distribution_over_different_bases_cannot_share_a_prefix(self):
         corpus_ids = []
