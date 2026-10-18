@@ -21,6 +21,7 @@ FIXTURES = ROOT / "fixtures" / "releases"
 COMMIT = "a" * 40
 TAG = f"public-working-{COMMIT}"
 ASSET = f"al-isabah-public-distribution-{COMMIT}.zip"
+CHECKSUM = f"{ASSET}.sha256"
 
 
 def write(path: Path, value: dict) -> None:
@@ -51,6 +52,7 @@ class DistributionCase:
         self.release = root / "release.json"
         self.tag_ref = root / "tag-ref.json"
         self.archive = root / ASSET
+        self.checksum = root / CHECKSUM
         self.finalize()
 
     def manifest(self) -> dict:
@@ -123,7 +125,20 @@ class DistributionCase:
             },
         )
 
-    def verify(self):
+    def add_checksum_sidecar(self, archive_sha: str | None = None) -> None:
+        declared_sha = archive_sha or hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        self.checksum.write_bytes(f"{declared_sha}  {ASSET}\n".encode("ascii"))
+        release = json.loads(self.release.read_text(encoding="utf-8"))
+        release["assets"].append(
+            {
+                "name": CHECKSUM,
+                "size": self.checksum.stat().st_size,
+                "digest": f"sha256:{hashlib.sha256(self.checksum.read_bytes()).hexdigest()}",
+            }
+        )
+        write(self.release, release)
+
+    def verify(self, checksum: Path | None = None):
         return verify_distribution(
             self.distribution,
             self.archive,
@@ -131,6 +146,7 @@ class DistributionCase:
             self.tag_ref,
             self.rights,
             self.authority,
+            checksum=checksum,
         )
 
 
@@ -353,6 +369,91 @@ class AlIsabahDistributionVerificationTests(unittest.TestCase):
                 manifest["packets"][0]["packetId"], records[0]["packetId"]
             )
 
+    def test_release_accepts_matching_checksum_sidecar(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            case.add_checksum_sidecar()
+            _, _, binding = case.verify(case.checksum)
+            self.assertEqual(
+                binding["sha256"],
+                hashlib.sha256(case.archive.read_bytes()).hexdigest(),
+            )
+
+    def test_release_rejects_missing_or_mismatched_checksum_sidecar(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            case.add_checksum_sidecar()
+            with self.assertRaisesRegex(CompatibilityError, "sidecar is missing"):
+                case.verify()
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            case.add_checksum_sidecar("0" * 64)
+            with self.assertRaisesRegex(CompatibilityError, "declaration does not match"):
+                case.verify(case.checksum)
+
+    def test_release_rejects_duplicate_or_unsupported_assets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            release = json.loads(case.release.read_text(encoding="utf-8"))
+            release["assets"].append(copy.deepcopy(release["assets"][0]))
+            write(case.release, release)
+            with self.assertRaisesRegex(CompatibilityError, "exactly one distribution archive"):
+                case.verify()
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            release = json.loads(case.release.read_text(encoding="utf-8"))
+            release["assets"].append(
+                {"name": "unrelated.txt", "size": 0, "digest": "sha256:" + "0" * 64}
+            )
+            write(case.release, release)
+            with self.assertRaisesRegex(CompatibilityError, "unsupported asset"):
+                case.verify()
+
+    def test_record_v21_accepts_only_explicit_title_only_content(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            case.update_record(
+                lambda value: value.update(
+                    schemaVersion="2.1.0",
+                    bodyState="title-only",
+                    arabic="",
+                    english="",
+                    formulas=[],
+                )
+            )
+            case.finalize()
+            _, records, _ = case.verify()
+            self.assertEqual(records[0]["bodyState"], "title-only")
+            self.assertTrue(records[0]["title"]["arabic"])
+            self.assertTrue(records[0]["title"]["english"])
+
+    def test_record_rejects_undeclared_or_invalid_title_only_content(self):
+        mutations = [
+            lambda value: value.update(schemaVersion="2.1.0", arabic="", english=""),
+            lambda value: value.update(schemaVersion="2.1.0", bodyState="title-only"),
+            lambda value: value.update(bodyState=None),
+            lambda value: value.update(schemaVersion="2.2.0"),
+        ]
+        for index, mutate in enumerate(mutations):
+            with self.subTest(mutation=index), tempfile.TemporaryDirectory() as temp:
+                case = DistributionCase(Path(temp))
+                case.update_record(mutate)
+                case.finalize()
+                with self.assertRaisesRegex(CompatibilityError, "body state"):
+                    case.verify()
+
+    def test_record_formula_must_match_the_pinned_upstream_projection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            case = DistributionCase(Path(temp))
+            case.update_record(
+                lambda value: value["formulas"][0].update(
+                    observedArabic="صيغة تجريبية غير مسجلة"
+                )
+            )
+            case.finalize()
+            with self.assertRaisesRegex(CompatibilityError, "formula"):
+                case.verify()
+
     def test_v1_is_rollback_only_and_unknown_major_rejects(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -481,10 +582,10 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             self.assertEqual(legacy["provenance"]["sourceArtifactSha256"], "6" * 64)
             self.assertEqual(item["source"]["producerAuthorityId"], "openiti-cleaned-arabic-comparison")
             self.assertEqual(item["humanReview"], "unreviewed")
-            self.assertEqual(len(item["honorifics"]), 2)
-            self.assertEqual(
-                item["honorifics"][0]["accessibleText"],
+            self.assertEqual(item["honorifics"], [])
+            self.assertIn(
                 "O God, bless Muḥammad and the family of Muḥammad.",
+                item["segments"][0]["english"],
             )
             self.assertIn("englishRights", item["source"])
             self.assertEqual(validate_public_corpus(root / "output"), [])
@@ -494,6 +595,32 @@ class AlIsabahDistributionIngestionTests(unittest.TestCase):
             (root / "activation.json").unlink()
             second_plan = ingest(*args)
             self.assertEqual(first_plan, second_plan)
+
+    def test_ingestion_preserves_title_only_entries_without_inventing_body_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = DistributionCase(root)
+            case.update_record(
+                lambda value: value.update(
+                    schemaVersion="2.1.0",
+                    bodyState="title-only",
+                    arabic="",
+                    english="",
+                    formulas=[],
+                )
+            )
+            case.finalize()
+            output = self.build_candidate(root, case)
+            item = json.loads(
+                (output / "items" / "synthetic-entry-0001.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(item["title"]["ar"], "عنوان تجريبي")
+            self.assertEqual(item["title"]["en"], "Synthetic title")
+            self.assertEqual(item["segments"][0]["arabic"], "")
+            self.assertEqual(item["segments"][0]["english"], "")
+            self.assertEqual(validate_public_corpus(output), [])
 
     def test_verification_failure_writes_no_output_or_activation(self):
         with tempfile.TemporaryDirectory() as temp:

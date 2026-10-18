@@ -1,8 +1,9 @@
 # Al-Isabah governance compatibility
 
 - **Status:** Accepted
-- **Issues:** [#113](https://github.com/yaqub0r/sabiqah/issues/113) and
-  [#136](https://github.com/yaqub0r/sabiqah/issues/136)
+- **Issues:** [#113](https://github.com/yaqub0r/sabiqah/issues/113),
+  [#136](https://github.com/yaqub0r/sabiqah/issues/136), and
+  [#158](https://github.com/yaqub0r/sabiqah/issues/158)
 
 ## Authority and pin
 
@@ -12,28 +13,31 @@ corrections, promotion, and immutable releases. Sabiqah is a verified
 application consumer and does not keep a governing copy of those policies.
 
 The current consumer pin is Al-Isabah commit
-[`e301d22b`](https://github.com/yaqub0r/al-isabah/tree/e301d22bd634777d5846a844340d42a00e3a2e3a).
+[`9dfb8cea`](https://github.com/yaqub0r/al-isabah/tree/9dfb8cea613329917ea9c932baaaef0bb842e966).
 At that commit:
 
 - the
-  [`translation-governance-reference.v2.json`](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/docs/contracts/translation-governance-reference.v2.json)
-  reference is version `2.0.0` with normalized SHA-256
-  `7d73170d384f417733134e5ca09263ba73c92e941c5590d534d9eb38ec6704ae`;
+  [`translation-governance-reference.v13.json`](https://github.com/yaqub0r/al-isabah/blob/9dfb8cea613329917ea9c932baaaef0bb842e966/docs/contracts/translation-governance-reference.v13.json)
+  reference is version `13.0.0` with normalized SHA-256
+  `f5c0b4819939fadcd5808bec26fe345c9c868faddbf2b00556ecc0df02a175a5`;
 - the referenced
-  [`translation-quality-workflow`](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/docs/contracts/translation-quality-workflow.md)
+  [`translation-quality-workflow`](https://github.com/yaqub0r/al-isabah/blob/9dfb8cea613329917ea9c932baaaef0bb842e966/docs/contracts/translation-quality-workflow.md)
   and
-  [Al-Isabah profile](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/docs/translation-profiles/al-isabah.md)
+  [Al-Isabah profile](https://github.com/yaqub0r/al-isabah/blob/9dfb8cea613329917ea9c932baaaef0bb842e966/docs/translation-profiles/al-isabah.md)
   govern translation execution; and
 - the referenced
-  [`honorific-formulas.v1.json`](https://github.com/yaqub0r/al-isabah/blob/e301d22bd634777d5846a844340d42a00e3a2e3a/profiles/honorific-formulas.v1.json)
-  registry is version `1.3.0` with normalized SHA-256
-  `b23fcd528b840b0e5bbe8932fca6eeaaa576ee51263d9838d4f8d18e40c9e100`.
+  [`honorific-formulas.v1.json`](https://github.com/yaqub0r/al-isabah/blob/9dfb8cea613329917ea9c932baaaef0bb842e966/profiles/honorific-formulas.v1.json)
+  registry is version `1.9.0` with normalized SHA-256
+  `6a9dc65f90947ffb1ce43d05c3404493514f564cda43742f90b28ebb43bf180d`.
 
 The machine-readable Sabiqah compatibility pin lives in
 `packages/release-model/src/al-isabah-governance.compatibility.json`. Its
-honorific projection is a verified consumer adapter, not a policy authority.
-Sabiqah separately owns font support, fallback, search, copy, bidirectional
-isolation, and accessibility presentation.
+formula projection preserves the complete verified upstream registry but is not
+a policy authority. Sabiqah applies its compact honorific presentation only to
+formulae with an existing consumer-owned display adapter; other verified
+formulae retain their upstream text without invented compact semantics. Sabiqah
+separately owns font support, fallback, search, copy, bidirectional isolation,
+and accessibility presentation.
 
 ## Consumer boundary
 
@@ -58,6 +62,7 @@ not change the pinned corpus object.
 A future update must start from an immutable Al-Isabah commit, verify the
 reference and artifact hashes using UTF-8/LF normalization, and reject an
 unknown reference major version. Update the consumer pin and derived
-projection together in a reviewed Sabiqah change. Distribution schema `2.0.0`
-remains active for new ingestion and schema `1.0.0` remains rollback-only; this
+projection together in a reviewed Sabiqah change. Distribution-manifest schema
+`2.0.0` remains active for new ingestion, including its backward-compatible
+record shapes `2.0.0` and `2.1.0`; schema `1.0.0` remains rollback-only. This
 governance pin does not replace release verification.

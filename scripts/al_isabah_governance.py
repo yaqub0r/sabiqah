@@ -76,51 +76,6 @@ def _validate_bindings() -> None:
         raise ValueError("Unsupported Al-Isabah governance reference major version")
 
 
-def _agreement(value: str) -> dict[str, str]:
-    agreements = {
-        "masculine singular and masculine plural": {
-            "number": "plural",
-            "gender": "masculine-or-mixed",
-        },
-        "masculine singular with family inclusion": {
-            "number": "plural",
-            "gender": "mixed",
-        },
-        "second-person masculine singular imperative addressed to God; masculine singular prophetic referent with family inclusion": {
-            "number": "plural",
-            "gender": "mixed",
-        },
-        "masculine singular": {"number": "singular", "gender": "masculine"},
-        "feminine singular": {"number": "singular", "gender": "feminine"},
-        "dual": {"number": "dual", "gender": "common"},
-        "masculine plural": {
-            "number": "plural",
-            "gender": "masculine-or-mixed",
-        },
-        "feminine plural": {"number": "plural", "gender": "feminine"},
-        "plural": {"number": "plural", "gender": "masculine-or-mixed"},
-        "not_applicable": {
-            "number": "not-applicable",
-            "gender": "not-applicable",
-        },
-    }
-    try:
-        return agreements[value]
-    except KeyError as error:
-        raise ValueError(f"Unknown upstream honorific agreement: {value}") from error
-
-
-def _referent_kind(scope: str) -> str:
-    lowered = scope.casefold()
-    if "god" in lowered:
-        return "Allah"
-    if "prophet" in lowered and "companions" not in lowered:
-        return "prophet"
-    if any(token in lowered for token in ("group", "two ", "companions")):
-        return "people"
-    return "person"
-
-
 def _consumer_entries() -> tuple[dict[str, Any], ...]:
     presentation_entries = PRESENTATION["entries"]
     by_character = {
@@ -128,36 +83,21 @@ def _consumer_entries() -> tuple[dict[str, Any], ...]:
         for entry in presentation_entries
         if entry.get("compactCharacter")
     }
-    by_expanded = {
-        form: entry
-        for entry in presentation_entries
-        for form in (entry["expandedArabic"], *entry.get("arabicAliases", []))
-    }
     adapters: dict[str, dict[str, Any]] = {}
 
-    for index, formula in enumerate(FORMULA_PROJECTION["entries"]):
+    for formula in FORMULA_PROJECTION["entries"]:
         target = str(formula["target"])
-        presentation = by_character.get(target) or by_expanded.get(
-            str(formula["expandedArabic"])
-        )
+        presentation = by_character.get(target)
         if presentation is None:
-            presentation = {
-                "id": f"al-isabah-upstream-formula-{index + 1:02d}",
-                "expandedArabic": formula["expandedArabic"],
-                "accessibleEnglish": formula["accessibleEnglish"],
-                "compactCharacter": "",
-                "codePoint": "",
-                "unicodeVersion": "",
-                "fontSupport": "fallback-expanded",
-                "referent": {"kind": _referent_kind(formula["referentScope"])},
-                "alternateCharacters": [],
-                "arabicAliases": [],
-                "englishAliases": [],
-            }
+            continue
 
         adapter_id = str(presentation["id"])
-        agreement = _agreement(str(formula["grammaticalAgreement"]))
         family_included = "family" in str(formula["semanticClass"]).casefold()
+        if presentation.get("familyIncluded") != family_included:
+            raise ValueError(
+                f"Upstream family semantics differ for presentation adapter {adapter_id}"
+            )
+        agreement = copy.deepcopy(presentation["agreement"])
         existing = adapters.get(adapter_id)
         if existing is not None:
             if (

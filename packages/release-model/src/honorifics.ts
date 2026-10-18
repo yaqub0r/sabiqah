@@ -97,43 +97,19 @@ for (const formula of alIsabahFormulaProjection.entries) {
 export const honorificEntries = honorificRegistry.entries.map((entry) => {
   const formula = projectedFormulaByTarget.get(entry.compactCharacter);
   if (!formula) return entry;
+  const familyIncluded = formula.semanticClass.includes("family");
+  if (entry.familyIncluded !== familyIncluded) {
+    throw new Error(
+      `Al-Isabah family semantics differ for presentation adapter ${entry.id}`,
+    );
+  }
   return {
     ...entry,
     semanticClass: formula.semanticClass,
     referent: { ...entry.referent, scope: formula.referentScope },
-    agreement: projectedAgreement(formula.grammaticalAgreement),
-    familyIncluded: formula.semanticClass.includes("family"),
+    familyIncluded,
   } satisfies HonorificEntry;
 });
-
-function projectedAgreement(value: string): HonorificAgreement {
-  const agreements: Record<string, HonorificAgreement> = {
-    "masculine singular and masculine plural": {
-      number: "plural",
-      gender: "masculine-or-mixed",
-    },
-    "masculine singular with family inclusion": {
-      number: "plural",
-      gender: "mixed",
-    },
-    "masculine singular": { number: "singular", gender: "masculine" },
-    "feminine singular": { number: "singular", gender: "feminine" },
-    dual: { number: "dual", gender: "common" },
-    "masculine plural": {
-      number: "plural",
-      gender: "masculine-or-mixed",
-    },
-    "feminine plural": { number: "plural", gender: "feminine" },
-    plural: { number: "plural", gender: "masculine-or-mixed" },
-    not_applicable: {
-      number: "not-applicable",
-      gender: "not-applicable",
-    },
-  };
-  const agreement = agreements[value];
-  if (!agreement) throw new Error(`Unknown Al-Isabah agreement: ${value}`);
-  return agreement;
-}
 
 const byCharacter = new Map<string, HonorificEntry>();
 for (const entry of honorificEntries) {
