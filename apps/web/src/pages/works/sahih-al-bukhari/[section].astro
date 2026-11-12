@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import BukhariRecord from "../../../components/BukhariRecord.astro";
+import BukhariNotice from "../../../components/BukhariNotice.astro";
+import { bukhari, bukhariSections } from "../../../lib/bukhari";
+
+export function getStaticPaths() {
+  return bukhariSections.map(section => ({ params: { section: section.id }, props: { section } }));
+}
+const { section } = Astro.props;
+const records = bukhari.records.filter(record => record.bookSection === section.id);
+---
+
+<BaseLayout title={`${section.title} · Sahih al-Bukhari`}>
+  <section class="shell bukhari-reader">
+    <p class="breadcrumb"><a href="/works/">All books</a> / <a href="/works/sahih-al-bukhari/">Sahih al-Bukhari</a></p>
+    <p class="eyebrow">{section.range} · public working edition</p>
+    <h1>{section.title}</h1>
+    <p class="issue-banner">Partial collection · all {records.length} records in this section are human-unreviewed. Arabic is a text-only transcription, not scan-verified. Uncertainties are preserved beside each affected record.</p>
+    <nav class="bukhari-section-nav" aria-label="Reading sections">{bukhariSections.map(item => <a href={`/works/sahih-al-bukhari/${item.id}/`} aria-current={item.id === section.id ? "page" : undefined}>{item.title}</a>)}</nav>
+    <details class="bukhari-evidence bukhari-jump">
+      <summary>Jump to a numbered report</summary>
+      <nav aria-label="Numbered reports" class="bukhari-report-links">{records.filter(record => record.printedHadithNumber !== null).map(record => <a href={`#${record.sourceUnitId}`}>Hadith {record.printedHadithNumber}</a>)}</nav>
+    </details>
+    <BukhariNotice />
+    <div class="bukhari-records">{records.map(record => <BukhariRecord record={record} />)}</div>
+    <nav class="bukhari-section-nav" aria-label="Continue reading">{bukhariSections.filter(item => item.id !== section.id).map(item => <a class="button secondary" href={`/works/sahih-al-bukhari/${item.id}/`}>{section.id === "opening" ? "Continue to" : "Return to"} {item.title} →</a>)}<a href="#top">Back to top</a></nav>
+  </section>
+</BaseLayout>
+
+<script>
+  // A reload closes the jump disclosure. Native scroll restoration can then
+  // restore its old pixel offset instead of the requested source-unit anchor.
+  // Reconcile that explicit anchor after restoration and Arabic font layout.
+  async function revealRequestedRecord() {
+    const hash = window.location.hash;
+    if (!/^#bukhari-l\d{6}$/.test(hash)) return;
+    await document.fonts.ready;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (window.location.hash !== hash) return;
+        document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start", behavior: "instant" });
+      });
+    });
+  }
+  window.addEventListener("pageshow", revealRequestedRecord);
+  window.addEventListener("hashchange", revealRequestedRecord);
+  if (document.readyState === "complete") void revealRequestedRecord();
+</script>

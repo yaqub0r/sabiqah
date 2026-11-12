@@ -81,7 +81,11 @@ Actions or production credential.
 
 ## Local development
 
-Prerequisites are Node.js 22.12 or newer and pnpm 11.
+Prerequisites are Node.js 22.12 or newer, pnpm 11, and Python 3.11 or newer.
+The Python standard library verifies the pinned Sahih al-Bukhari working
+release before development, type checking, and builds. The first run downloads
+the exact public release; subsequent runs revalidate its ignored local cache.
+See the [Bukhari attribution and ingestion record](docs/attribution/sahih-al-bukhari.md).
 
 ```sh
 pnpm install --frozen-lockfile

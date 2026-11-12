@@ -31,6 +31,11 @@ terms recorded in [`docs/attribution/al-isabah.md`](docs/attribution/al-isabah.m
 remain in force. The repository-level licensing change does not broaden,
 narrow, replace, or remove those terms.
 
+The separately licensed Sahih al-Bukhari working release retains CC BY 4.0 for
+its original English and project-authored structure/notes, with the distinct
+OpenITI source notice and scoped source-risk decision preserved. See
+[`docs/attribution/sahih-al-bukhari.md`](docs/attribution/sahih-al-bukhari.md).
+
 ## Private evidence
 
 Private research evidence is neither published nor offered under the

@@ -1,0 +1,12 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import BookCatalog from "../../components/BookCatalog.astro";
+---
+<BaseLayout title="Books">
+  <section class="shell">
+    <p class="eyebrow">Arabic and English · sources in view</p>
+    <h1>Choose a book.</h1>
+    <p class="lede">Working editions keep their scope, sources, uncertainty, and human review state visible as you read.</p>
+    <BookCatalog />
+  </section>
+</BaseLayout>

@@ -1,0 +1,18 @@
+---
+import { bukhari } from "../lib/bukhari";
+const { rights, sourceAuthority } = bukhari.manifest.proposal;
+---
+
+<details class="bukhari-evidence bukhari-release-notice">
+  <summary>Source, rights, and release limitations</summary>
+  <p>{rights.attribution}</p>
+  <p>Original English and project-authored structure and notes: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. OpenITI corpus notice: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>. These apply to different contributions; the English license does not relicense third-party material.</p>
+  <p>{rights.arabicBasis}</p>
+  <p>{rights.residualRisk}</p>
+  <p>Source edition: {sourceAuthority.edition}</p>
+  <ul>{sourceAuthority.limitations.map(limitation => <li>{limitation}</li>)}</ul>
+  <h3>Excluded material</h3>
+  <ul>{rights.excludedMaterial.map(material => <li>{material}</li>)}</ul>
+  <p>Presentation changes: Sabiqah arranges the unchanged released text into bilingual reading sections and expandable source details. It does not revise translations, assign scholarly approval, or change the release class.</p>
+  <p>Release: <a href={bukhari.releaseUrl}>{bukhari.manifest.releaseId}</a>. <a href={`https://github.com/yaqub0r/sahih-al-bukhari/tree/${bukhari.manifest.repositoryCommit}`}>View the pinned book repository</a>.</p>
+</details>

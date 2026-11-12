@@ -194,6 +194,138 @@ button {
 .arabic-card p {
   color: var(--muted);
 }
+.book-shelf {
+  padding-top: 0;
+}
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+.book-card {
+  display: block;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fffaf1;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.65;
+}
+.book-card h2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+.book-card [lang="ar"] {
+  font-family: "Noto Naskh Arabic Variable", serif;
+  font-size: 1.5rem;
+}
+.bukhari-reader {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.bukhari-reader h1 {
+  max-width: 22ch;
+  font-size: clamp(2.7rem, 6vw, 5rem);
+  line-height: 1.08;
+}
+.bukhari-section-nav,
+.bukhari-report-links,
+.bukhari-record-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.bukhari-section-nav [aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 0.18em;
+}
+.bukhari-record {
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 1.5rem;
+}
+.bukhari-record:target {
+  border-top: 0.3rem solid var(--gold);
+}
+.bukhari-record-heading {
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.bukhari-record-heading h2 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+.bukhari-bilingual {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+.bukhari-bilingual > div {
+  min-width: 0;
+}
+.bukhari-english > p:last-child,
+.bukhari-arabic > p:last-child {
+  white-space: pre-wrap;
+  unicode-bidi: plaintext;
+}
+.bukhari-english > p:last-child {
+  font-size: 1.08rem;
+  line-height: 1.9;
+}
+.bukhari-reader [lang="ar"] {
+  font-family: "Noto Naskh Arabic Variable", "Traditional Arabic", serif;
+  font-size: 1.45rem;
+  line-height: 2;
+}
+.bukhari-english bdi[lang="ar"] {
+  font-size: 1.12em;
+  line-height: inherit;
+}
+.bukhari-evidence {
+  margin: 1.5rem 0;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: #fffaf1;
+  min-width: 0;
+}
+.bukhari-evidence summary {
+  cursor: pointer;
+  font-weight: 750;
+  color: var(--green);
+}
+.bukhari-evidence[open] summary {
+  margin-bottom: 1rem;
+}
+.bukhari-evidence h3,
+.bukhari-record .issue-banner h3 {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+.bukhari-path {
+  margin-top: 1.5rem;
+}
+.bukhari-transmission {
+  border-left: 2px solid var(--line);
+  padding-left: 1rem;
+}
+.bukhari-reader li > p {
+  margin-bottom: 0.5rem;
+}
+.bukhari-report-links a {
+  padding: 0.4rem;
+}
+@media (max-width: 700px) {
+  .book-grid,
+  .bukhari-bilingual {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bukhari-bilingual {
+    gap: 0.5rem;
+  }
+}
 .section-heading {
   display: flex;
   justify-content: space-between;

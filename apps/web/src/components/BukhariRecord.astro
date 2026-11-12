@@ -1,0 +1,46 @@
+---
+import type { BukhariRecord } from "../lib/bukhari";
+import BukhariEnglish from "./BukhariEnglish.astro";
+const { record } = Astro.props as { record: BukhariRecord };
+const label = record.printedHadithNumber === null
+  ? `${record.kind === "heading" ? "Heading" : "Comment"} · ${record.sourceOrdinal}`
+  : `Hadith ${record.printedHadithNumber}`;
+---
+
+<article class="bukhari-record" id={record.sourceUnitId} aria-labelledby={`${record.sourceUnitId}-title`}>
+  <header class="bukhari-record-heading">
+    <h2 id={`${record.sourceUnitId}-title`}><a href={`#${record.sourceUnitId}`}>{label}</a></h2>
+    <span class="badge warning">Human-unreviewed</span>
+  </header>
+  <div class="bukhari-bilingual">
+    <div class="bukhari-english"><p class="segment-meta">English · working translation</p><p dir="auto"><BukhariEnglish text={record.english} /></p></div>
+    <div class="bukhari-arabic" lang="ar" dir="rtl"><p class="segment-meta" lang="en" dir="ltr">Arabic · source text</p><p>{record.arabic}</p></div>
+  </div>
+  {record.uncertainties.length > 0 && <aside class="issue-banner" aria-label="Uncertainty disclosures">
+    <h3>Uncertainty to keep in view</h3>
+    <ul>{record.uncertainties.map(note => <li><strong>{note.category === "structure" ? "Structure" : "Translation"}{note.reportId ? ` · ${note.reportId}` : ""}:</strong> <span dir="auto">{note.summary}</span></li>)}</ul>
+  </aside>}
+  <details class="bukhari-evidence">
+    <summary>Source structure and transmission paths{record.isnad.status === "uncertain" ? " · uncertain" : ""}</summary>
+    <p>Stable source unit: <code>{record.sourceUnitId}</code> · source order {record.sourceOrdinal}.</p>
+    <p>These paths describe the printed text. They do not establish historical contact or authenticate a chain. Machine processing is complete; human scholarly review remains open.</p>
+    <p lang="ar" dir="rtl">{record.isnad.note}</p>
+    {record.isnad.paths.length === 0 && <p>No transmission path is recorded for this heading or comment.</p>}
+    {record.isnad.paths.map(path => <section class="bukhari-path">
+      <h3>Path {path.id} · {path.kind} · {path.status}</h3>
+      <p lang="ar" dir="rtl">{path.note}</p>
+      <ol>{path.nodeIds.map((id, index) => {
+        const node = record.isnad.nodes.find(node => node.id === id)!;
+        const edge = record.isnad.edges.find(edge => edge.id === path.edgeIds[index]);
+        return <li>
+          <p><span lang="ar" dir="rtl">{node.arabic}</span>{!node.arabic && (node.kind === "compiler" ? "Implicit compiler" : "Unspecified link")} <small>({node.kind} · {node.status})</small></p>
+          <p lang="ar" dir="rtl">{node.note}</p>
+          {edge && <div class="bukhari-transmission"><p><span lang="ar" dir="rtl">{edge.arabicWording}</span> <small>({edge.mode})</small></p><p lang="ar" dir="rtl">{edge.note}</p></div>}
+        </li>;
+      })}</ol>
+    </section>)}
+    {record.isnad.reports.map(report => <p><strong>Report {report.id} · {report.status}</strong> · source offsets {report.start}–{report.end} · paths {report.pathIds.join(", ") || "none"}<br /><span lang="ar" dir="rtl">{report.note}</span></p>)}
+    <h3>Arabic passage boundaries</h3>
+    <ol>{record.segments.map(segment => <li><p><strong>{segment.kind}</strong> · source offsets {segment.start}–{segment.end}</p><p lang="ar" dir="rtl">{segment.arabic}</p></li>)}</ol>
+  </details>
+</article>
