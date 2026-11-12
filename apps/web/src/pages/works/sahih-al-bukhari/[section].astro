@@ -27,3 +27,23 @@ const records = bukhari.records.filter(record => record.bookSection === section.
     <nav class="bukhari-section-nav" aria-label="Continue reading">{bukhariSections.filter(item => item.id !== section.id).map(item => <a class="button secondary" href={`/works/sahih-al-bukhari/${item.id}/`}>{section.id === "opening" ? "Continue to" : "Return to"} {item.title} →</a>)}<a href="#top">Back to top</a></nav>
   </section>
 </BaseLayout>
+
+<script>
+  // A reload closes the jump disclosure. Native scroll restoration can then
+  // restore its old pixel offset instead of the requested source-unit anchor.
+  // Reconcile that explicit anchor after restoration and Arabic font layout.
+  async function revealRequestedRecord() {
+    const hash = window.location.hash;
+    if (!/^#bukhari-l\d{6}$/.test(hash)) return;
+    await document.fonts.ready;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (window.location.hash !== hash) return;
+        document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start", behavior: "instant" });
+      });
+    });
+  }
+  window.addEventListener("pageshow", revealRequestedRecord);
+  window.addEventListener("hashchange", revealRequestedRecord);
+  if (document.readyState === "complete") void revealRequestedRecord();
+</script>

@@ -29,6 +29,7 @@ const server = process.env.BUKHARI_BASE_URL
       },
     );
 let browser;
+let activePage;
 const results = [];
 try {
   let ready = false;
@@ -57,6 +58,7 @@ try {
     [1440, 900],
   ]) {
     const page = await browser.newPage({ viewport: { width, height } });
+    activePage = page;
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     async function geometry(label) {
@@ -158,13 +160,17 @@ try {
         .click();
       assert.equal(new URL(page.url()).hash, `#${firstReport.sourceUnitId}`);
       await page.reload();
+      await page.evaluate(() => document.fonts.ready);
       const target = page.locator(`#${firstReport.sourceUnitId}`);
-      assert(
-        await target.evaluate((el) => {
-          const y = el.getBoundingClientRect().top;
+      // Native hash/scroll restoration can finish after the load event. Assert
+      // the settled user-visible outcome, rather than sampling that race.
+      await page.waitForFunction(
+        (id) => {
+          const y = document.getElementById(id).getBoundingClientRect().top;
           return y >= 0 && y < innerHeight;
-        }),
-        "Deep-link refresh did not reveal record",
+        },
+        firstReport.sourceUnitId,
+        { timeout: 5000 },
       );
       const details = target.locator("details");
       await details.locator("summary").click();
@@ -174,10 +180,14 @@ try {
       await page.goto(
         `${base}/works/sahih-al-bukhari/${section}/#${last.sourceUnitId}`,
       );
-      assert(
-        await page
-          .locator(`#${last.sourceUnitId}`)
-          .evaluate((el) => el.getBoundingClientRect().top < innerHeight),
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForFunction(
+        (id) => {
+          const y = document.getElementById(id).getBoundingClientRect().top;
+          return y >= 0 && y < innerHeight;
+        },
+        last.sourceUnitId,
+        { timeout: 5000 },
       );
       await geometry(`${section}-last-record`);
     }
@@ -192,6 +202,7 @@ try {
       geometry: "passed",
     });
     await page.close();
+    activePage = null;
   }
   await writeFile(
     `${output}/results.json`,
@@ -204,6 +215,23 @@ try {
   console.log(
     "Bukhari presentation passed: 5 pages at 3 viewports, all 110 records and 49 disclosures preserved.",
   );
+} catch (error) {
+  if (activePage && !activePage.isClosed()) {
+    await activePage.screenshot({ path: `${output}/failure.png` });
+    await writeFile(
+      `${output}/failure.json`,
+      JSON.stringify(
+        {
+          url: activePage.url(),
+          viewport: activePage.viewportSize(),
+          error: String(error),
+        },
+        null,
+        2,
+      ),
+    );
+  }
+  throw error;
 } finally {
   await browser?.close();
   server?.kill();
