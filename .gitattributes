@@ -1,0 +1,4 @@
+# These release members carry raw byte checksums. Git must not rewrite their
+# line endings on Windows; doing so changes the release under verification.
+fixtures/releases/al-isabah-v2-synthetic/** -text
+evidence/releases/*.manifest.json -text

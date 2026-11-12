@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import BukhariNotice from "../../../components/BukhariNotice.astro";
+import { bukhari, bukhariSections } from "../../../lib/bukhari";
+---
+
+<BaseLayout title="Sahih al-Bukhari" description="Read the Beginning of Revelation and Book of Faith in Arabic and working English, with visible uncertainty and source structure.">
+  <section class="shell bukhari-reader">
+    <p class="breadcrumb"><a href="/works/">All books</a> / Sahih al-Bukhari</p>
+    <p class="eyebrow">Public working edition · partial collection</p>
+    <h1>Sahih al-Bukhari</h1>
+    <p class="lede" lang="ar" dir="rtl">صحيح البخاري</p>
+    <p class="lede">Read the Beginning of Revelation and the Book of Faith, with Arabic alongside working English and the source record in view.</p>
+    <p class="issue-banner">This release contains 58 numbered reports and all intervening headings and authorial comments: 110 records in total. All are human-unreviewed. The rest of the collection is not included. Machine completion does not mean scholarly approval or authentication of transmission chains.</p>
+    <nav class="book-grid" aria-label="Sahih al-Bukhari reading sections">
+      {bukhariSections.map(section => <a class="book-card" href={`/works/sahih-al-bukhari/${section.id}/`}><span class="eyebrow">{section.range}</span><h2>{section.title}</h2><p>{bukhari.records.filter(record => record.bookSection === section.id).length} records · Arabic and English</p><span>Read section →</span></a>)}
+    </nav>
+    <p>49 uncertainty disclosures remain visible beside the affected records. No account is needed to read.</p>
+    <BukhariNotice />
+    <p><a href="https://github.com/yaqub0r/sahih-al-bukhari/issues">Discuss corrections in the book repository</a>. Include the release and stable source unit when reporting a concern.</p>
+  </section>
+</BaseLayout>

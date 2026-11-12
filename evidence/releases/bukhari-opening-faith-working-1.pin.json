@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "repository": "yaqub0r/sahih-al-bukhari",
+  "githubReleaseId": 442312937,
+  "githubArchiveAssetId": 737322948,
+  "immutable": true,
+  "commit": "969117cec0806973024e5cfad03583107db537de",
+  "tag": "public-working-969117cec0806973024e5cfad03583107db537de",
+  "releaseId": "bukhari-opening-faith-working-1",
+  "archive": "sahih-al-bukhari-public-distribution-969117cec0806973024e5cfad03583107db537de.zip",
+  "archiveBytes": 1318351,
+  "archiveSha256": "27e731febdbc3c38d4c828096644ce1997b4c01515241456b58d5941c95748ca",
+  "manifestSha256": "9a811f22e519d93505d9cd6cdfeeb11cb0b70db02a7bd75435dc03fdd8d063b7",
+  "schemaSha256": "e8712b8ceba8e2334c318c1a24042ef7de049043470afd7bb72d88406047f70c",
+  "closureSha256": "9489b24b24fab65d8c8ef7d3a032744f372a2f358dd0c39aad73b8e2071950d3",
+  "recordCount": 110,
+  "reportCount": 58,
+  "uncertaintyCount": 49
+}
