@@ -18,6 +18,14 @@ mentions that administrator so GitHub can route an email notification to the
 configured administrative mailbox. An overdue credential generates a new
 mention each day. The job fails when a credential is within 14 days of expiry.
 
+Delivery and expiry have separate steps: `Notify administrator` succeeds when
+issue notifications have been posted or their stage markers already exist;
+`Report credential expiry alarm` deliberately fails for a critical expiry.
+`Report notification delivery failure` instead identifies a failed or incomplete
+issue-notification operation. The job summary describes which condition occurred.
+A red workflow alone does not establish that notification delivery failed.
+Neither successful posting nor an existing stage marker proves email receipt.
+
 GitHub email delivery is an account setting. The administrator must enable email
 notifications, select the administrative mailbox as the notification address,
 and confirm delivery using the workflow's `test` mode.
@@ -82,12 +90,17 @@ Replace `CLOUDFLARE_API_TOKEN` in `development`, then dispatch
 `cloudflare-credential-smoke.yml` for `development` and run
 `infra-plan.yml`. Success requires R2 listing and a no-drift plan. The token must
 remain read-only.
+The smoke test also requires account membership listing to be denied (HTTP 403),
+without creating or modifying resources.
 
 ### Infrastructure apply token
 
 Replace `CLOUDFLARE_API_TOKEN` in `production`. Dispatch the credential smoke
-test and approve the production environment. Run a protected no-drift plan
-before any apply. Do not create a change merely to test the token.
+test and approve the production environment. Dispatch `infra-plan.yml` from
+`main` with `environment=production` and approve its production environment gate.
+Both manual plan environments fail verification if drift is detected. The plan
+workflow never applies changes; do not dispatch `infra-apply.yml` to test a token.
+The membership-list denial check above applies to production as well.
 
 ### OpenTofu state credential
 
