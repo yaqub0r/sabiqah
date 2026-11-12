@@ -7,20 +7,30 @@ on:
       - ".github/workflows/infra-plan.yml"
       - ".github/workflows/infra-apply.yml"
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to verify with a no-drift plan (never applies)
+        required: true
+        type: choice
+        default: development
+        options:
+          - development
+          - production
 
 permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-infra-plan-${{ github.ref }}
+  group: cloudflare-infra-plan-${{ github.ref }}-${{ inputs.environment || 'development' }}
   cancel-in-progress: true
 
 jobs:
   plan:
     name: Plan private R2 infrastructure
+    if: github.event_name == 'pull_request' || inputs.environment != 'production' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: development
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'development' }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -58,5 +68,17 @@ jobs:
 
       - name: Create speculative plan
         working-directory: infra/cloudflare
-        run: tofu plan -input=false -lock-timeout=5m -no-color
-
+        shell: bash
+        env:
+          REQUIRE_NO_DRIFT: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          result=0
+          tofu plan -input=false -lock-timeout=5m -no-color -detailed-exitcode || result=$?
+          if [[ "${result}" == "2" && "${REQUIRE_NO_DRIFT}" == "true" ]]; then
+            echo "::error::Credential verification found infrastructure drift. No changes were applied."
+            exit 1
+          fi
+          if [[ "${result}" != "0" && "${result}" != "2" ]]; then
+            exit "${result}"
+          fi
